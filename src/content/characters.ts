@@ -22,6 +22,8 @@
  * or costume. See ART_BIBLE.md §12–14.
  */
 
+import { PEN_COLORS } from '../design/penColors';
+
 export interface CharacterVariant {
   id: string;
   /** Arabic label for the costume, shown when a variant is selectable. */
@@ -46,7 +48,10 @@ export interface GameCharacter {
   personality: string;
   /** Whether this character represents the game itself. See the note above. */
   mainCast: boolean;
-  /** Stroke colour on a shared canvas. Distinct across all ten. */
+  /**
+   * Stroke colour on a shared canvas, as literal hex. Never a CSS variable —
+   * a canvas context cannot resolve one. See design/penColors.ts.
+   */
   penColor: string;
   /** Costume variants. `default` always exists and is the canon design. */
   variants: readonly CharacterVariant[];
@@ -64,7 +69,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Confident, self-important, treats his own catastrophic drawings as masterpieces. The beret is core to his identity and is never removed.',
     mainCast: true,
-    penColor: 'var(--wt-pen-artist)',
+    penColor: PEN_COLORS.artist,
     variants: DEFAULT_ONLY,
   },
   {
@@ -75,7 +80,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Low energy, permanently unimpressed, sarcastic and judgmental. Expressions read as "I have seen better" even at good moments.',
     mainCast: true,
-    penColor: 'var(--wt-pen-critic)',
+    penColor: PEN_COLORS.critic,
     variants: DEFAULT_ONLY,
   },
   {
@@ -86,7 +91,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Always visibly trying to work out what is happening. The go-to face for bewilderment, doubt and confusion.',
     mainCast: true,
-    penColor: 'var(--wt-pen-confused)',
+    penColor: PEN_COLORS.confused,
     variants: DEFAULT_ONLY,
   },
   {
@@ -97,7 +102,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Enormous energy. Movement is fast, exaggerated and physical — jumping, flailing, never still. Poses should be mid-motion.',
     mainCast: true,
-    penColor: 'var(--wt-pen-excited)',
+    penColor: PEN_COLORS.excited,
     variants: DEFAULT_ONLY,
   },
   {
@@ -108,7 +113,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Sweet and guileless to a degree that becomes funny the moment suspicion or accusation is in the air.',
     mainCast: true,
-    penColor: 'var(--wt-pen-innocent)',
+    penColor: PEN_COLORS.innocent,
     variants: [
       { id: 'default', label: 'الأساسي' },
       { id: 'hijab', label: 'بالحجاب' },
@@ -122,7 +127,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Cold, reserved, watches everyone with quiet suspicion. Especially suited to المزوّر.',
     mainCast: true,
-    penColor: 'var(--wt-pen-detective)',
+    penColor: PEN_COLORS.detective,
     variants: [
       { id: 'default', label: 'الأساسي' },
       { id: 'saudi', label: 'بالغترة' },
@@ -138,7 +143,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Absolutely certain he has the answer, and consistently wrong. Chest out, hands on hips, never doubts himself for a second.',
     mainCast: false,
-    penColor: 'var(--wt-pen-confident)',
+    penColor: PEN_COLORS.confident,
     variants: DEFAULT_ONLY,
   },
   {
@@ -149,7 +154,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Every minor event is an absolute catastrophe. Reactions are enormous and theatrical, arms flung wide, wailing at nothing.',
     mainCast: false,
-    penColor: 'var(--wt-pen-dramatic)',
+    penColor: PEN_COLORS.dramatic,
     variants: DEFAULT_ONLY,
   },
   {
@@ -160,7 +165,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Minimal reactions while everything around him is chaos. The comedy is the contrast — he barely moves.',
     mainCast: false,
-    penColor: 'var(--wt-pen-calm)',
+    penColor: PEN_COLORS.calm,
     variants: DEFAULT_ONLY,
   },
   {
@@ -171,7 +176,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
     personality:
       'Enjoys wrecking the situation far more than winning it. Lopsided, leaning, always hiding something behind his back.',
     mainCast: false,
-    penColor: 'var(--wt-pen-trickster)',
+    penColor: PEN_COLORS.trickster,
     variants: DEFAULT_ONLY,
   },
 ] as const;

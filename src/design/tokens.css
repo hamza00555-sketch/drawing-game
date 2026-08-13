@@ -72,9 +72,10 @@
   --wt-danger-deep: var(--wt-tomato-deep);
 
   /*
-   * Pen colours, one per character (ten of them). Deliberately darker than the
-   * body colours: a stroke has to stay legible as a thin line on the near-white
-   * canvas, where a light fill colour disappears.
+   * Pen colours, one per character. MIRRORED from src/design/penColors.ts,
+   * which is the source of truth — a canvas 2D context cannot resolve a CSS
+   * variable, so the drawing code must use literal hex. These exist only for
+   * CSS-side uses such as swatches and legends. Change one, change both.
    */
   --wt-pen-artist: #d13d24;
   --wt-pen-critic: #c98a1c;

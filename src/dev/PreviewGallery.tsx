@@ -12,6 +12,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { JoinScreen } from '../screens/JoinScreen';
 import { LobbyScreen } from '../screens/LobbyScreen';
 import { ModeSelectScreen } from '../screens/ModeSelectScreen';
+import { DrawingPreview } from './DrawingPreview';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 
 const players: Record<string, RoomPlayer> = {
@@ -86,6 +87,9 @@ export function PreviewGallery({ screen }: { screen: string }) {
         />
       );
 
+    case 'draw':
+      return <DrawingPreview />;
+
     case 'modes':
       return (
         <ModeSelectScreen
@@ -100,7 +104,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
       return (
         <main className="wt-screen wt-paper-ground">
           <ul className="font-body text-ink">
-            {['home', 'create', 'join', 'lobby', 'lobby-empty', 'modes'].map((name) => (
+            {['home', 'create', 'join', 'lobby', 'lobby-empty', 'modes', 'draw'].map((name) => (
               <li key={name}>
                 <a className="underline" href={`?preview=${name}`}>
                   {name}

@@ -1,0 +1,184 @@
+/**
+ * Stroke synchronisation.
+ *
+ * The contract this module exists to uphold: **the network never touches how
+ * the pen feels.** Every pointer event is rendered locally the instant it
+ * arrives. This module only decides what goes on the wire, and when.
+ *
+ * Shape of a stroke on the wire:
+ *
+ *   strokes/{roomId}/{gameId}/{strokeId}
+ *     playerId, seq, tool, color, width, startedAt   ← written once, up front
+ *     points/{chunkIndex}: [{x,y,t}, ...]            ← appended every ~50ms
+ *     done: true                                     ← written at stroke end
+ *
+ * Points are appended as CHUNKS rather than written per point. A phone fires
+ * pointer events far faster than anyone needs to see them, and one database
+ * write per point would be both ruinous and pointless. Chunking also means a
+ * viewer sees the line grow smoothly instead of appearing all at once.
+ *
+ * Chunks are numbered, so a late-arriving chunk cannot reorder a line.
+ */
+
+import { onChildAdded, onChildChanged, ref, set, update } from 'firebase/database';
+import { getDb } from '../firebase';
+import { paths } from '../paths';
+import type { Point, Stroke, Tool } from './strokes';
+
+/** How often buffered points are flushed. Roughly three display frames. */
+export const FLUSH_INTERVAL_MS = 50;
+
+export interface StrokeHeader {
+  playerId: string;
+  seq: number;
+  tool: Tool;
+  color: string;
+  width: number;
+  startedAt: number;
+}
+
+/** Wire representation. `points` is a map of chunk index to point array. */
+interface WireStroke extends StrokeHeader {
+  points?: Record<string, Point[]>;
+  done?: boolean;
+}
+
+function flattenPoints(points: Record<string, Point[]> | undefined): Point[] {
+  if (!points) return [];
+
+  return Object.keys(points)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .flatMap((index) => points[String(index)] ?? []);
+}
+
+export function wireToStroke(id: string, wire: WireStroke): Stroke {
+  return {
+    id,
+    playerId: wire.playerId,
+    seq: wire.seq,
+    tool: wire.tool,
+    color: wire.color,
+    width: wire.width,
+    startedAt: wire.startedAt,
+    points: flattenPoints(wire.points),
+  };
+}
+
+/**
+ * Publishes one stroke as it is drawn.
+ *
+ * Created on pointer-down, fed points as they arrive, and finished on
+ * pointer-up. Nothing here blocks the caller: every method returns immediately
+ * and the writes happen in the background.
+ */
+export class StrokePublisher {
+  private chunkIndex = 0;
+  private pending: Point[] = [];
+  private timer: ReturnType<typeof setInterval> | undefined;
+  private closed = false;
+
+  constructor(
+    private readonly roomId: string,
+    private readonly gameId: string,
+    readonly strokeId: string,
+    header: StrokeHeader,
+  ) {
+    // The header goes out immediately so other players can start rendering the
+    // line's colour and weight before any points arrive.
+    void set(ref(getDb(), paths.stroke(roomId, gameId, strokeId)), header);
+
+    this.timer = setInterval(() => this.flush(), FLUSH_INTERVAL_MS);
+  }
+
+  /** Buffer a point. Rendering already happened locally; this is wire only. */
+  add(point: Point): void {
+    if (this.closed) return;
+    this.pending.push(point);
+  }
+
+  private flush(): void {
+    if (this.pending.length === 0) return;
+
+    const chunk = this.pending;
+    this.pending = [];
+
+    const index = this.chunkIndex;
+    this.chunkIndex += 1;
+
+    void update(ref(getDb(), `${paths.stroke(this.roomId, this.gameId, this.strokeId)}/points`), {
+      [index]: chunk,
+    });
+  }
+
+  /**
+   * Finish the stroke: flush whatever is left, then mark it done so viewers
+   * know the line is complete and can move it into their committed layer.
+   */
+  finish(): void {
+    if (this.closed) return;
+    this.closed = true;
+
+    if (this.timer !== undefined) {
+      clearInterval(this.timer);
+      this.timer = undefined;
+    }
+
+    this.flush();
+    void update(ref(getDb(), paths.stroke(this.roomId, this.gameId, this.strokeId)), {
+      done: true,
+    });
+  }
+}
+
+export interface StrokeSubscription {
+  stop: () => void;
+}
+
+/**
+ * Watch a game's strokes.
+ *
+ * `onProgress` fires as a stroke grows (including for strokes that already
+ * existed when this client attached — which is what makes rejoining mid-round
+ * rebuild the drawing), and `onDone` fires when it is complete.
+ *
+ * Strokes authored by `ignorePlayerId` are skipped: the local artist has
+ * already rendered them, and echoing them back would draw the same line twice
+ * and fight the local buffer.
+ */
+export function watchStrokes(
+  roomId: string,
+  gameId: string,
+  handlers: {
+    onProgress: (stroke: Stroke) => void;
+    onDone: (stroke: Stroke) => void;
+    ignorePlayerId?: string;
+  },
+): StrokeSubscription {
+  const strokesRef = ref(getDb(), paths.strokes(roomId, gameId));
+
+  const handle = (id: string | null, value: unknown) => {
+    if (!id || value === null || typeof value !== 'object') return;
+
+    const wire = value as WireStroke;
+    if (handlers.ignorePlayerId && wire.playerId === handlers.ignorePlayerId) return;
+
+    const stroke = wireToStroke(id, wire);
+    if (wire.done) handlers.onDone(stroke);
+    else handlers.onProgress(stroke);
+  };
+
+  const stopAdded = onChildAdded(strokesRef, (snapshot) =>
+    handle(snapshot.key, snapshot.val()),
+  );
+  const stopChanged = onChildChanged(strokesRef, (snapshot) =>
+    handle(snapshot.key, snapshot.val()),
+  );
+
+  return {
+    stop: () => {
+      stopAdded();
+      stopChanged();
+    },
+  };
+}
