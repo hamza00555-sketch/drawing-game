@@ -105,7 +105,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
           hostId="p1"
           selfId="p1"
           currentMode="kammil"
-          error="نحتاج 3 لاعبين على الأقل."
+          error="الجولات تحتاج نشر المنطق الموثوق (Cloud Functions). الغرف والانضمام يشتغلون بدونه — شوف DEPLOY.md."
           onChangeMode={noop}
           onStart={noop}
           onLeave={noop}

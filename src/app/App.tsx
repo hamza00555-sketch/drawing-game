@@ -14,7 +14,14 @@ import {
 } from '../engine/room';
 import { startPresence, watchPresence, claimHostIfVacant } from '../engine/presence';
 import { CharacterTakenError, takenByOthers, watchCharacters } from '../engine/characters';
-import { callGame, startRound, watchGame, watchScores, type GameState } from '../engine/game';
+import {
+  callGame,
+  describeCallFailure,
+  startRound,
+  watchGame,
+  watchScores,
+  type GameState,
+} from '../engine/game';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 import { GameRouter } from './GameRouter';
 import { useSession } from './session';
@@ -163,7 +170,7 @@ export function App() {
         scores={scores}
         onNextRound={() => {
           void startRound(roomId, room.currentMode ?? game.mode).catch((caught: unknown) =>
-            setError(caught instanceof Error ? caught.message : undefined),
+            setError(describeCallFailure(caught).message),
           );
         }}
         onBackToLobby={() => {
@@ -246,13 +253,7 @@ export function App() {
             setBusy(true);
             setError(undefined);
             void startRound(roomId!, mode)
-              .catch((caught: unknown) =>
-                setError(
-                  caught instanceof Error
-                    ? caught.message
-                    : 'ما قدرنا نبدأ الجولة. تأكد من الاتصال.',
-                ),
-              )
+              .catch((caught: unknown) => setError(describeCallFailure(caught).message))
               .finally(() => setBusy(false));
           }}
           onLeave={() => void handleLeave()}

@@ -288,6 +288,55 @@ export async function callGame<T = unknown>(
   return result.data as T;
 }
 
+/** Arabic script. Used to tell our own error messages from the SDK's. */
+const ARABIC = /[؀-ۿ]/;
+
+export interface CallFailure {
+  message: string;
+  /**
+   * True when the trusted logic does not appear to be deployed at all, rather
+   * than having refused this particular request.
+   */
+  functionsMissing: boolean;
+}
+
+/**
+ * Turn a failed call into something worth showing a player.
+ *
+ * The distinction that matters is between "the server considered your request
+ * and said no" and "there is no server". The first already arrives in Arabic,
+ * written by us, and should be passed through untouched — `مو دورك`,
+ * `نحتاج 3 لاعبين على الأقل`. The second arrives as an SDK string like
+ * "NOT FOUND" or "internal", which tells a player nothing and, on the free
+ * Spark plan, means something very specific: Cloud Functions are not deployed,
+ * because deploying them requires the Blaze plan.
+ *
+ * The script of the message is the reliable signal. Every message our functions
+ * raise is Arabic; every message the SDK invents is not.
+ */
+export function describeCallFailure(error: unknown): CallFailure {
+  const raw = error instanceof Error ? error.message : String(error);
+  if (ARABIC.test(raw)) return { message: raw, functionsMissing: false };
+
+  const code = (error as { code?: string } | undefined)?.code ?? '';
+  const missing =
+    code === 'functions/not-found' ||
+    code === 'functions/internal' ||
+    code === 'functions/unavailable' ||
+    code === '';
+
+  if (missing) {
+    return {
+      functionsMissing: true,
+      message:
+        'الجولات تحتاج نشر المنطق الموثوق (Cloud Functions). ' +
+        'الغرف والانضمام يشتغلون بدونه — شوف DEPLOY.md.',
+    };
+  }
+
+  return { message: 'ما قدرنا نبدأ الجولة. تأكد من الاتصال.', functionsMissing: false };
+}
+
 /** Which function starts a round, per mode. */
 const START_FUNCTION: Record<GameMode, string> = {
   mozawwer: 'startMozawwerRound',
