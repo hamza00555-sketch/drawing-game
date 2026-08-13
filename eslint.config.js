@@ -3,7 +3,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'functions/lib'] },
+  { ignores: ['dist', 'node_modules', 'functions/lib', 'functions/node_modules'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -52,11 +52,23 @@ export default tseslint.config(
   },
   {
     /*
-     * The clock module is the one place allowed to read the device clock.
-     * Tests need it too — simulating a skewed device is the whole point of
-     * clock.test.ts.
+     * Exemptions from the device-clock rule.
+     *
+     * - engine/clock.ts is the module that measures the skew.
+     * - Tests simulate a skewed device; that is the point of clock.test.ts.
+     * - functions/ runs on Google's servers, where Date.now() IS the
+     *   authoritative clock the whole rule exists to defer to. Writing
+     *   phaseEndsAt from it is correct, not a violation.
+     * - src/dev/ builds fixtures for the preview gallery; those deadlines are
+     *   mock data, never gameplay, and never ship.
      */
-    files: ['src/engine/clock.ts', 'scripts/**/*.mjs', '**/*.test.ts'],
+    files: [
+      'src/engine/clock.ts',
+      'src/dev/**/*.tsx',
+      'scripts/**/*.mjs',
+      '**/*.test.ts',
+      'functions/src/**/*.ts',
+    ],
     rules: { 'no-restricted-syntax': 'off' },
   },
 );

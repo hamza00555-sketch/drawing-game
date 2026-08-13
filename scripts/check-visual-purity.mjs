@@ -22,7 +22,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const SRC = join(ROOT, 'src');
+const ROOTS = [join(ROOT, 'src'), join(ROOT, 'shared'), join(ROOT, 'functions', 'src')];
 
 const EMOJI = new RegExp(
   '[' +
@@ -71,7 +71,7 @@ function walk(dir) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
-      if (entry === 'node_modules' || entry === 'generated') continue;
+      if (entry === 'node_modules' || entry === 'generated' || entry === 'lib') continue;
       walk(full);
     } else if (/\.(ts|tsx|css|html)$/.test(entry)) {
       inspect(full);
@@ -109,14 +109,21 @@ function inspect(file) {
   });
 }
 
-try {
-  statSync(SRC);
-} catch {
-  console.log('no src/ directory yet — nothing to check');
-  process.exit(0);
+let scanned = 0;
+for (const root of ROOTS) {
+  try {
+    statSync(root);
+  } catch {
+    continue;
+  }
+  walk(root);
+  scanned += 1;
 }
 
-walk(SRC);
+if (scanned === 0) {
+  console.log('no source directories yet — nothing to check');
+  process.exit(0);
+}
 
 if (violations.length === 0) {
   console.log('visual purity: clean (no emoji, no hand-coded artwork, no icon libraries)');

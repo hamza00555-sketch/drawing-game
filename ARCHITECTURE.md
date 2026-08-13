@@ -276,3 +276,39 @@ Not produced yet, but the seams exist: `AUDIO_CUES` in `src/config/balance.ts`
 enumerates every hook (button, stroke, timer, countdown, correct, wrong, reveal,
 vote, suspense, win, lose, character reaction) so adding sound later is wiring,
 not surgery.
+
+---
+
+## 13. Shared logic
+
+`shared/` is compiled into **both** the client bundle and the Cloud Functions
+build. It holds anything the server must decide and the client must predict
+identically: mode balance constants, word banks, vote tallying, guess
+normalisation and scoring.
+
+A copy inside `functions/` would be free to drift, and a scoring rule that
+differs between the screen and the server reads to players as the game lying to
+them. `functions/tsconfig.json` therefore sets `rootDir` to the repo root and
+includes `../shared`, which is why its build output lands at
+`lib/functions/src/index.js`.
+
+Keep `shared/` dependency-free: it is consumed by an ES module bundler and by a
+CommonJS Node build, so it must not reach for anything from either side.
+
+## 14. What the Cloud Functions own
+
+Only what rules cannot express:
+
+- `startMozawwerRound` — picks the word, the impostor and a shuffled turn order,
+  and writes each player's secret to their own node. The impostor's node has no
+  `word` key at all.
+- `advanceMozawwer` — every phase transition, in one place: begin drawing, end a
+  turn, honour the ready-to-vote rule, close voting and tally, stage the reveal,
+  run the impostor's last guess, and award points.
+
+Everything else — strokes, presence, votes, guesses, character reservations — is
+written directly by clients under security rules, because a Cloud Function on a
+latency-sensitive path costs a cold start this game cannot afford.
+
+Scores are written **only** inside `finishRound`. That is what makes
+`playerScores` safe to leave `".write": false` for every client.

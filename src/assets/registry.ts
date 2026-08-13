@@ -177,24 +177,41 @@ export function getAsset(id: AssetId): AssetEntry | undefined {
 }
 
 /**
- * Build an asset id, falling back to the `default` variant when a costume has
- * no art for the requested pose yet.
+ * Build an asset id, degrading gracefully when art does not exist yet.
  *
- * This is what keeps variants cheap: a room can put the detective in a ghutra
- * without every one of his poses having to exist in that costume on day one.
+ * Resolution order:
+ *   1. the exact costume + pose
+ *   2. the default costume in that pose — so a costume never has to be
+ *      generated in every pose before a room can use it
+ *   3. (only when `fallbackToIdle`) the same character's idle pose
+ *
+ * Step 3 is opt-in because the two cases genuinely differ. A small avatar in a
+ * list should keep working when a reaction pose has not been generated — a grid
+ * of placeholder boxes where the players should be makes a core screen unusable.
+ * A large, deliberate piece of art should NOT silently fall back: there the
+ * placeholder is the point, naming exactly what still needs generating.
  */
 export function characterAsset(
   characterId: string,
   pose: string,
   variant = 'default',
+  fallbackToIdle = false,
 ): AssetId {
   const requested = `${characterId}_${variant}_${pose}`;
   if (assetRegistry[requested]) return requested;
 
-  const fallback = `${characterId}_default_${pose}`;
-  if (assetRegistry[fallback]) return fallback;
+  const defaultVariant = `${characterId}_default_${pose}`;
+  if (assetRegistry[defaultVariant]) return defaultVariant;
 
-  // Neither exists — return the requested id so <AssetSlot /> names the exact
+  if (fallbackToIdle) {
+    const idleInVariant = `${characterId}_${variant}_idle`;
+    if (assetRegistry[idleInVariant]) return idleInVariant;
+
+    const idleDefault = `${characterId}_default_idle`;
+    if (assetRegistry[idleDefault]) return idleDefault;
+  }
+
+  // Nothing to show — return the requested id so <AssetSlot /> names the exact
   // asset that still needs generating.
   return requested;
 }

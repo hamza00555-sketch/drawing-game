@@ -12,6 +12,8 @@
  * Everything here is expected to change after the first real playtest.
  */
 
+import { MOZAWWER, type ReadyToVoteRule } from '../../shared/mozawwer';
+
 export const ROOM = {
   minPlayers: 3,
   /**
@@ -27,37 +29,13 @@ export const ROOM = {
   reconnectGraceMs: 60_000,
 } as const;
 
-/**
- * Who is allowed to end the drawing stage in المزوّر and move everyone to voting.
- *
- * This is deliberately NOT hardcoded. `any_player` is the fastest and most fun
- * default, but it hands the impostor an exploit: they can end the drawing early,
- * before their weak contribution is exposed. If playtesting shows that abuse,
- * switch the room to `majority` or `host_only` without touching game code.
+/*
+ * المزوّر balance lives in shared/mozawwer.ts because the Cloud Function needs
+ * the same numbers. Imported and re-exported here so this file stays the one
+ * place anyone looks for a tunable value.
  */
-export type ReadyToVoteRule = 'any_player' | 'host_only' | 'majority';
-
-export const MOZAWWER = {
-  /** Passes around the shared canvas before "الرسمة جاهزة" is even offered. */
-  minTurnsBeforeReady: 2,
-  /** Hard ceiling so a room cannot stall forever. */
-  maxTurns: 12,
-  turnMs: 20_000,
-  readyToVoteRule: 'any_player' as ReadyToVoteRule,
-  votingMs: 30_000,
-  /** The impostor's last chance to name the word after being unmasked. */
-  impostorGuessMs: 20_000,
-  scores: {
-    /** Each non-impostor who voted for the actual impostor. */
-    correctVote: 2,
-    /** To the impostor, if the vote failed to identify them. */
-    impostorSurvived: 5,
-    /** To the impostor for naming the word after being caught. */
-    impostorGuessedWord: 3,
-    /** Split among non-impostors when the impostor is caught. */
-    groupCaughtImpostor: 1,
-  },
-} as const;
+export { MOZAWWER };
+export type { ReadyToVoteRule };
 
 export const KAMMIL = {
   countdownMs: 3_000,

@@ -13,6 +13,7 @@ import { JoinScreen } from '../screens/JoinScreen';
 import { LobbyScreen } from '../screens/LobbyScreen';
 import { ModeSelectScreen } from '../screens/ModeSelectScreen';
 import { DrawingPreview } from './DrawingPreview';
+import { MozawwerPreview, MOZAWWER_PREVIEWS } from './MozawwerPreview';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 
 const players: Record<string, RoomPlayer> = {
@@ -101,10 +102,23 @@ export function PreviewGallery({ screen }: { screen: string }) {
       );
 
     default:
+      if ((MOZAWWER_PREVIEWS as readonly string[]).includes(screen)) {
+        return <MozawwerPreview phase={screen} />;
+      }
+
       return (
         <main className="wt-screen wt-paper-ground">
           <ul className="font-body text-ink">
-            {['home', 'create', 'join', 'lobby', 'lobby-empty', 'modes', 'draw'].map((name) => (
+            {[
+              'home',
+              'create',
+              'join',
+              'lobby',
+              'lobby-empty',
+              'modes',
+              'draw',
+              ...MOZAWWER_PREVIEWS,
+            ].map((name) => (
               <li key={name}>
                 <a className="underline" href={`?preview=${name}`}>
                   {name}

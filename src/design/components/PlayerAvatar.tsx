@@ -28,6 +28,12 @@ export interface PlayerAvatarProps {
   size?: 'sm' | 'md' | 'lg';
   /** Score badge, shown during and after a game. */
   score?: number;
+  /**
+   * Whether to render the name under the portrait. Off when the surrounding
+   * layout already names the player — a row that prints the name beside the
+   * avatar should not print it twice.
+   */
+  showName?: boolean;
 }
 
 const SIZE = {
@@ -45,16 +51,20 @@ export function PlayerAvatar({
   isHost = false,
   size = 'md',
   score,
+  showName = true,
 }: PlayerAvatarProps) {
   const character = getCharacter(characterId);
   const dimensions = SIZE[size];
   const disconnected = status === 'disconnected';
 
   return (
-    // w-full + min-w-0: without these the component sizes to its widest child
-    // (the name), so a long name sets the grid column width and overflows its
-    // neighbours no matter what truncation the name itself declares.
-    <div className="flex w-full min-w-0 flex-col items-center gap-1">
+    /*
+     * w-full + min-w-0 so a long name cannot set the column width and overflow
+     * its neighbours in a grid. max-w + shrink-0 so the same component does not
+     * stretch to fill a horizontal flex row, which would push the row's other
+     * content off the end.
+     */
+    <div className="flex w-full min-w-0 shrink-0 flex-col items-center gap-1 max-w-[7rem]">
       <div
         className={[
           'relative flex items-start justify-center overflow-hidden rounded-lg border-bold bg-paper-raised',
@@ -77,7 +87,9 @@ export function PlayerAvatar({
          * defeats the whole point — these characters are read by their faces.
          */}
         <AssetSlot
-          id={characterAsset(characterId, pose, variant)}
+          // fallbackToIdle: a missing reaction pose must not turn a roster or a
+          // voting grid into a wall of placeholder boxes.
+          id={characterAsset(characterId, pose, variant, true)}
           alt={character?.name ?? name}
           className="h-[165%] w-auto max-w-none -translate-y-[4%] object-contain object-top"
         />
@@ -94,24 +106,28 @@ export function PlayerAvatar({
        * cell: without it the name sets the column's intrinsic width and a long
        * one ("عبدالرحمن الشمري") spills across its neighbours.
        */}
-      <p
-        className={[
-          'w-full min-w-0 truncate text-center font-body',
-          dimensions.text,
-          disconnected ? 'text-ink-faint' : 'text-ink',
-        ].join(' ')}
-        title={name}
-      >
-        {name}
-      </p>
+      {showName && (
+        <>
+          <p
+            className={[
+              'w-full min-w-0 truncate text-center font-body',
+              dimensions.text,
+              disconnected ? 'text-ink-faint' : 'text-ink',
+            ].join(' ')}
+            title={name}
+          >
+            {name}
+          </p>
 
-      {/*
-       * Reserved height even when empty, so avatars with a status label do not
-       * push their row out of alignment with those without one.
-       */}
-      <span className="min-h-4 font-body text-xs text-ink-faint">
-        {disconnected ? 'غير متصل' : isHost ? 'المضيف' : ''}
-      </span>
+          {/*
+           * Reserved height even when empty, so avatars with a status label do
+           * not push their row out of alignment with those without one.
+           */}
+          <span className="min-h-4 font-body text-xs text-ink-faint">
+            {disconnected ? 'غير متصل' : isHost ? 'المضيف' : ''}
+          </span>
+        </>
+      )}
     </div>
   );
 }
