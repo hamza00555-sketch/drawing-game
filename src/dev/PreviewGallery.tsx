@@ -15,6 +15,7 @@ import { ModeSelectScreen } from '../screens/ModeSelectScreen';
 import { DrawingPreview } from './DrawingPreview';
 import { MozawwerPreview, MOZAWWER_PREVIEWS } from './MozawwerPreview';
 import { KammilPreview, KAMMIL_PREVIEWS } from './KammilPreview';
+import { MamnouPreview, MAMNOU_PREVIEWS } from './MamnouPreview';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 
 const players: Record<string, RoomPlayer> = {
@@ -109,6 +110,9 @@ export function PreviewGallery({ screen }: { screen: string }) {
       if ((KAMMIL_PREVIEWS as readonly string[]).includes(screen)) {
         return <KammilPreview phase={screen} />;
       }
+      if ((MAMNOU_PREVIEWS as readonly string[]).includes(screen)) {
+        return <MamnouPreview phase={screen} />;
+      }
 
       return (
         <main className="wt-screen wt-paper-ground">
@@ -123,6 +127,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
               'draw',
               ...MOZAWWER_PREVIEWS,
               ...KAMMIL_PREVIEWS,
+              ...MAMNOU_PREVIEWS,
             ].map((name) => (
               <li key={name}>
                 <a className="underline" href={`?preview=${name}`}>

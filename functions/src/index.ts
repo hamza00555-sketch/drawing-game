@@ -18,8 +18,14 @@ import { MOZAWWER, MOZAWWER_WORDS, scoreMozawwerRound, tallyVotes, isCorrectGues
 admin.initializeApp();
 const db = admin.database();
 
-// كمّل رسمتي lives in its own module; re-exported so both modes deploy together.
+// Each mode lives in its own module; re-exported so they deploy together.
 export { startKammilRound, advanceKammil } from './kammil';
+export {
+  startMamnouRound,
+  beginMamnouDrawing,
+  submitMamnouGuess,
+  endMamnouRound,
+} from './mamnou3at';
 
 interface RoomPlayer {
   id: string;
