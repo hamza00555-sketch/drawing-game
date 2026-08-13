@@ -69,10 +69,14 @@ export function SetupNeededScreen() {
             يحتاج Java فقط.
           </p>
 
+          {/*
+           * `npm run setup:emulator` rather than a `cp`: this is run on Windows
+           * too, where `cp` is not a command in CMD and the failure looks
+           * exactly like the app ignoring you.
+           */}
           <div className="mt-3 flex flex-col gap-1 rounded-md border-thin border-ink-hairline bg-paper p-3">
-            <Command>npm install &amp;&amp; npm --prefix functions install</Command>
-            <Command>cp .env.emulator .env.local</Command>
-            <Command>npm run build:functions</Command>
+            <Command>npm install</Command>
+            <Command>npm run setup:emulator</Command>
             <Command>npm run emulators # طرفية أولى</Command>
             <Command>npm run dev # طرفية ثانية</Command>
           </div>

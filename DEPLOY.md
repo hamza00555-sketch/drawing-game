@@ -162,17 +162,20 @@ Auth و Realtime Database **و Cloud Functions** على جهازك، ولا يش
 
 ```bash
 npm install                 # يثبّت firebase-tools محليًا — لا حاجة لتثبيت عام
-npm --prefix functions install
-cp .env.emulator .env.local # إعداد وهمي يوجّه التطبيق للمحاكي
-npm run build:functions     # المحاكي يشغّل JS المبني، لا TS
+npm run setup:emulator      # يكتب .env.local ويثبّت اعتماديات functions
 ```
 
 ثم في طرفيتين:
 
 ```bash
-npm run emulators           # Auth + Database + Functions
+npm run emulators           # Auth + Database + Functions (يبني functions أولًا)
 npm run dev
 ```
+
+> `npm run setup:emulator` بدل `cp .env.emulator .env.local`، لأن `cp` ليست
+> أمرًا في CMD على Windows، وفشلها صامت: التطبيق يقلع ويعرض شاشة الإعداد وكأنه
+> تجاهلك. السكربت يعمل على Windows و macOS و Linux بنفس الطريقة، ويرفض أن يدهس
+> `.env.local` يشير إلى مشروع سحابي حقيقي إلا بـ`-- --force`.
 
 افتح الرابط في **ثلاث نوافذ متخفية** (كل نافذة لاعب مستقل، لأن الهوية المجهولة
 مخزّنة لكل ملف تعريف). أنشئ غرفة من الأولى وانضم بالكود من الباقيتين.

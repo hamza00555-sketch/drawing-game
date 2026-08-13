@@ -15,7 +15,9 @@
     "check:purity": "node scripts/check-visual-purity.mjs",
     "verify": "npm run check:purity && npm run lint && npm run typecheck && npm run test",
     "emulators": "firebase emulators:start --project demo-wesh-tha --only auth,database,functions",
-    "build:functions": "npm --prefix functions run build"
+    "build:functions": "npm --prefix functions run build",
+    "setup:emulator": "node scripts/use-emulator.mjs",
+    "preemulators": "npm run build:functions"
   },
   "dependencies": {
     "@fontsource/baloo-bhaijaan-2": "^5.3.0",
