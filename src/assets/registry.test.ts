@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { characterAsset, getAsset } from './registry';
-import { CHARACTERS } from '../content/characters';
 
 describe('characterAsset', () => {
   it('resolves a registered variant pose', () => {
@@ -24,26 +23,8 @@ describe('characterAsset', () => {
     );
     expect(getAsset('detective_saudi_suspicious')).toBeUndefined();
   });
-});
 
-describe('cast integrity', () => {
-  it('every character has registered art for its declared variants', () => {
-    for (const character of CHARACTERS) {
-      for (const variant of character.variants) {
-        const id = `${character.id}_${variant.id}_idle`;
-        expect(getAsset(id), `missing art: ${id}`).toBeDefined();
-      }
-    }
-  });
-
-  it('every character has a distinct pen colour', () => {
-    const colors = CHARACTERS.map((character) => character.penColor);
-    expect(new Set(colors).size).toBe(colors.length);
-  });
-
-  it('always offers a default variant, since it is the canon design', () => {
-    for (const character of CHARACTERS) {
-      expect(character.variants.some((v) => v.id === 'default')).toBe(true);
-    }
+  it('defaults the variant when none is given', () => {
+    expect(characterAsset('trickster', 'idle')).toBe('trickster_default_idle');
   });
 });

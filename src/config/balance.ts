@@ -14,7 +14,12 @@
 
 export const ROOM = {
   minPlayers: 3,
-  maxPlayers: 8,
+  /**
+   * Ten, matching the cast size. Every player in a full room must be able to
+   * pick a different character, so the two numbers are locked together and a
+   * test asserts it.
+   */
+  maxPlayers: 10,
   /** Room codes avoid 0/O and 1/I/L — they get misread aloud across a table. */
   codeAlphabet: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789',
   codeLength: 4,

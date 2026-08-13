@@ -21,6 +21,15 @@ export const paths = {
   roomMode: (roomId: string) => `rooms/${roomId}/currentMode`,
   roomSettings: (roomId: string) => `rooms/${roomId}/settings`,
 
+  /**
+   * Character reservations, keyed by character so the database itself enforces
+   * uniqueness. Claiming is a transaction on a single node — two players
+   * tapping the same character at the same instant cannot both win.
+   */
+  characters: (roomId: string) => `roomCharacters/${roomId}`,
+  character: (roomId: string, characterId: string) =>
+    `roomCharacters/${roomId}/${characterId}`,
+
   players: (roomId: string) => `roomPlayers/${roomId}`,
   player: (roomId: string, playerId: string) => `roomPlayers/${roomId}/${playerId}`,
   playerReady: (roomId: string, playerId: string) => `roomPlayers/${roomId}/${playerId}/ready`,

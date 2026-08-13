@@ -45,6 +45,22 @@
   --wt-rose: #dd6491;
   --wt-rose-deep: #b2436c;
 
+  /*
+   * Extended accents for the four player-only characters. Ten characters is
+   * more than a palette can separate on hue alone, which is why the cast is
+   * designed to be told apart by silhouette first — see ART_BIBLE.md §12.
+   * These are chosen to sit in gaps: yellow-green, orange between tomato and
+   * mustard, a desaturated blue-grey, and a warm brown.
+   */
+  --wt-lime: #7ba63c;
+  --wt-lime-deep: #5c7d27;
+  --wt-ember: #d9772b;
+  --wt-ember-deep: #a8541a;
+  --wt-slate: #7e93a3;
+  --wt-slate-deep: #566876;
+  --wt-cocoa: #8a5a3b;
+  --wt-cocoa-deep: #653f28;
+
   /* ---- Semantic ----------------------------------------------------------- */
   --wt-primary: var(--wt-tomato);
   --wt-primary-deep: var(--wt-tomato-deep);
@@ -56,18 +72,20 @@
   --wt-danger-deep: var(--wt-tomato-deep);
 
   /*
-   * Player pen colours. Chosen so that two simultaneous artists in
-   * "الرسم المشترك" stay distinguishable, and so each stays legible
-   * on the canvas ground. Order matters: index = seat order.
+   * Pen colours, one per character (ten of them). Deliberately darker than the
+   * body colours: a stroke has to stay legible as a thin line on the near-white
+   * canvas, where a light fill colour disappears.
    */
-  --wt-pen-1: #2a211c;
-  --wt-pen-2: #e2503a;
-  --wt-pen-3: #2b9e92;
-  --wt-pen-4: #3a68cf;
-  --wt-pen-5: #f0b03a;
-  --wt-pen-6: #7f57c9;
-  --wt-pen-7: #dd6491;
-  --wt-pen-8: #5f8b34;
+  --wt-pen-artist: #d13d24;
+  --wt-pen-critic: #c98a1c;
+  --wt-pen-confused: #1c7269;
+  --wt-pen-excited: #27499b;
+  --wt-pen-innocent: #b2436c;
+  --wt-pen-detective: #5c3b9b;
+  --wt-pen-confident: #5c7d27;
+  --wt-pen-dramatic: #a8541a;
+  --wt-pen-calm: #566876;
+  --wt-pen-trickster: #653f28;
 
   /* ---- Type --------------------------------------------------------------- */
   --wt-font-display: 'Baloo Bhaijaan 2', 'Tajawal', system-ui, sans-serif;

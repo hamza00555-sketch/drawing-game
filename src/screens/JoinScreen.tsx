@@ -1,10 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { GameButton } from '../design/components/GameButton';
 import { CharacterPicker } from '../design/components/CharacterPicker';
 import { Screen } from '../design/components/Screen';
 import { TextField } from '../design/components/TextField';
 import { ROOM } from '../config/balance';
-import { CHARACTERS } from '../content/characters';
+import { CHARACTERS, availableCharacters } from '../content/characters';
 import { normalizeRoomCode } from '../engine/room';
 import { useSession } from '../app/session';
 
@@ -46,6 +46,22 @@ export function JoinScreen({
   );
   const [variant, setVariant] = useState(session.variant);
   const [code, setCode] = useState('');
+
+  /*
+   * The remembered character — or the first in the list — may already be taken
+   * by the time this player opens the screen. Without this the picker shows a
+   * dimmed, unselectable tile as the current selection and the join button
+   * submits a character that will be rejected. Move to the first free one.
+   */
+  useEffect(() => {
+    if (!takenIds.includes(characterId)) return;
+
+    const free = availableCharacters(takenIds)[0];
+    if (free) {
+      setCharacterId(free.id);
+      setVariant('default');
+    }
+  }, [takenIds, characterId]);
 
   const joining = intent === 'join';
   const codeReady = !joining || normalizeRoomCode(code).length === ROOM.codeLength;

@@ -1,17 +1,25 @@
 /**
  * The وش ذا؟ cast — CANON.
  *
- * These six designs are final. They are not reinterpreted per generation:
- * every new pose starts from the Master Style Anchor plus that character's own
- * reference image, so head shape, proportions, eyes, brows, mouth, special
- * features, colour and silhouette all survive a change of pose or costume.
+ * TEN characters, so a full room of ten players can each be someone different.
+ * But they are not equals in the product:
  *
- * A player must recognise the character instantly even when the pose, the
- * expression, the clothing or the body angle changes. See ART_BIBLE.md §12–14.
+ *   - `mainCast: true`  — the six original designs. These are the faces of the
+ *     game: Home hero, splash, mode scenes, tutorials, empty states, reactions,
+ *     share art, marketing. Anything representing وش ذا؟ itself draws from here.
+ *   - `mainCast: false` — the four added purely to widen player choice. They are
+ *     fully playable and appear wherever a player who picked them appears, but
+ *     they do not join the identity artwork, and no existing scene is
+ *     regenerated to include them.
  *
- * `penColor` is the colour this character's strokes take on a shared canvas.
- * Assigned per character, not by seat order, so two artists in الرسم المشترك
- * stay tellable apart at a glance.
+ * The flag exists so `mainCastCharacters()` can drive that split, instead of
+ * six character ids being hardcoded across the hero, the scenes and the
+ * marketing surfaces.
+ *
+ * These designs are final. Every new pose starts from the Master Style Anchor
+ * plus that character's own reference, so head shape, proportions, eyes, brows,
+ * mouth, special features, colour and silhouette all survive a change of pose
+ * or costume. See ART_BIBLE.md §12–14.
  */
 
 export interface CharacterVariant {
@@ -24,62 +32,83 @@ export interface GameCharacter {
   id: string;
   /** Arabic display name, shown in the lobby and on results. */
   name: string;
-  /** One-line personality, used in the character picker. */
+  /**
+   * Short label for the picker grid, where a tile is ~66px wide at 320px.
+   * The full `name` is used in the lobby and results, where there is room.
+   */
+  shortName: string;
+  /** One line, used in the picker. Kept short — the art does the work. */
   blurb: string;
   /**
-   * How this character behaves — the note that keeps generated poses in
-   * character rather than turning the cast into recoloured avatars.
+   * How this character behaves. Keeps generated poses in character rather than
+   * letting the cast decay into recoloured avatars.
    */
   personality: string;
+  /** Whether this character represents the game itself. See the note above. */
+  mainCast: boolean;
+  /** Stroke colour on a shared canvas. Distinct across all ten. */
   penColor: string;
   /** Costume variants. `default` always exists and is the canon design. */
   variants: readonly CharacterVariant[];
 }
 
+const DEFAULT_ONLY = [{ id: 'default', label: 'الأساسي' }] as const;
+
 export const CHARACTERS: readonly GameCharacter[] = [
+  // ---- Main cast: the faces of وش ذا؟ -------------------------------------
   {
     id: 'artist',
     name: 'الفنان المتفلسف',
+    shortName: 'الفنان',
     blurb: 'واثق من عبقريته حتى لو كانت رسمته كارثة',
     personality:
       'Confident, self-important, treats his own catastrophic drawings as masterpieces. The beret is core to his identity and is never removed.',
-    penColor: 'var(--wt-tomato)',
-    variants: [{ id: 'default', label: 'الأساسي' }],
+    mainCast: true,
+    penColor: 'var(--wt-pen-artist)',
+    variants: DEFAULT_ONLY,
   },
   {
     id: 'critic',
     name: 'الناقد',
+    shortName: 'الناقد',
     blurb: 'ما عجبه شي، ولا مرة',
     personality:
       'Low energy, permanently unimpressed, sarcastic and judgmental. Expressions read as "I have seen better" even at good moments.',
-    penColor: 'var(--wt-mustard)',
-    variants: [{ id: 'default', label: 'الأساسي' }],
+    mainCast: true,
+    penColor: 'var(--wt-pen-critic)',
+    variants: DEFAULT_ONLY,
   },
   {
     id: 'confused',
     name: 'الملخبط',
+    shortName: 'الملخبط',
     blurb: 'ما فهم شيء، ومستمر',
     personality:
       'Always visibly trying to work out what is happening. The go-to face for bewilderment, doubt and confusion.',
-    penColor: 'var(--wt-teal)',
-    variants: [{ id: 'default', label: 'الأساسي' }],
+    mainCast: true,
+    penColor: 'var(--wt-pen-confused)',
+    variants: DEFAULT_ONLY,
   },
   {
     id: 'excited',
     name: 'المتحمس',
+    shortName: 'المتحمس',
     blurb: 'طاقته أكبر من اللعبة نفسها',
     personality:
       'Enormous energy. Movement is fast, exaggerated and physical — jumping, flailing, never still. Poses should be mid-motion.',
-    penColor: 'var(--wt-cobalt)',
-    variants: [{ id: 'default', label: 'الأساسي' }],
+    mainCast: true,
+    penColor: 'var(--wt-pen-excited)',
+    variants: DEFAULT_ONLY,
   },
   {
     id: 'innocent',
     name: 'البريء المشبوه',
+    shortName: 'البريء',
     blurb: 'وجهه بريء أكثر من اللازم',
     personality:
       'Sweet and guileless to a degree that becomes funny the moment suspicion or accusation is in the air.',
-    penColor: 'var(--wt-rose)',
+    mainCast: true,
+    penColor: 'var(--wt-pen-innocent)',
     variants: [
       { id: 'default', label: 'الأساسي' },
       { id: 'hijab', label: 'بالحجاب' },
@@ -88,14 +117,62 @@ export const CHARACTERS: readonly GameCharacter[] = [
   {
     id: 'detective',
     name: 'المحقق',
+    shortName: 'المحقق',
     blurb: 'يشك في الجميع، وأحيانًا في نفسه',
     personality:
       'Cold, reserved, watches everyone with quiet suspicion. Especially suited to المزوّر.',
-    penColor: 'var(--wt-grape)',
+    mainCast: true,
+    penColor: 'var(--wt-pen-detective)',
     variants: [
       { id: 'default', label: 'الأساسي' },
       { id: 'saudi', label: 'بالغترة' },
     ],
+  },
+
+  // ---- Player-only cast: widens choice, does not carry the identity --------
+  {
+    id: 'confident',
+    name: 'الواثق زيادة',
+    shortName: 'الواثق',
+    blurb: 'متأكد إنه عارف، وهو غلطان',
+    personality:
+      'Absolutely certain he has the answer, and consistently wrong. Chest out, hands on hips, never doubts himself for a second.',
+    mainCast: false,
+    penColor: 'var(--wt-pen-confident)',
+    variants: DEFAULT_ONLY,
+  },
+  {
+    id: 'dramatic',
+    name: 'الدرامي',
+    shortName: 'الدرامي',
+    blurb: 'كل شي عنده كارثة',
+    personality:
+      'Every minor event is an absolute catastrophe. Reactions are enormous and theatrical, arms flung wide, wailing at nothing.',
+    mainCast: false,
+    penColor: 'var(--wt-pen-dramatic)',
+    variants: DEFAULT_ONLY,
+  },
+  {
+    id: 'calm',
+    name: 'الهادي',
+    shortName: 'الهادي',
+    blurb: 'الدنيا تنقلب وهو ساكت',
+    personality:
+      'Minimal reactions while everything around him is chaos. The comedy is the contrast — he barely moves.',
+    mainCast: false,
+    penColor: 'var(--wt-pen-calm)',
+    variants: DEFAULT_ONLY,
+  },
+  {
+    id: 'trickster',
+    name: 'المشاغب',
+    shortName: 'المشاغب',
+    blurb: 'يستمتع بالخربطة أكثر من الفوز',
+    personality:
+      'Enjoys wrecking the situation far more than winning it. Lopsided, leaning, always hiding something behind his back.',
+    mainCast: false,
+    penColor: 'var(--wt-pen-trickster)',
+    variants: DEFAULT_ONLY,
   },
 ] as const;
 
@@ -104,8 +181,16 @@ export function getCharacter(id: string): GameCharacter | undefined {
 }
 
 /**
- * Characters still free to pick in a room. The cast size is the practical
- * player ceiling, which is why ROOM.maxPlayers matches it.
+ * The six that represent the game itself. Use this for hero art, mode scenes,
+ * tutorials, empty states and anything outward-facing — never the full ten.
+ */
+export function mainCastCharacters(): GameCharacter[] {
+  return CHARACTERS.filter((character) => character.mainCast);
+}
+
+/**
+ * Characters still free to pick in a room. `takenIds` comes from the
+ * reservation index, not from local UI state.
  */
 export function availableCharacters(takenIds: readonly string[]): GameCharacter[] {
   const taken = new Set(takenIds);

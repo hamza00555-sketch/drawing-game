@@ -64,6 +64,22 @@
       }
     },
 
+    // Character reservations: characterId -> playerId. Uniqueness is enforced
+    // here, by the database, rather than in the UI. A node may be written only
+    // when it is free or already yours, so two players claiming the same
+    // character simultaneously cannot both succeed — one transaction wins and
+    // the other is rejected.
+    "roomCharacters": {
+      "$roomId": {
+        ".read": "auth != null",
+
+        "$characterId": {
+          ".write": "auth != null && (!data.exists() || data.val() === auth.uid) && (!newData.exists() || newData.val() === auth.uid)",
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        }
+      }
+    },
+
     "roomPlayers": {
       "$roomId": {
         ".read": "auth != null",
@@ -77,7 +93,13 @@
           ".validate": "newData.hasChildren(['name', 'characterId', 'joinedAt'])",
 
           "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16" },
-          "characterId": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          // You may only present as a character you actually hold the
+          // reservation for. Without this a client could skip the transaction
+          // and simply write any characterId onto its own player record.
+          "characterId": {
+            ".validate": "newData.isString() && newData.val().length <= 40 && root.child('roomCharacters').child($roomId).child(newData.val()).val() === auth.uid"
+          },
+          "variant": { ".validate": "newData.isString() && newData.val().length <= 24" },
           "ready": { ".validate": "newData.isBoolean()" },
           "joinedAt": { ".validate": "newData.val() === now || data.val() === newData.val()" },
           "$other": { ".validate": false }

@@ -18,6 +18,7 @@ import {
 } from 'firebase/database';
 import { ensureSignedIn, getDb } from './firebase';
 import { serverNow } from './clock';
+import { releaseAllForPlayer, switchCharacter } from './characters';
 import { paths } from './paths';
 import { DEFAULT_BALANCE, ROOM } from '../config/balance';
 import type { RoomPlayer } from './presence';
@@ -165,7 +166,8 @@ export async function joinRoomById(
   }
 
   const players = (playersSnapshot.val() as Record<string, RoomPlayer> | null) ?? {};
-  const alreadyIn = Boolean(players[user.uid]);
+  const existing = players[user.uid];
+  const alreadyIn = Boolean(existing);
 
   if (!alreadyIn) {
     if (Object.keys(players).length >= ROOM.maxPlayers) {
@@ -174,14 +176,19 @@ export async function joinRoomById(
     if (room.status === 'playing') {
       throw new RoomError('in_progress', 'اللعبة بدأت. انتظر الجولة الجاية.');
     }
-
-    const taken = Object.values(players).some(
-      (player) => player.characterId === characterId && player.id !== user.uid,
-    );
-    if (taken) {
-      throw new RoomError('character_taken', 'أحد أخذ هذي الشخصية. اختر غيرها.');
-    }
   }
+
+  /*
+   * Reserve the character BEFORE writing the player record. The reservation is
+   * a transaction on a single node, so two players choosing the same character
+   * in the same instant cannot both succeed — and the security rule refuses to
+   * accept a characterId on a player record without a matching reservation, so
+   * this cannot be skipped by a client that goes straight to the write.
+   *
+   * This throws CharacterTakenError, which the caller surfaces so the loser of
+   * the race is told to pick again.
+   */
+  await switchCharacter(roomId, user.uid, existing?.characterId, characterId);
 
   await update(ref(db, paths.player(roomId, user.uid)), {
     id: user.uid,
@@ -206,8 +213,13 @@ export async function setRoomMode(roomId: string, mode: GameMode): Promise<void>
   await set(ref(getDb(), paths.roomMode(roomId)), mode);
 }
 
-/** Explicit exit. Distinct from a disconnect, which only flips presence. */
+/**
+ * Explicit exit. Distinct from a disconnect, which only flips presence.
+ * Releases the character reservation so the seat AND the character both free up
+ * for whoever joins next.
+ */
 export async function leaveRoom(roomId: string, playerId: string): Promise<void> {
+  await releaseAllForPlayer(roomId, playerId);
   await remove(ref(getDb(), paths.player(roomId, playerId)));
 }
 

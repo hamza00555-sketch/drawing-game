@@ -29,6 +29,10 @@ import confusedDefaultIdle from './generated/confused_default_idle.webp';
 import excitedDefaultIdle from './generated/excited_default_idle.webp';
 import innocentDefaultIdle from './generated/innocent_default_idle.webp';
 import detectiveDefaultIdle from './generated/detective_default_idle.webp';
+import confidentDefaultIdle from './generated/confident_default_idle.webp';
+import dramaticDefaultIdle from './generated/dramatic_default_idle.webp';
+import calmDefaultIdle from './generated/calm_default_idle.webp';
+import tricksterDefaultIdle from './generated/trickster_default_idle.webp';
 import detectiveSaudiIdle from './generated/detective_saudi_idle.webp';
 import innocentHijabIdle from './generated/innocent_hijab_idle.webp';
 
@@ -86,6 +90,32 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
     src: detectiveDefaultIdle,
     alt: 'المحقق',
     width: 320,
+    height: 900,
+  },
+
+  // Player-only cast. Playable, but never used for identity artwork.
+  confident_default_idle: {
+    src: confidentDefaultIdle,
+    alt: 'الواثق زيادة',
+    width: 900,
+    height: 859,
+  },
+  dramatic_default_idle: {
+    src: dramaticDefaultIdle,
+    alt: 'الدرامي',
+    width: 673,
+    height: 900,
+  },
+  calm_default_idle: {
+    src: calmDefaultIdle,
+    alt: 'الهادي',
+    width: 900,
+    height: 441,
+  },
+  trickster_default_idle: {
+    src: tricksterDefaultIdle,
+    alt: 'المشاغب',
+    width: 625,
     height: 900,
   },
 

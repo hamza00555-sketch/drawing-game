@@ -98,16 +98,40 @@ The beige/taupe hijab colour is approved and deliberate — it sits outside the
 token accent palette so it does not compete with the pink body, and neutral
 cloth reads as cloth.
 
-The remaining four characters deliberately have **no** Saudi variant. Adding one
-to each "for balance" is exactly the costume-theme failure ART_BIBLE.md §13
-forbids.
+The remaining characters deliberately have **no** Saudi variant. Adding one to
+each "for balance" is exactly the costume-theme failure ART_BIBLE.md §13 forbids.
+
+## Batch 1c — Player-only cast
+
+Four characters added so a full ten-player room can each pick someone different.
+`mainCast: false` — playable, but never used for identity artwork, and no
+existing scene was regenerated to include them.
+
+| id | character | colour | size | transparent | status | file |
+|---|---|---|---|---|---|---|
+| `confident_default_idle` | الواثق زيادة | lime | 900×859 | yes | shipped | `src/assets/generated/confident_default_idle.webp` |
+| `dramatic_default_idle` | الدرامي | ember | 673×900 | yes | shipped | `src/assets/generated/dramatic_default_idle.webp` |
+| `calm_default_idle` | الهادي | slate | 900×441 | yes | shipped | `src/assets/generated/calm_default_idle.webp` |
+| `trickster_default_idle` | المشاغب | cocoa | 625×900 | yes | shipped | `src/assets/generated/trickster_default_idle.webp` |
+
+Generated on Seedream 5.0 Pro with the style anchor as reference, all four on the
+first attempt. Each was briefed to fill a silhouette gap rather than repeat an
+existing body: inverted head-to-body proportion, a legless flame shape, the
+lowest and widest form in the cast, and a deliberately asymmetric lean.
+
+Verified with a ten-character silhouette lineup. The closest pair is الناقد and
+الواثق زيادة — both wide masses — separated by the hands-on-hips negative space
+and the critic's forward hunch.
+
+Only `idle` exists for these four. Reaction poses are generated on demand if a
+player picks one and a mode needs it.
 
 ## Batch 2 — Entry screens
 
 | id | purpose | character | expression | size | transparent | screens | status | file |
 |---|---|---|---|---|---|---|---|---|
-| `hero_home_confused_group` | Home hero: a group squinting at one baffling drawing — the moment the game is named after | group | confused | 1600×1200 | yes | Home | queued | — |
-| `splash_backdrop` | Splash artwork behind the wordmark | group | mixed | 1200×1600 | no | Splash | queued | — |
+| `hero_home_confused_group` | Home hero: the whole main cast around one baffling scribble — one proud, one unimpressed, one baffled, one bouncing, one innocently pleased, one eyeing a neighbour. Explains «وش ذا؟» with no copy. | main cast | mixed | 1400×1000 | yes | Home | shipped | `src/assets/generated/hero_home_confused_group.webp` |
+| `splash_backdrop` | Splash artwork behind the wordmark | main cast | mixed | 1200×1600 | yes | Splash | queued | — |
 
 ## Batch 3 — Mode selection scenes
 
@@ -116,11 +140,18 @@ Not an icon in a grid.
 
 | id | purpose | size | transparent | screens | status | file |
 |---|---|---|---|---|---|---|
-| `mode_scene_mozawwer` | One creature bluffing while others draw confidently | 800×600 | yes | Mode Selection | queued | — |
-| `mode_scene_mamnou3at` | An artist straining not to draw the obvious thing | 800×600 | yes | Mode Selection | queued | — |
-| `mode_scene_mushtarak` | Two creatures drawing on one canvas, pulling in different directions | 800×600 | yes | Mode Selection | queued | — |
-| `mode_scene_kammil` | A drawing passed hand to hand, growing stranger | 800×600 | yes | Mode Selection | queued | — |
-| `mode_scene_kanat_esh` | A chain of misunderstanding, word to drawing to word | 800×600 | yes | Mode Selection | queued | — |
+| `mode_scene_mozawwer` | Three drawing confidently while a fourth sweats and fakes it | 700×410 | yes | Mode Selection | shipped | `src/assets/generated/mode_scene_mozawwer.webp` |
+| `mode_scene_mamnou3at` | An artist straining, with crossed-out marks for what is forbidden | 700×511 | yes | Mode Selection | shipped | `src/assets/generated/mode_scene_mamnou3at.webp` |
+| `mode_scene_mushtarak` | Two creatures on one sheet with different coloured pens, pulling apart | 700×419 | yes | Mode Selection | shipped | `src/assets/generated/mode_scene_mushtarak.webp` |
+| `mode_scene_kammil` | A sheet passed down a panicking line at speed, with motion lines | 700×279 | yes | Mode Selection | shipped | `src/assets/generated/mode_scene_kammil.webp` |
+| `mode_scene_kanat_esh` | A chain of four, the drawing mutating from a cat to a scribble | 700×328 | yes | Mode Selection | shipped | `src/assets/generated/mode_scene_kanat_esh.webp` |
+
+**Batch 3 generation note.** The first pass asked for a "transparent background"
+in the prompt. Models do not produce alpha from that instruction — they paint the
+checkerboard. One scene came back with the grid painted BETWEEN the characters,
+which survived background removal as opaque patches inside the artwork and could
+not be fixed without drawing. Regenerated with a plain solid background and cut
+out afterwards. See ART_BIBLE.md §13.
 
 ## Batch 4 — Gameplay moments
 

@@ -169,8 +169,19 @@ Any of these means regenerate:
 
 ## 12. The cast — canon
 
-Six characters, all generated and locked. Colour identifies them in prose; form
-identifies them on screen.
+**Ten characters, split into two tiers.**
+
+- **Main cast (6)** — `mainCast: true`. The faces of وش ذا؟: Home hero, splash,
+  mode scenes, tutorials, empty states, reactions, share art, marketing.
+  Anything representing the game itself uses ONLY these six.
+- **Player-only cast (4)** — `mainCast: false`. Added so a full room of ten
+  players can each be someone different. Fully playable and shown wherever
+  their player appears, but they never carry the identity, and **no existing
+  scene is regenerated to include them.**
+
+Colour identifies them in prose; form identifies them on screen.
+
+### Main cast
 
 | Colour | Character | Personality | Locked form |
 |---|---|---|---|
@@ -180,6 +191,25 @@ identifies them on screen.
 | Blue | **المتحمس** | Enormous energy; fast, exaggerated, physical | Compact and springy; spiky outline; poses should be mid-motion |
 | Pink | **البريء المشبوه** | Sweet and guileless to a degree that becomes funny under suspicion | Small, neat, egg-shaped; tiny body; oversized guileless eyes |
 | Purple | **المحقق** | Cold, reserved, watches everyone with quiet suspicion | Angular and elongated; narrow head; arms crossed by default |
+
+### Player-only cast
+
+Designed to fill silhouette gaps the main cast leaves, not to repeat its
+personalities. None of them wears Saudi clothing: the two costume variants in
+the main cast already carry that representation, and adding more "for balance"
+is the costume-theme failure §13 forbids.
+
+| Colour | Character | Personality | Locked form |
+|---|---|---|---|
+| Lime | **الواثق زيادة** | Certain he has the answer, consistently wrong | Huge barrel torso with a comically tiny head — the inverse of the cast's usual big-head proportion; hands on hips, wide planted stance |
+| Ember | **الدرامي** | Every minor event is a catastrophe | Tall wavy flame-like body with **no legs**, tapering to a curl; enormous arms flung overhead |
+| Slate | **الهادي** | Minimal reactions amid total chaos | The smallest and lowest: a wide flattened dome, wider than tall, barely any limbs |
+| Cocoa | **المشاغب** | Enjoys wrecking it more than winning | Lopsided and asymmetric; one arm thick and one thin, leaning off-balance, hands hidden behind the back |
+
+The closest silhouette pair in the full ten is **الناقد** and **الواثق زيادة**,
+both wide masses. They separate on the triangular negative space under the
+hands-on-hips stance, and on the critic's forward hunch. Verified by compositing
+an actual silhouette lineup, not by eye on the colour versions.
 
 ### What must survive every generation
 

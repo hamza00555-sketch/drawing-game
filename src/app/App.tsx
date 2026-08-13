@@ -13,6 +13,7 @@ import {
   type Room,
 } from '../engine/room';
 import { startPresence, watchPresence, claimHostIfVacant } from '../engine/presence';
+import { CharacterTakenError, takenByOthers, watchCharacters } from '../engine/characters';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 import { useSession } from './session';
 import { SetupNeededScreen } from './SetupNeededScreen';
@@ -47,6 +48,7 @@ export function App() {
   const [room, setRoom] = useState<Room | undefined>(undefined);
   const [players, setPlayers] = useState<Record<string, RoomPlayer>>({});
   const [presence, setPresence] = useState<Record<string, PresenceRecord>>({});
+  const [charactersTaken, setCharactersTaken] = useState<Record<string, string>>({});
   const [selfId, setSelfId] = useState<string | undefined>(undefined);
 
   const roomId = useSession((state) => state.roomId);
@@ -69,11 +71,13 @@ export function App() {
     const stopRoom = watchRoom(roomId, setRoom);
     const stopPlayers = watchPlayers(roomId, setPlayers);
     const stopPresence = watchPresence(roomId, setPresence);
+    const stopCharacters = watchCharacters(roomId, setCharactersTaken);
 
     return () => {
       stopRoom();
       stopPlayers();
       stopPresence();
+      stopCharacters();
     };
   }, [roomId]);
 
@@ -107,8 +111,10 @@ export function App() {
         setRoomId(id);
         setRoute({ name: 'lobby' });
       } catch (caught) {
+        // A lost character race is an ordinary outcome, not a failure: someone
+        // simply tapped the same creature a moment earlier.
         setError(
-          caught instanceof RoomError
+          caught instanceof CharacterTakenError || caught instanceof RoomError
             ? caught.message
             : 'صار خطأ. تأكد من الاتصال وحاول مرة ثانية.',
         );
@@ -156,6 +162,7 @@ export function App() {
             setRoute({ name: 'home' });
           }}
           onSubmit={(input) => void handleJoin(input)}
+          takenIds={takenByOthers(charactersTaken, selfId)}
         />
       );
 
