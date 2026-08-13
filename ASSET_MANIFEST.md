@@ -24,13 +24,26 @@ subsequent generation, so the whole game stays in one world.
 
 | id | purpose | character | expression | size | transparent | screens | status | file |
 |---|---|---|---|---|---|---|---|---|
-| `style_anchor_cast` | Master style reference: several characters together, establishes line, palette, shading | all | mixed | 2048×1152 | no | none (reference only) | queued | — |
-| `char_artist_idle` | الفنان المتفلسف, neutral | artist | idle | 1024×1024 | yes | Lobby, Avatar | queued | — |
-| `char_detective_idle` | المحقق, neutral | detective | idle | 1024×1024 | yes | Lobby, Avatar | queued | — |
-| `char_confused_idle` | الملخبط, neutral | confused | idle | 1024×1024 | yes | Lobby, Avatar | queued | — |
-| `char_excited_idle` | المتحمس, neutral | excited | idle | 1024×1024 | yes | Lobby, Avatar | queued | — |
-| `char_innocent_idle` | البريء المشبوه, neutral | innocent | idle | 1024×1024 | yes | Lobby, Avatar | queued | — |
-| `char_critic_idle` | الناقد, neutral | critic | idle | 1024×1024 | yes | Lobby, Avatar | queued | — |
+| `style_anchor_cast` | Master style reference: the six-character lineup that establishes line, palette and shading. **Reference only — not bundled.** | all | mixed | 1800×1005 | no | none | shipped | `art-reference/style_anchor_cast.webp` |
+| `char_artist_idle` | الفنان المتفلسف, neutral | artist | idle | 394×900 | yes | Lobby, Avatar | shipped | `src/assets/generated/char_artist_idle.webp` |
+| `char_detective_idle` | المحقق, neutral | detective | idle | 858×900 | yes | Lobby, Avatar | shipped | `src/assets/generated/char_detective_idle.webp` |
+| `char_confused_idle` | الملخبط, neutral | confused | idle | 588×900 | yes | Lobby, Avatar | shipped | `src/assets/generated/char_confused_idle.webp` |
+| `char_excited_idle` | المتحمس, neutral | excited | idle | 900×889 | yes | Lobby, Avatar | shipped | `src/assets/generated/char_excited_idle.webp` |
+| `char_innocent_idle` | البريء المشبوه, neutral | innocent | idle | 564×900 | yes | Lobby, Avatar | shipped | `src/assets/generated/char_innocent_idle.webp` |
+| `char_critic_idle` | الناقد, neutral | critic | idle | 320×900 | yes | Lobby, Avatar | shipped | `src/assets/generated/char_critic_idle.webp` |
+
+**Batch 1 generation notes**
+
+- `style_anchor_cast` — Nano Banana Pro, 16:9, 2k, text-only, first attempt accepted.
+- All six characters — Seedream 5.0 Pro, 1:1, 2k, with the style anchor passed as
+  an image reference so the cast stays in one world. `char_artist_idle` failed
+  twice on Seedream and was regenerated on Nano Banana Pro, then cut out with the
+  background remover.
+- Post-processing: trimmed to artwork bounds, resized so the long edge is 900px
+  (2× the largest on-screen use), converted to WebP q88. Total shipped character
+  art: **501 KB** for all six.
+- Silhouette test: all six pass — the pair at highest risk of confusion (المحقق
+  and الملخبط, both rounded masses) separate on the antenna and leg length.
 
 ## Batch 2 — Entry screens
 

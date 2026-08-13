@@ -50,6 +50,9 @@ The target sits between them: **comedic, a bit ugly on purpose, warm, alive**.
 
 - **Large expressive heads**, roughly 45–60% of total height.
 - **Small bodies**, short torsos.
+- **Merged head-and-body blobs are an accepted variant** — several of the
+  established cast are a single mass carrying the face, with no neck. Use this
+  to widen silhouette variety, not as the default for every character.
 - **Flexible rubber-hose arms** — no elbows, no joints, they curve.
 - **Simple mitten or three-finger hands.** No detailed anatomy.
 - **Small feet**, often just a rounded stub or a simple shoe shape.
