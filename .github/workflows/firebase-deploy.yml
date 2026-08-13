@@ -1,0 +1,78 @@
+# نشر Firebase من المتصفح — بلا طرفية.
+#
+# سبب وجود هذا الملف: قواعد الأمان يمكن لصقها في Firebase Console، لكن Cloud
+# Functions لا يمكن. لا توجد طريقة في الواجهة لرفعها، والأمر الوحيد المتاح هو
+# `firebase deploy` من سطر أوامر. هذا الـworkflow يشغّل ذلك الأمر نيابةً عنك على
+# خوادم GitHub، فتصير عملية النشر ضغطة زر في تبويب Actions.
+#
+# ما تحتاجه مرة واحدة، من المتصفح:
+#
+#   1. Firebase Console ← Project settings ← Service accounts
+#      ← Generate new private key ← يحمّل ملف JSON.
+#   2. GitHub ← Settings ← Secrets and variables ← Actions ← New secret:
+#        FIREBASE_SERVICE_ACCOUNT  = محتوى ملف الـJSON كاملًا
+#        FIREBASE_PROJECT_ID       = معرّف مشروعك في Firebase
+#   3. تبويب Actions ← «نشر Firebase» ← Run workflow.
+#
+# القواعد وحدها تُنشر على الخطة المجانية. الـFunctions تحتاج Blaze، ولذلك
+# نشرها اختيار صريح في النموذج وليس شيئًا يحدث تلقائيًا فيفشل التشغيل.
+
+name: نشر Firebase
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployFunctions:
+        description: 'انشر Cloud Functions أيضًا (يتطلب خطة Blaze)'
+        type: boolean
+        default: false
+
+  # القواعد فقط، وفقط حين تتغير فعلًا.
+  push:
+    branches: [claude/stoic-gauss-3m4j2h]
+    paths:
+      - 'firebase/database.rules.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # firebase-tools اعتمادية تطوير في هذا المستودع، فلا حاجة لتثبيت عام.
+      - run: npm ci
+
+      - name: تجهيز اعتماد الخدمة
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SERVICE_ACCOUNT" ]; then
+            echo "ينقص السر FIREBASE_SERVICE_ACCOUNT — راجع التعليقات أعلى هذا الملف."
+            exit 1
+          fi
+          # عبر متغير بيئة لا وسيط سطر أوامر: الوسائط تظهر في سجل التشغيل.
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/service-account.json" >> "$GITHUB_ENV"
+
+      - name: نشر قواعد الأمان
+        run: npx firebase deploy --only database --project "${{ secrets.FIREBASE_PROJECT_ID }}" --non-interactive
+
+      - name: بناء Functions
+        if: inputs.deployFunctions
+        run: |
+          npm ci --prefix functions
+          npm run build:functions
+
+      - name: نشر Functions
+        if: inputs.deployFunctions
+        run: npx firebase deploy --only functions --project "${{ secrets.FIREBASE_PROJECT_ID }}" --non-interactive
+
+      - name: إزالة الاعتماد
+        if: always()
+        run: rm -f "$RUNNER_TEMP/service-account.json"
