@@ -20,6 +20,7 @@ import {
   readableLinkIndex,
   scoreKanatEshRound,
 } from '../../shared/kanatEsh';
+import { gameSecretPath, readGameSecret } from './secrets';
 
 const db = () => admin.database();
 
@@ -84,6 +85,10 @@ export const startKanatEshRound = onCall(async (request) => {
         playerId: 'seed',
         content: seed,
       },
+      // The seed is the one thing nobody but the first drawer may see: a player
+      // who knows where the chain started can reason backwards, and the drift
+      // between start and end is the entire mode.
+      [gameSecretPath(roomId, gameId)]: { seed },
       [`rooms/${roomId}/status`]: 'playing',
       [`rooms/${roomId}/usedSeeds/${gameId}`]: seed,
       [`games/${roomId}/current`]: {
@@ -92,10 +97,14 @@ export const startKanatEshRound = onCall(async (request) => {
         phase: 'turn',
         phaseEndsAt: Date.now() + KANAT_ESH.drawMs,
         currentIndex: 1,
+        // String mirror of currentIndex. The linkStrokes rule matches it against
+        // the $index wildcard, which is always a string — comparing it to the
+        // number would silently never match and lock the drawer out of their
+        // own canvas.
+        currentIndexKey: '1',
         currentPlayerId: firstAuthor,
         totalLinks,
         authorByIndex,
-        seed,
         visibleTo: visibilityFor(0, firstAuthor),
       },
     });
@@ -114,18 +123,35 @@ export const submitKanatEshLink = onCall(async (request) => {
   if (!game || game.phase !== 'turn') {
     throw new HttpsError('failed-precondition', 'ما في جولة شغّالة.');
   }
-  if (game.currentPlayerId !== uid) {
+
+  /*
+   * Normally only the player whose turn it is submits their link. Once the
+   * deadline has passed, anyone may close the turn with whatever exists — a
+   * chain is a queue, and one player who put their phone down would otherwise
+   * hold every other player in the room indefinitely. Before the deadline the
+   * turn still belongs to exactly one person.
+   */
+  const isAuthor = game.currentPlayerId === uid;
+  const expired = typeof game.phaseEndsAt === 'number' && Date.now() >= game.phaseEndsAt;
+  if (!isAuthor && !expired) {
     throw new HttpsError('permission-denied', 'مو دورك.');
   }
 
   const index: number = game.currentIndex;
   const type = linkTypeAt(index);
+  // A drawing link carries no text: its content is the strokes, which live in
+  // their own read-gated bucket at linkStrokes/{roomId}/{gameId}/{index}. The
+  // index is recorded here so the poster knows where to look.
+  // A drawing link carries the index of its stroke bucket, not text. A text
+  // link closed by the timeout says so, rather than silently reading as blank.
+  const submitted = String(request.data?.text ?? '').slice(0, 200).trim();
   const content =
-    type === 'text' ? String(request.data?.text ?? '').slice(0, 200) : String(game.gameId);
+    type === 'drawing' ? String(index) : isAuthor && submitted ? submitted : 'ما لحق';
 
   await db().ref(`chains/${roomId}/${game.gameId}/${index}`).set({
     type,
-    playerId: uid,
+    // The link belongs to whoever's turn it was, even when a timeout closed it.
+    playerId: game.currentPlayerId,
     content,
   });
 
@@ -151,13 +177,21 @@ export const submitKanatEshLink = onCall(async (request) => {
       number
     >;
 
+    const { seed } = await readGameSecret<{ seed: string }>(roomId, game.gameId);
+
     const updates: Record<string, unknown> = {
       [`games/${roomId}/current/phase`]: 'reveal',
       [`games/${roomId}/current/phaseEndsAt`]: null,
       // Clearing visibleTo is safe: the rules also open chains during reveal.
       [`games/${roomId}/current/visibleTo`]: null,
+      [`games/${roomId}/current/currentIndexKey`]: null,
+      // «بدأنا بـ» — the poster's opening line, public now that the chain is done.
+      [`games/${roomId}/current/seed`]: seed,
       [`rooms/${roomId}/status`]: 'lobby',
     };
+    // What each player gained THIS round. Totals alone cannot tell a player
+    // whether they just earned three points or none.
+    updates[`games/${roomId}/current/scoreDelta`] = delta;
     for (const [playerId, points] of Object.entries(delta)) {
       updates[`playerScores/${roomId}/${playerId}`] = (current[playerId] ?? 0) + points;
     }
@@ -173,6 +207,7 @@ export const submitKanatEshLink = onCall(async (request) => {
 
   await gameRef.update({
     currentIndex: nextIndex,
+    currentIndexKey: String(nextIndex),
     currentPlayerId: nextAuthor,
     phaseEndsAt: Date.now() + (nextType === 'drawing' ? KANAT_ESH.drawMs : KANAT_ESH.writeMs),
     // Replaced wholesale, so the previous player's grant is revoked.

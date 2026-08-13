@@ -32,3 +32,15 @@ export type PenColorKey = keyof typeof PEN_COLORS;
 
 /** Default ink for canvases with no per-player colouring. */
 export const DEFAULT_PEN = '#2a211c';
+
+/**
+ * A player's pen, from the character they chose.
+ *
+ * Character reservations are unique per room, so this is also what makes each
+ * pen on a shared canvas unique — the colour is a consequence of the identity,
+ * not a separate thing to allocate and keep in sync.
+ */
+export function penColorFor(characterId: string | undefined): string {
+  if (!characterId) return DEFAULT_PEN;
+  return PEN_COLORS[characterId as PenColorKey] ?? DEFAULT_PEN;
+}

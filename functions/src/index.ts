@@ -14,6 +14,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { MOZAWWER, MOZAWWER_WORDS, scoreMozawwerRound, tallyVotes, isCorrectGuess } from './game';
+import { gameSecretPath, readGameSecret } from './secrets';
 
 admin.initializeApp();
 const db = admin.database();
@@ -34,6 +35,12 @@ interface RoomPlayer {
   name: string;
   characterId: string;
   joinedAt: number;
+}
+
+/** The private half of a المزوّر round. Never leaves the server before reveal. */
+interface MozawwerSecret {
+  word: string;
+  impostorId: string;
 }
 
 async function requireHost(roomId: string, uid: string): Promise<void> {
@@ -112,6 +119,9 @@ export const startMozawwerRound = onCall(async (request) => {
 
   await db.ref().update({
     [`playerSecrets/${roomId}/${gameId}`]: secrets,
+    // Who the impostor is and what the word is: server-only until the reveal.
+    // See secrets.ts for why they cannot live on the game node.
+    [gameSecretPath(roomId, gameId)]: { word: chosen.word, impostorId },
     [`rooms/${roomId}/status`]: 'playing',
     [`rooms/${roomId}/usedWords/${gameId}`]: chosen.word,
     [`games/${roomId}/current`]: {
@@ -123,14 +133,48 @@ export const startMozawwerRound = onCall(async (request) => {
       turnOrder,
       turnIndex: 0,
       turnsTaken: 0,
-      // Kept server-side only. Clients learn it at the reveal.
-      impostorId,
-      word: chosen.word,
       settings,
     },
   });
 
   return { gameId };
+});
+
+/**
+ * Close the round and put the room back in its lobby.
+ *
+ * Clearing `games/{roomId}/current` is what lets the host pick a different mode
+ * again — that rule refuses while a game exists, so a finished round left in
+ * place would quietly lock the room into one mode forever.
+ *
+ * The chain, the strokes and the secrets are left where they are: they are
+ * keyed by gameId, the next round gets a new one, and deleting a finished
+ * drawing costs a write to gain nothing.
+ */
+export const returnToLobby = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+
+  const roomId = String(request.data?.roomId ?? '');
+  const phase = (await db.ref(`games/${roomId}/current/phase`).get()).val();
+
+  // Mid-round this is the host's call — one player must not be able to end a
+  // round everyone else is still playing. Once the scores are up, the round is
+  // over for everybody, and whoever reaches for the button can take the room
+  // back to the lobby.
+  if (phase !== 'result') {
+    await requireHost(roomId, uid);
+  } else {
+    const isMember = (await db.ref(`roomPlayers/${roomId}/${uid}`).get()).exists();
+    if (!isMember) throw new HttpsError('permission-denied', 'أنت مو في هذي الغرفة.');
+  }
+
+  await db.ref().update({
+    [`games/${roomId}/current`]: null,
+    [`rooms/${roomId}/status`]: 'lobby',
+  });
+
+  return { status: 'lobby' };
 });
 
 /**
@@ -236,19 +280,22 @@ export const advanceMozawwer = onCall(async (request) => {
     case 'closeVoting': {
       if (game.phase !== 'vote') return { phase: game.phase };
 
+      const secret = await readGameSecret<MozawwerSecret>(roomId, game.gameId);
       const votes = ((await db.ref(`votes/${roomId}/${game.gameId}`).get()).val() ??
         {}) as Record<string, string>;
       const { accusedId, counts } = tallyVotes(votes);
-      const caught = accusedId === game.impostorId;
+      const caught = accusedId === secret.impostorId;
 
       await gameRef.update({
         phase: 'reveal',
         phaseEndsAt: Date.now() + 6000,
-        // Safe to publish now: the round is over.
+        // Safe to publish now: the round is over. This is the moment the word
+        // and the impostor cross from `gameSecrets` into the readable node.
         accusedId: accusedId ?? null,
         voteCounts: counts,
         caught,
-        revealedWord: game.word,
+        impostorId: secret.impostorId,
+        revealedWord: secret.word,
       });
       return { phase: 'reveal', caught };
     }
@@ -261,6 +308,7 @@ export const advanceMozawwer = onCall(async (request) => {
         await finishRound(roomId, game, false);
         return { phase: 'result' };
       }
+
 
       await gameRef.update({
         phase: 'impostorGuess',
@@ -276,9 +324,23 @@ export const advanceMozawwer = onCall(async (request) => {
       }
 
       const guess = String(request.data?.guess ?? '');
-      const correct = isCorrectGuess(guess, game.word);
+      const secret = await readGameSecret<MozawwerSecret>(roomId, game.gameId);
+      const correct = isCorrectGuess(guess, secret.word);
       await finishRound(roomId, game, correct);
       return { phase: 'result', correct };
+    }
+
+    case 'closeImpostorGuess': {
+      // The impostor's last chance expired, or they left. Somebody other than
+      // the impostor has to be able to close the round, or a player who simply
+      // put their phone down would freeze the whole room.
+      if (game.phase !== 'impostorGuess') return { phase: game.phase };
+      if (typeof game.phaseEndsAt === 'number' && Date.now() < game.phaseEndsAt) {
+        return { phase: game.phase };
+      }
+
+      await finishRound(roomId, game, false);
+      return { phase: 'result' };
     }
 
     default:
@@ -323,6 +385,9 @@ async function finishRound(
     string,
     number
   >;
+  // What each player gained THIS round. Totals alone cannot tell a player
+  // whether they just earned three points or none.
+  updates[`games/${roomId}/current/scoreDelta`] = delta;
   for (const [playerId, points] of Object.entries(delta)) {
     updates[`playerScores/${roomId}/${playerId}`] = (current[playerId] ?? 0) + points;
   }

@@ -31,6 +31,10 @@ export interface LobbyScreenProps {
   hostId: string;
   selfId: string;
   currentMode?: GameMode;
+  /** True while the host's start request is in flight. */
+  starting?: boolean;
+  /** Why the last start attempt failed — shown where the host is looking. */
+  error?: string;
   onChangeMode: () => void;
   onStart: () => void;
   onLeave: () => void;
@@ -44,6 +48,8 @@ export function LobbyScreen({
   hostId,
   selfId,
   currentMode,
+  starting = false,
+  error,
   onChangeMode,
   onStart,
   onLeave,
@@ -65,9 +71,25 @@ export function LobbyScreen({
     <Screen
       footer={
         <>
+          {/*
+           * The failure belongs next to the button that caused it. A host who
+           * taps "ابدأ" and sees nothing happen assumes the tap was missed.
+           */}
+          {error && (
+            <p className="text-center font-body text-sm text-tomato-deep" role="alert">
+              {error}
+            </p>
+          )}
+
           {isHost ? (
-            <GameButton tone="primary" size="lg" block disabled={!canStart} onClick={onStart}>
-              ابدأ
+            <GameButton
+              tone="primary"
+              size="lg"
+              block
+              disabled={!canStart || starting}
+              onClick={onStart}
+            >
+              {starting ? 'نوزّع الأدوار' : 'ابدأ'}
             </GameButton>
           ) : (
             <p className="text-center font-body text-sm text-ink-soft">

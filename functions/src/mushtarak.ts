@@ -11,6 +11,14 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { MUSHTARAK, pickArtistPair, pickCombo, scoreMushtarakRound } from '../../shared/mushtarak';
 import { isCorrectGuess } from '../../shared/mozawwer';
+import { gameSecretPath, readGameSecret } from './secrets';
+
+/** The split prompt. Each artist gets one half via playerSecrets; nobody gets both. */
+interface MushtarakSecret {
+  partA: string;
+  partB: string;
+  full: string;
+}
 
 const db = () => admin.database();
 
@@ -63,6 +71,13 @@ export const startMushtarakRound = onCall(async (request) => {
     .ref()
     .update({
       [`playerSecrets/${roomId}/${gameId}`]: secrets,
+      // Both halves together are the answer, so they cannot sit on a node the
+      // guessers — or either artist — can read.
+      [gameSecretPath(roomId, gameId)]: {
+        partA: combo.partA,
+        partB: combo.partB,
+        full: combo.full,
+      },
       [`rooms/${roomId}/status`]: 'playing',
       [`rooms/${roomId}/usedWords/${gameId}`]: combo.full,
       [`rooms/${roomId}/lastArtistPair`]: artistIds,
@@ -70,15 +85,12 @@ export const startMushtarakRound = onCall(async (request) => {
         gameId,
         mode: 'mushtarak',
         phase: 'brief',
-        phaseEndsAt: Date.now() + 6000,
+        phaseEndsAt: Date.now() + MUSHTARAK.briefMs,
         artistIds,
         guesserIds,
         // activeDrawers is what the stroke security rule checks — this is the
         // one mode where more than one player may write strokes at once.
         activeDrawers: Object.fromEntries(artistIds.map((id) => [id, true])),
-        partA: combo.partA,
-        partB: combo.partB,
-        full: combo.full,
       },
     });
 
@@ -140,7 +152,8 @@ export const advanceMushtarak = onCall(async (request) => {
       }
 
       const text = String(request.data?.guess ?? '').slice(0, 60);
-      const correct = isCorrectGuess(text, game.full);
+      const secret = await readGameSecret<MushtarakSecret>(roomId, game.gameId);
+      const correct = isCorrectGuess(text, secret.full);
 
       await db().ref(`guesses/${roomId}/${game.gameId}`).push({
         playerId: uid,
@@ -154,6 +167,7 @@ export const advanceMushtarak = onCall(async (request) => {
     case 'toReveal': {
       if (game.phase !== 'guess') return { phase: game.phase };
 
+      const secret = await readGameSecret<MushtarakSecret>(roomId, game.gameId);
       const raw = (await db().ref(`guesses/${roomId}/${game.gameId}`).get()).val() ?? {};
       const correctIds = [
         ...new Set(
@@ -176,8 +190,16 @@ export const advanceMushtarak = onCall(async (request) => {
         [`games/${roomId}/current/phase`]: 'reveal',
         [`games/${roomId}/current/phaseEndsAt`]: null,
         [`games/${roomId}/current/correctGuesserIds`]: correctIds,
+        // Published now, and only now: the reveal screen shows both halves and
+        // the phrase they were supposed to add up to.
+        [`games/${roomId}/current/partA`]: secret.partA,
+        [`games/${roomId}/current/partB`]: secret.partB,
+        [`games/${roomId}/current/full`]: secret.full,
         [`rooms/${roomId}/status`]: 'lobby',
       };
+      // What each player gained THIS round. Totals alone cannot tell a player
+      // whether they just earned three points or none.
+      updates[`games/${roomId}/current/scoreDelta`] = delta;
       for (const [playerId, points] of Object.entries(delta)) {
         updates[`playerScores/${roomId}/${playerId}`] = (current[playerId] ?? 0) + points;
       }

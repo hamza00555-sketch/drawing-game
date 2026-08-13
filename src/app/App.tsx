@@ -14,7 +14,9 @@ import {
 } from '../engine/room';
 import { startPresence, watchPresence, claimHostIfVacant } from '../engine/presence';
 import { CharacterTakenError, takenByOthers, watchCharacters } from '../engine/characters';
+import { callGame, startRound, watchGame, watchScores, type GameState } from '../engine/game';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
+import { GameRouter } from './GameRouter';
 import { useSession } from './session';
 import { SetupNeededScreen } from './SetupNeededScreen';
 import { SplashScreen } from '../screens/SplashScreen';
@@ -50,6 +52,8 @@ export function App() {
   const [presence, setPresence] = useState<Record<string, PresenceRecord>>({});
   const [charactersTaken, setCharactersTaken] = useState<Record<string, string>>({});
   const [selfId, setSelfId] = useState<string | undefined>(undefined);
+  const [game, setGame] = useState<GameState | undefined>(undefined);
+  const [scores, setScores] = useState<Record<string, number>>({});
 
   const roomId = useSession((state) => state.roomId);
   const setRoomId = useSession((state) => state.setRoomId);
@@ -72,12 +76,16 @@ export function App() {
     const stopPlayers = watchPlayers(roomId, setPlayers);
     const stopPresence = watchPresence(roomId, setPresence);
     const stopCharacters = watchCharacters(roomId, setCharactersTaken);
+    const stopGame = watchGame(roomId, setGame);
+    const stopScores = watchScores(roomId, setScores);
 
     return () => {
       stopRoom();
       stopPlayers();
       stopPresence();
       stopCharacters();
+      stopGame();
+      stopScores();
     };
   }, [roomId]);
 
@@ -138,6 +146,34 @@ export function App() {
 
   if (!configured) return <SetupNeededScreen />;
 
+  /*
+   * A live round outranks whatever this device thought it was showing. The
+   * server started it, so every member follows — which is also what puts a
+   * player who reloaded mid-round straight back into the round instead of into
+   * an empty lobby.
+   */
+  if (roomId && room && selfId && game && route.name !== 'splash') {
+    return (
+      <GameRouter
+        roomId={roomId}
+        selfId={selfId}
+        hostId={room.hostId}
+        players={players}
+        game={game}
+        scores={scores}
+        onNextRound={() => {
+          void startRound(roomId, room.currentMode ?? game.mode).catch((caught: unknown) =>
+            setError(caught instanceof Error ? caught.message : undefined),
+          );
+        }}
+        onBackToLobby={() => {
+          void callGame('returnToLobby', { roomId }).catch(() => undefined);
+          setRoute({ name: 'lobby' });
+        }}
+      />
+    );
+  }
+
   switch (route.name) {
     case 'splash':
       return <SplashScreen onDone={() => setRoute({ name: 'home' })} />;
@@ -196,8 +232,28 @@ export function App() {
           selfId={selfId}
           {...(room.currentMode === undefined ? {} : { currentMode: room.currentMode })}
           onChangeMode={() => setRoute({ name: 'modeSelect' })}
+          {...(busy ? { starting: true } : {})}
+          {...(error === undefined ? {} : { error })}
           onStart={() => {
-            // Gameplay lands in Phase 4. The lobby is complete without it.
+            const mode = room.currentMode;
+            if (!mode) {
+              setRoute({ name: 'modeSelect' });
+              return;
+            }
+
+            // Only the host may deal a round, and the function checks that
+            // again — this is the affordance, not the enforcement.
+            setBusy(true);
+            setError(undefined);
+            void startRound(roomId!, mode)
+              .catch((caught: unknown) =>
+                setError(
+                  caught instanceof Error
+                    ? caught.message
+                    : 'ما قدرنا نبدأ الجولة. تأكد من الاتصال.',
+                ),
+              )
+              .finally(() => setBusy(false));
           }}
           onLeave={() => void handleLeave()}
           onCopyCode={() => void navigator.clipboard?.writeText(room.code)}

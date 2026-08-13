@@ -18,6 +18,7 @@ import { KammilPreview, KAMMIL_PREVIEWS } from './KammilPreview';
 import { MamnouPreview, MAMNOU_PREVIEWS } from './MamnouPreview';
 import { MushtarakPreview, MUSHTARAK_PREVIEWS } from './MushtarakPreview';
 import { KanatEshPreview, KANAT_ESH_PREVIEWS } from './KanatEshPreview';
+import { RoundScoresScreen } from '../screens/RoundScoresScreen';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 
 const players: Record<string, RoomPlayer> = {
@@ -95,6 +96,36 @@ export function PreviewGallery({ screen }: { screen: string }) {
     case 'draw':
       return <DrawingPreview />;
 
+    case 'lobby-start-failed':
+      return (
+        <LobbyScreen
+          code="K7QM"
+          players={players}
+          presence={presence}
+          hostId="p1"
+          selfId="p1"
+          currentMode="kammil"
+          error="نحتاج 3 لاعبين على الأقل."
+          onChangeMode={noop}
+          onStart={noop}
+          onLeave={noop}
+        />
+      );
+
+    case 'scores':
+      return (
+        <RoundScoresScreen
+          headline="وصلنا للنهاية"
+          detail="دجاجة تهرب من مطعم بروست"
+          players={players}
+          scores={{ p1: 12, p2: 9, p3: 9, p4: 4, p5: 2 }}
+          delta={{ p1: 3, p2: 0, p3: 1, p4: 0, p5: 1 }}
+          isHost
+          onNextRound={noop}
+          onBackToLobby={noop}
+        />
+      );
+
     case 'modes':
       return (
         <ModeSelectScreen
@@ -133,6 +164,8 @@ export function PreviewGallery({ screen }: { screen: string }) {
               'lobby-empty',
               'modes',
               'draw',
+              'lobby-start-failed',
+              'scores',
               ...MOZAWWER_PREVIEWS,
               ...KAMMIL_PREVIEWS,
               ...MAMNOU_PREVIEWS,

@@ -58,9 +58,26 @@ export const paths = {
   stroke: (roomId: string, gameId: string, strokeId: string) =>
     `strokes/${roomId}/${gameId}/${strokeId}`,
 
+  /**
+   * كانت إيش؟ only: one stroke bucket per link in the chain.
+   *
+   * The shared `strokes` bucket above is readable by every member of the room,
+   * which is right for the four modes where everyone watches one canvas — and
+   * wrong here, where reading an earlier drawing would let a player reason back
+   * to the original sentence. Each link's strokes are gated by the same
+   * `visibleTo` grant that gates the link itself.
+   */
+  linkStrokes: (roomId: string, gameId: string, index: number) =>
+    `linkStrokes/${roomId}/${gameId}/${index}`,
+
   votes: (roomId: string, gameId: string) => `votes/${roomId}/${gameId}`,
   vote: (roomId: string, gameId: string, voterId: string) =>
     `votes/${roomId}/${gameId}/${voterId}`,
+
+  /** Who has voted, without who for. Readable while `votes` stays sealed. */
+  voteMarks: (roomId: string, gameId: string) => `voteMarks/${roomId}/${gameId}`,
+  voteMark: (roomId: string, gameId: string, voterId: string) =>
+    `voteMarks/${roomId}/${gameId}/${voterId}`,
 
   guesses: (roomId: string, gameId: string) => `guesses/${roomId}/${gameId}`,
 

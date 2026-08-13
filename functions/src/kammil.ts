@@ -12,6 +12,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { KAMMIL, assignKammilRoles, kammilDrawMs, scoreKammilRound } from '../../shared/kammil';
 import { MOZAWWER_WORDS, isCorrectGuess } from '../../shared/mozawwer';
+import { gameSecretPath, readGameSecret } from './secrets';
 
 const db = () => admin.database();
 
@@ -68,6 +69,9 @@ export const startKammilRound = onCall(async (request) => {
     .ref()
     .update({
       [`playerSecrets/${roomId}/${gameId}`]: secrets,
+      // The guesser is a member of the room, so the readable game node must not
+      // carry the word. It lives here until the reveal.
+      [gameSecretPath(roomId, gameId)]: { word: word.word },
       [`rooms/${roomId}/status`]: 'playing',
       [`games/${roomId}/current`]: {
         gameId,
@@ -78,7 +82,6 @@ export const startKammilRound = onCall(async (request) => {
         guesserId,
         turnIndex: 0,
         currentPlayerId: artistIds[0],
-        word: word.word,
         turnMs: kammilDrawMs(artistIds.length),
       },
     });
@@ -116,6 +119,18 @@ export const advanceKammil = onCall(async (request) => {
     case 'endTurn': {
       if (game.phase !== 'turn') return { phase: game.phase };
 
+      /*
+       * Two devices watch this deadline — the artist whose pen it is, and the
+       * host as a fallback for an artist who has left. Both may call in the same
+       * instant, and without this guard the second call would land after the
+       * first advanced the state and skip an entire artist's turn. The caller
+       * states which turn it believes is ending; a stale answer is discarded.
+       */
+      const expected = request.data?.turnIndex;
+      if (typeof expected === 'number' && expected !== game.turnIndex) {
+        return { phase: game.phase };
+      }
+
       const nextIndex = game.turnIndex + 1;
 
       if (nextIndex >= artistIds.length) {
@@ -136,14 +151,25 @@ export const advanceKammil = onCall(async (request) => {
       return { phase: 'countdown' };
     }
 
+    // `closeGuess` is the same ending with nobody to answer: the guesser's time
+    // ran out, or they left. Anyone may call it, but only after the deadline,
+    // so it cannot be used to cut the guesser's thinking short.
+    case 'closeGuess':
     case 'submitGuess': {
       if (game.phase !== 'guess') return { phase: game.phase };
-      if (uid !== game.guesserId) {
+
+      const timedOut = action === 'closeGuess';
+      if (timedOut) {
+        if (typeof game.phaseEndsAt === 'number' && Date.now() < game.phaseEndsAt) {
+          return { phase: game.phase };
+        }
+      } else if (uid !== game.guesserId) {
         throw new HttpsError('permission-denied', 'التخمين للاعب الأخير.');
       }
 
-      const guess = String(request.data?.guess ?? '');
-      const correct = isCorrectGuess(guess, game.word);
+      const guess = timedOut ? '' : String(request.data?.guess ?? '');
+      const { word } = await readGameSecret<{ word: string }>(roomId, game.gameId);
+      const correct = isCorrectGuess(guess, word);
 
       const delta = scoreKammilRound({ artistIds, guesserId: game.guesserId, correct });
       const current = ((await db().ref(`playerScores/${roomId}`).get()).val() ?? {}) as Record<
@@ -156,9 +182,12 @@ export const advanceKammil = onCall(async (request) => {
         [`games/${roomId}/current/phaseEndsAt`]: null,
         [`games/${roomId}/current/guess`]: guess,
         [`games/${roomId}/current/correct`]: correct,
-        [`games/${roomId}/current/revealedWord`]: game.word,
+        [`games/${roomId}/current/revealedWord`]: word,
         [`rooms/${roomId}/status`]: 'lobby',
       };
+      // What each player gained THIS round. Totals alone cannot tell a player
+      // whether they just earned three points or none.
+      updates[`games/${roomId}/current/scoreDelta`] = delta;
       for (const [playerId, points] of Object.entries(delta)) {
         updates[`playerScores/${roomId}/${playerId}`] = (current[playerId] ?? 0) + points;
       }

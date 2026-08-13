@@ -16,6 +16,13 @@ import {
   scoreMamnouRound,
 } from '../../shared/mamnou3at';
 import { isCorrectGuess } from '../../shared/mozawwer';
+import { gameSecretPath, readGameSecret } from './secrets';
+
+/** Artist-only knowledge. The guessers hold a letter count and nothing else. */
+interface MamnouSecret {
+  word: string;
+  forbidden: string[];
+}
 
 const db = () => admin.database();
 
@@ -82,6 +89,9 @@ export const startMamnouRound = onCall(async (request) => {
     .ref()
     .update({
       [`playerSecrets/${roomId}/${gameId}`]: secrets,
+      // Guessers are members of the room and can read the game node, so neither
+      // the word nor the forbidden list may be stored there.
+      [gameSecretPath(roomId, gameId)]: { word: entry.word, forbidden: entry.forbidden },
       [`rooms/${roomId}/status`]: 'playing',
       [`rooms/${roomId}/usedWords/${gameId}`]: entry.word,
       [`rooms/${roomId}/lastArtistId`]: artistId,
@@ -89,12 +99,10 @@ export const startMamnouRound = onCall(async (request) => {
         gameId,
         mode: 'mamnou3at',
         phase: 'brief',
-        phaseEndsAt: Date.now() + 8000,
+        phaseEndsAt: Date.now() + MAMNOU3AT.briefMs,
         artistId,
         currentPlayerId: artistId,
         guesserIds: playerIds.filter((id) => id !== artistId),
-        word: entry.word,
-        forbidden: entry.forbidden,
       },
     });
 
@@ -125,7 +133,8 @@ export const submitMamnouGuess = onCall(async (request) => {
   const alreadyCorrect = Object.values(existing as Record<string, { playerId: string; correct?: boolean }>)
     .some((g) => g.playerId === uid && g.correct);
 
-  const correct = !alreadyCorrect && isCorrectGuess(text, game.word);
+  const secret = await readGameSecret<MamnouSecret>(roomId, game.gameId);
+  const correct = !alreadyCorrect && isCorrectGuess(text, secret.word);
 
   await guessesRef.push({
     playerId: uid,
@@ -167,8 +176,9 @@ export const endMamnouRound = onCall(async (request) => {
 
 async function finishMamnou(
   roomId: string,
-  game: { gameId: string; artistId: string; word: string },
+  game: { gameId: string; artistId: string },
 ): Promise<void> {
+  const secret = await readGameSecret<MamnouSecret>(roomId, game.gameId);
   const raw = (await db().ref(`guesses/${roomId}/${game.gameId}`).get()).val() ?? {};
   const guesses = Object.values(
     raw as Record<string, { playerId: string; correct?: boolean; at: number }>,
@@ -192,10 +202,16 @@ async function finishMamnou(
   const updates: Record<string, unknown> = {
     [`games/${roomId}/current/phase`]: 'result',
     [`games/${roomId}/current/phaseEndsAt`]: null,
-    [`games/${roomId}/current/revealedWord`]: game.word,
+    // The round is over: the word and the list it was drawn around become
+    // public, which is the whole payoff of the result screen.
+    [`games/${roomId}/current/revealedWord`]: secret.word,
+    [`games/${roomId}/current/revealedForbidden`]: secret.forbidden,
     [`games/${roomId}/current/ranked`]: ranked,
     [`rooms/${roomId}/status`]: 'lobby',
   };
+  // What each player gained THIS round. Totals alone cannot tell a player
+  // whether they just earned three points or none.
+  updates[`games/${roomId}/current/scoreDelta`] = delta;
   for (const [playerId, points] of Object.entries(delta)) {
     updates[`playerScores/${roomId}/${playerId}`] = (current[playerId] ?? 0) + points;
   }

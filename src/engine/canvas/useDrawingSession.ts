@@ -24,6 +24,11 @@ export interface DrawingSessionOptions {
   gameId: string;
   playerId: string;
   canvas: React.RefObject<DrawingCanvasHandle | null>;
+  /**
+   * Which stroke bucket this canvas reads and writes. Defaults to the room's
+   * shared canvas; كانت إيش؟ passes a per-link bucket so the chain stays blind.
+   */
+  bucketPath?: string;
   /** Skip network entirely — used by the dev preview and by local replays. */
   offline?: boolean;
 }
@@ -46,11 +51,14 @@ export function useDrawingSession({
   gameId,
   playerId,
   canvas,
+  bucketPath,
   offline = false,
 }: DrawingSessionOptions): DrawingSession {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const publisherRef = useRef<StrokePublisher | undefined>(undefined);
   const seqRef = useRef(0);
+
+  const bucket = bucketPath ?? paths.strokes(roomId, gameId);
 
   /*
    * Seed from whatever already exists, then follow live changes.
@@ -63,7 +71,7 @@ export function useDrawingSession({
     if (offline) return;
 
     let cancelled = false;
-    const strokesRef = ref(getDb(), paths.strokes(roomId, gameId));
+    const strokesRef = ref(getDb(), bucket);
 
     const stopInitial = onValue(
       strokesRef,
@@ -91,12 +99,12 @@ export function useDrawingSession({
     return () => {
       cancelled = true;
     };
-  }, [roomId, gameId, offline, canvas]);
+  }, [bucket, offline, canvas]);
 
   useEffect(() => {
     if (offline) return;
 
-    const subscription = watchStrokes(roomId, gameId, {
+    const subscription = watchStrokes(bucket, {
       // Our own strokes are already on screen; echoing them back would draw the
       // same line twice and fight the local buffer.
       ignorePlayerId: playerId,
@@ -112,7 +120,7 @@ export function useDrawingSession({
     });
 
     return subscription.stop;
-  }, [roomId, gameId, playerId, offline, canvas]);
+  }, [bucket, playerId, offline, canvas]);
 
   const nextSeq = useCallback(() => {
     const seq = seqRef.current;
@@ -124,7 +132,7 @@ export function useDrawingSession({
     (stroke: Omit<Stroke, 'points'>) => {
       if (offline) return;
 
-      publisherRef.current = new StrokePublisher(roomId, gameId, stroke.id, {
+      publisherRef.current = new StrokePublisher(bucket, stroke.id, {
         playerId: stroke.playerId,
         seq: stroke.seq,
         tool: stroke.tool,
@@ -133,7 +141,7 @@ export function useDrawingSession({
         startedAt: stroke.startedAt,
       });
     },
-    [roomId, gameId, offline],
+    [bucket, offline],
   );
 
   const onStrokePoint = useCallback((_strokeId: string, point: Point) => {

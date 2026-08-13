@@ -19,7 +19,12 @@ export default defineConfig({
       output: {
         manualChunks: {
           // Firebase is large and not needed for the splash paint.
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/database'],
+          firebase: [
+            'firebase/app',
+            'firebase/auth',
+            'firebase/database',
+            'firebase/functions',
+          ],
         },
       },
     },

@@ -7,10 +7,14 @@
  *
  * Shape of a stroke on the wire:
  *
- *   strokes/{roomId}/{gameId}/{strokeId}
+ *   {bucket}/{strokeId}
  *     playerId, seq, tool, color, width, startedAt   ← written once, up front
  *     points/{chunkIndex}: [{x,y,t}, ...]            ← appended every ~50ms
  *     done: true                                     ← written at stroke end
+ *
+ * The bucket is a path, not a (roomId, gameId) pair, because كانت إيش؟ needs one
+ * bucket per link in the chain — see `paths.linkStrokes`. Everything below is
+ * indifferent to which bucket it is pointed at.
  *
  * Points are appended as CHUNKS rather than written per point. A phone fires
  * pointer events far faster than anyone needs to see them, and one database
@@ -20,10 +24,9 @@
  * Chunks are numbered, so a late-arriving chunk cannot reorder a line.
  */
 
-import { onChildAdded, onChildChanged, ref, set, update } from 'firebase/database';
+import { get, onChildAdded, onChildChanged, ref, set, update } from 'firebase/database';
 import { getDb } from '../firebase';
-import { paths } from '../paths';
-import type { Point, Stroke, Tool } from './strokes';
+import { sortStrokes, type Point, type Stroke, type Tool } from './strokes';
 
 /** How often buffered points are flushed. Roughly three display frames. */
 export const FLUSH_INTERVAL_MS = 50;
@@ -78,15 +81,14 @@ export class StrokePublisher {
   private timer: ReturnType<typeof setInterval> | undefined;
   private closed = false;
 
-  constructor(
-    private readonly roomId: string,
-    private readonly gameId: string,
-    readonly strokeId: string,
-    header: StrokeHeader,
-  ) {
+  private readonly strokePath: string;
+
+  constructor(bucketPath: string, readonly strokeId: string, header: StrokeHeader) {
+    this.strokePath = `${bucketPath}/${strokeId}`;
+
     // The header goes out immediately so other players can start rendering the
     // line's colour and weight before any points arrive.
-    void set(ref(getDb(), paths.stroke(roomId, gameId, strokeId)), header);
+    void set(ref(getDb(), this.strokePath), header);
 
     this.timer = setInterval(() => this.flush(), FLUSH_INTERVAL_MS);
   }
@@ -106,9 +108,7 @@ export class StrokePublisher {
     const index = this.chunkIndex;
     this.chunkIndex += 1;
 
-    void update(ref(getDb(), `${paths.stroke(this.roomId, this.gameId, this.strokeId)}/points`), {
-      [index]: chunk,
-    });
+    void update(ref(getDb(), `${this.strokePath}/points`), { [index]: chunk });
   }
 
   /**
@@ -125,14 +125,34 @@ export class StrokePublisher {
     }
 
     this.flush();
-    void update(ref(getDb(), paths.stroke(this.roomId, this.gameId, this.strokeId)), {
-      done: true,
-    });
+    void update(ref(getDb(), this.strokePath), { done: true });
   }
 }
 
 export interface StrokeSubscription {
   stop: () => void;
+}
+
+/**
+ * Read a finished drawing once, in order.
+ *
+ * For drawings nobody is adding to any more: the previous link of a كانت إيش؟
+ * chain, or a poster panel. A live session would keep a listener open on a
+ * bucket that will never change again.
+ *
+ * Returns an empty list rather than throwing when the read is refused, because
+ * "you may not see this" is an ordinary answer here — it is what the blindness
+ * rule is for, and the caller renders an empty canvas either way.
+ */
+export async function readStrokesOnce(bucketPath: string): Promise<Stroke[]> {
+  try {
+    const snapshot = await get(ref(getDb(), bucketPath));
+    const raw = (snapshot.val() as Record<string, WireStroke> | null) ?? {};
+
+    return sortStrokes(Object.entries(raw).map(([id, wire]) => wireToStroke(id, wire)));
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -147,15 +167,14 @@ export interface StrokeSubscription {
  * and fight the local buffer.
  */
 export function watchStrokes(
-  roomId: string,
-  gameId: string,
+  bucketPath: string,
   handlers: {
     onProgress: (stroke: Stroke) => void;
     onDone: (stroke: Stroke) => void;
     ignorePlayerId?: string;
   },
 ): StrokeSubscription {
-  const strokesRef = ref(getDb(), paths.strokes(roomId, gameId));
+  const strokesRef = ref(getDb(), bucketPath);
 
   const handle = (id: string | null, value: unknown) => {
     if (!id || value === null || typeof value !== 'object') return;

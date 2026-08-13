@@ -52,15 +52,20 @@ playerScores/{roomId}/{playerId}                           (server-written only)
 presence/{roomId}/{playerId}
   connected  lastSeen                                      (onDisconnect)
 
-games/{roomId}/current
+games/{roomId}/current                                     (member-readable)
   gameId  mode  phase  phaseEndsAt  currentPlayerId
   turnOrder/  activeDrawers/  round
+
+gameSecrets/{roomId}/{gameId}                              (readable by NOBODY)
+  word?  impostorId?  forbidden/?  partA?  partB?  full?  seed?
 
 playerSecrets/{roomId}/{gameId}/{playerId}
   role  word?                                              (owner-readable only)
 
-strokes/{roomId}/{gameId}/{strokeId}
-votes/{roomId}/{gameId}/{voterId}
+strokes/{roomId}/{gameId}/{strokeId}                       (one shared canvas)
+linkStrokes/{roomId}/{gameId}/{index}/{strokeId}           (كانت إيش؟ only)
+votes/{roomId}/{gameId}/{voterId}                          (sealed until reveal)
+voteMarks/{roomId}/{gameId}/{voterId}                      (who voted, not for whom)
 guesses/{roomId}/{gameId}/{guessId}
 chains/{roomId}/{gameId}/{index}
 ```
@@ -115,6 +120,48 @@ model, not of a conditional in a component.
 
 The same pattern makes كانت إيش؟ blind: a player may read only the chain link
 that feeds their turn, until the phase reaches reveal.
+
+### The corollary: nothing secret may sit on the game node
+
+`games/{roomId}/current` is readable by every member of the room, because
+phases, deadlines and turn order have to be. Read rules in Realtime Database
+**cascade downwards and cannot be revoked further down the tree**, so a `word`
+child hanging off that node would be world-readable to the room regardless of
+any rule written beneath it.
+
+So a round's private facts live in a sibling subtree, `gameSecrets`, which is
+`.read: false` and `.write: false` for everyone. Only the Admin SDK sees it:
+
+| mode | what it holds |
+|---|---|
+| المزوّر | `word`, `impostorId` |
+| كمّل رسمتي | `word` |
+| الممنوعات | `word`, `forbidden` |
+| الرسم المشترك | `partA`, `partB`, `full` |
+| كانت إيش؟ | `seed` |
+
+When a round ends, whatever the room has earned the right to know is **copied**
+into the public node — `revealedWord`, `impostorId`, `full`, `seed`. Revealing
+is an explicit act, never the absence of one.
+
+`src/engine/roundSecrecy.test.ts` fails the build if a secret key reappears in
+a setup payload. That mistake is invisible in play — the game works perfectly
+and the impostor simply reads the answer — so it needs a test, not a review.
+
+### Two subtrees that exist purely for secrecy
+
+**`linkStrokes`** — كانت إيش؟ draws into one bucket per link, not the shared
+`strokes` node. Sharing it would put every drawing in the chain behind one
+member-readable path, and a player could read backwards to the sentence the
+room started from. Each link's strokes sit behind the same `visibleTo` grant
+that gates the link text, so a player can read exactly two things: the link
+feeding their turn, and the one they are drawing now.
+
+**`voteMarks`** — `votes` stays sealed until the reveal, which is right: a
+running tally would let the room watch an accusation build and pile on. But a
+voting screen with no sign of progress reads as broken, so each voter drops a
+separate mark carrying one fact — "this player is done" — which is safe to
+share.
 
 ---
 
@@ -222,9 +269,18 @@ canvas, FSM, scoring primitives. It knows nothing about any specific mode.
 - `rules.ts` — permissions: who draws, who sees what
 - `screens/` — round-specific UI
 - `content.ts` — words, prompts, combinations
+- `{Mode}Game.tsx` — the container that maps live state onto those screens
 
 Multiplayer logic is never duplicated into a mode. Adding a sixth mode should
-mean adding a folder, not touching the engine.
+mean adding a folder and one line in `src/app/GameRouter.tsx`, not touching the
+engine.
+
+A container is a translator and nothing more: subscriptions in, screen props
+out, and calls to trusted logic for anything that decides an outcome. If a
+container starts deciding something, it is in the wrong file — that belongs in
+`rules.ts` beside it, or in `functions/`. The shared pieces every container uses
+(`usePlayerSecret`, `useDeadline`, the props contract) live in
+`src/modes/liveRound.ts`.
 
 ---
 
@@ -305,6 +361,28 @@ Only what rules cannot express:
 - `advanceMozawwer` — every phase transition, in one place: begin drawing, end a
   turn, honour the ready-to-vote rule, close voting and tally, stage the reveal,
   run the impostor's last guess, and award points.
+- `startKammilRound` / `advanceKammil`, `startMamnouRound` / `beginMamnouDrawing`
+  / `submitMamnouGuess` / `endMamnouRound`, `startMushtarakRound` /
+  `advanceMushtarak`, `startKanatEshRound` / `submitKanatEshLink` /
+  `kanatEshToResult` — the same shape for the other four modes.
+- `returnToLobby` — clears `games/{roomId}/current`. Not housekeeping: the rule
+  on `currentMode` refuses while a game exists, so a finished round left in
+  place would lock the room into one mode forever.
+
+### Who tells the server that a deadline passed
+
+Deadlines are the server's, but something has to announce that the moment
+arrived. The rule throughout is **one owner, one shadow**:
+
+- the player the phase belongs to — the artist whose turn it is, the author of
+  the current chain link — closes their own deadline;
+- the host shadows it, so a player who puts their phone down cannot freeze the
+  room.
+
+Both may fire in the same instant, so each call carries what it believes it is
+ending (`turnIndex`) or is accepted only after the deadline has genuinely
+passed (`closeGuess`, `closeImpostorGuess`, a timed-out chain link). Without
+that, artist and host firing together would skip an entire turn.
 
 Everything else — strokes, presence, votes, guesses, character reservations — is
 written directly by clients under security rules, because a Cloud Function on a

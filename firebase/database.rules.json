@@ -132,11 +132,31 @@
     // Game state: readable by members, writable only by trusted logic. This is
     // what prevents a player from forcing a phase change, skipping a turn,
     // extending their own timer or making themselves the active player.
+    //
+    // BECAUSE this subtree is readable by every member, nothing secret may be
+    // stored in it. Read rules in Realtime Database cascade downwards and cannot
+    // be revoked further down the tree, so a single secret child here would be
+    // world-readable to the room no matter what rule sat beneath it. The word,
+    // the impostor, the forbidden list, the split prompt and the seed sentence
+    // therefore live in `gameSecrets` below, and are copied into this node only
+    // once the round has revealed them.
     "games": {
       "$roomId": {
         ".read": "auth != null && root.child('roomPlayers').child($roomId).child(auth.uid).exists()",
         ".write": false
       }
+    },
+
+    // Round facts no client may ever read: the word, who the impostor is, the
+    // two halves of a split prompt, the taboo list, the seed sentence. Trusted
+    // logic reads and writes these through the Admin SDK, which bypasses rules;
+    // for every client this subtree simply does not exist.
+    //
+    // This is the same principle as `playerSecrets`, one level up: there, a
+    // player reads their own payload; here, nobody reads anything.
+    "gameSecrets": {
+      ".read": false,
+      ".write": false
     },
 
     // The heart of المزوّر. A player can read ONLY their own secret payload.
@@ -164,7 +184,14 @@
             // drawing phase is live, and only if that author is either the
             // active player (turn-based modes) or listed as an active drawer
             // (simultaneous modes such as الرسم المشترك).
-            ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('phase').val().matches(/^draw/) && (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid || root.child('games').child($roomId).child('current').child('activeDrawers').child(auth.uid).exists())",
+            //
+            // A stroke is not one write. The header goes out on pointer-down,
+            // point chunks are appended every ~50ms, and `done` lands on
+            // pointer-up — so this rule must permit the author to keep writing
+            // to a node that already exists. What it must NOT permit is one
+            // player appending to another player's line, or anyone drawing
+            // outside their own turn, and both of those are still refused.
+            ".write": "auth != null && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid) && root.child('games').child($roomId).child('current').child('phase').val().matches(/^draw/) && (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid || root.child('games').child($roomId).child('current').child('activeDrawers').child(auth.uid).exists())",
             ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'points', 'startedAt'])",
 
             "playerId": { ".validate": "newData.val() === auth.uid" },
@@ -174,7 +201,47 @@
             "width": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 1" },
             "points": { ".validate": "newData.hasChildren()" },
             "startedAt": { ".validate": "newData.isNumber()" },
+            // Written at pointer-up so viewers know the line is complete.
+            "done": { ".validate": "newData.isBoolean()" },
             "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
+    // كانت إيش؟ draws into its OWN bucket per link, not into the shared
+    // `strokes` node above.
+    //
+    // The reason is the mode's only secret. `strokes/{roomId}/{gameId}` is
+    // readable by every member — correct for the four modes where everyone is
+    // looking at one canvas together, and fatal here, where it would let a
+    // player read every earlier drawing in the chain and reason backwards to the
+    // original sentence. So each link's strokes sit behind the same `visibleTo`
+    // grant that gates the link text itself, and a player may read exactly two
+    // things: the link feeding their turn, and the one they are drawing now.
+    "linkStrokes": {
+      "$roomId": {
+        "$gameId": {
+          "$index": {
+            ".read": "auth != null && (root.child('games').child($roomId).child('current').child('phase').val().matches(/^(reveal|result)/) || root.child('games').child($roomId).child('current').child('visibleTo').child($index).child(auth.uid).exists() || (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('currentIndexKey').val() === $index))",
+            ".indexOn": ["seq"],
+
+            "$strokeId": {
+              // Only the player whose turn it is, only into the link they are
+              // authoring right now, and only while the chain is running.
+              ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('phase').val() === 'turn' && root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('currentIndexKey').val() === $index",
+              ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'points', 'startedAt'])",
+
+              "playerId": { ".validate": "newData.val() === auth.uid" },
+              "seq": { ".validate": "newData.isNumber()" },
+              "tool": { ".validate": "newData.isString() && newData.val().matches(/^(pen|eraser)$/)" },
+              "color": { ".validate": "newData.isString() && newData.val().length <= 24" },
+              "width": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 1" },
+              "points": { ".validate": "newData.hasChildren()" },
+              "startedAt": { ".validate": "newData.isNumber()" },
+              "done": { ".validate": "newData.isBoolean()" },
+              "$other": { ".validate": false }
+            }
           }
         }
       }
@@ -191,6 +258,26 @@
             // change it afterwards.
             ".write": "auth != null && auth.uid === $voterId && !data.exists() && root.child('games').child($roomId).child('current').child('phase').val() === 'vote'",
             ".validate": "newData.isString() && root.child('roomPlayers').child($roomId).child(newData.val()).exists()"
+          }
+        }
+      }
+    },
+
+    // Who has voted — never who they voted for.
+    //
+    // `votes` above stays sealed until the reveal, which is right: a running
+    // tally would let the room watch an accusation build and pile on. But a
+    // voting screen with no sign of progress reads as broken, so each voter also
+    // drops a mark here. It carries a single fact — "this player is done" — and
+    // that fact is safe to share.
+    "voteMarks": {
+      "$roomId": {
+        "$gameId": {
+          ".read": "auth != null && root.child('roomPlayers').child($roomId).child(auth.uid).exists()",
+
+          "$voterId": {
+            ".write": "auth != null && auth.uid === $voterId && !data.exists() && root.child('games').child($roomId).child('current').child('phase').val() === 'vote'",
+            ".validate": "newData.isBoolean() && newData.val() === true"
           }
         }
       }

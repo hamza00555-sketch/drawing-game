@@ -15,6 +15,8 @@
 
 export const MUSHTARAK = {
   drawMs: 60_000,
+  /** How long each artist gets to read their half before the pens open. */
+  briefMs: 6_000,
   guessMs: 30_000,
   /** "فهمتك" — the one limited signal an artist may send per round. */
   gotYouUsesPerArtist: 1,

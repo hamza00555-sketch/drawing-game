@@ -16,6 +16,8 @@
 
 export const MAMNOU3AT = {
   drawMs: 75_000,
+  /** How long the artist gets to read the word and the forbidden list. */
+  briefMs: 8_000,
   /** How many forbidden elements the artist is shown. */
   forbiddenCount: 3,
   scores: {
