@@ -1,0 +1,65 @@
+/**
+ * Realtime Database path builders.
+ *
+ * Every path in the app is constructed here so the shape of the tree is
+ * described in exactly one place, and so a rename cannot silently desync the
+ * client from `firebase/database.rules.json`.
+ *
+ * Shape note: the tree is deliberately split into small sibling subtrees rather
+ * than one fat `rooms/{id}/state` blob. A stroke arriving must not wake the
+ * scoreboard listener; a score change must not re-deliver the player list.
+ * Listeners subscribe to the narrowest path that answers their question.
+ */
+
+export const paths = {
+  /** code -> roomId lookup, so joining never scans the room list. */
+  roomCode: (code: string) => `roomCodes/${code}`,
+
+  room: (roomId: string) => `rooms/${roomId}`,
+  roomHostId: (roomId: string) => `rooms/${roomId}/hostId`,
+  roomStatus: (roomId: string) => `rooms/${roomId}/status`,
+  roomMode: (roomId: string) => `rooms/${roomId}/currentMode`,
+  roomSettings: (roomId: string) => `rooms/${roomId}/settings`,
+
+  players: (roomId: string) => `roomPlayers/${roomId}`,
+  player: (roomId: string, playerId: string) => `roomPlayers/${roomId}/${playerId}`,
+  playerReady: (roomId: string, playerId: string) => `roomPlayers/${roomId}/${playerId}/ready`,
+
+  /** Server-authoritative. Never client-writable. */
+  scores: (roomId: string) => `playerScores/${roomId}`,
+  score: (roomId: string, playerId: string) => `playerScores/${roomId}/${playerId}`,
+
+  presence: (roomId: string) => `presence/${roomId}`,
+  playerPresence: (roomId: string, playerId: string) => `presence/${roomId}/${playerId}`,
+
+  game: (roomId: string) => `games/${roomId}/current`,
+  gamePhase: (roomId: string) => `games/${roomId}/current/phase`,
+  gamePhaseEndsAt: (roomId: string) => `games/${roomId}/current/phaseEndsAt`,
+  gameCurrentPlayer: (roomId: string) => `games/${roomId}/current/currentPlayerId`,
+  gameTurnOrder: (roomId: string) => `games/${roomId}/current/turnOrder`,
+
+  /**
+   * A player may only ever read their own node here. The impostor's payload
+   * has no `word` child at all — see ARCHITECTURE.md, "Secrecy".
+   */
+  playerSecret: (roomId: string, gameId: string, playerId: string) =>
+    `playerSecrets/${roomId}/${gameId}/${playerId}`,
+
+  strokes: (roomId: string, gameId: string) => `strokes/${roomId}/${gameId}`,
+  stroke: (roomId: string, gameId: string, strokeId: string) =>
+    `strokes/${roomId}/${gameId}/${strokeId}`,
+
+  votes: (roomId: string, gameId: string) => `votes/${roomId}/${gameId}`,
+  vote: (roomId: string, gameId: string, voterId: string) =>
+    `votes/${roomId}/${gameId}/${voterId}`,
+
+  guesses: (roomId: string, gameId: string) => `guesses/${roomId}/${gameId}`,
+
+  chain: (roomId: string, gameId: string) => `chains/${roomId}/${gameId}`,
+  chainLink: (roomId: string, gameId: string, index: number) =>
+    `chains/${roomId}/${gameId}/${index}`,
+
+  /** Firebase-provided, not ours: connection state and clock skew. */
+  infoConnected: '.info/connected',
+  infoServerTimeOffset: '.info/serverTimeOffset',
+} as const;

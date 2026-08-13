@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// وش ذا؟ — Storage is used only for real files: exported share posters and
+// final round images. Live gameplay never touches Storage; strokes live in the
+// Realtime Database as vector data (see ARCHITECTURE.md).
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Exported posters and final images. Anyone with the link may read (they
+    // are meant to be shared outside the app); only the authenticated author
+    // may create, and nothing may be overwritten or deleted from a client.
+    match /posters/{roomId}/{gameId}/{fileName} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/(png|jpeg|webp)');
+      allow update, delete: if false;
+    }
+
+    // Everything else is closed.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

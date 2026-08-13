@@ -1,0 +1,86 @@
+@import './design/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /* Prevent iOS from re-flowing type when the phone is rotated. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--wt-paper);
+    color: var(--wt-ink);
+    font-family: var(--wt-font-body);
+    font-size: var(--wt-text-base);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    /*
+     * The whole app is a drawing surface at some point. Disabling the browser's
+     * pull-to-refresh and double-tap zoom globally is the difference between a
+     * pen stroke and an accidental page reload mid-turn.
+     */
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--wt-font-display);
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0;
+    /* Arabic display type needs a touch more room between letterforms. */
+    letter-spacing: 0;
+  }
+
+  button {
+    font-family: inherit;
+    /* Cartoon buttons are pressed, not selected. */
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  input,
+  textarea {
+    font-family: inherit;
+    /* iOS zooms the viewport when a focused field is under 16px. */
+    font-size: max(16px, var(--wt-text-base));
+  }
+
+  :focus-visible {
+    outline: var(--wt-stroke-bold) solid var(--wt-cobalt);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+   * The paper ground. A very low-contrast tint keeps the surface from reading
+   * as flat digital white without competing with gameplay. This is a surface
+   * treatment, not an illustration — no shapes, no drawn marks.
+   */
+  .wt-paper-ground {
+    background-color: var(--wt-paper);
+    background-image: radial-gradient(
+      circle at 50% 0%,
+      var(--wt-paper-raised) 0%,
+      var(--wt-paper) 55%
+    );
+  }
+
+  /* Safe-area-aware screen shell used by every full screen. */
+  .wt-screen {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding-block-start: max(var(--wt-space-4), var(--wt-safe-top));
+    padding-block-end: max(var(--wt-space-4), var(--wt-safe-bottom));
+    padding-inline: var(--wt-space-4);
+  }
+}

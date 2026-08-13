@@ -1,0 +1,218 @@
+{
+  // وش ذا؟ — Realtime Database Security Rules
+  // ---------------------------------------------------------------------------
+  // These rules are part of the architecture, not a hardening pass bolted on
+  // afterwards. The game's core secret — which player is the impostor and what
+  // the word is — is protected HERE, not in the UI.
+  //
+  // Trust model:
+  //   - Clients may write only what they legitimately own: their own player
+  //     record, their own presence, their own vote, their own guess, their own
+  //     strokes while it is their turn.
+  //   - Scores, phases, turn order, roles and words are written exclusively by
+  //     trusted server logic (Cloud Functions via the Admin SDK, which bypasses
+  //     these rules). Every such node is `".write": false` for clients.
+  //   - The one deliberate exception is host migration: a connected player may
+  //     claim host ONLY when the current host is provably disconnected. This
+  //     avoids a Cloud Function on a latency-sensitive path.
+
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    // Lookup index: join code -> roomId. Readable so a player can resolve a
+    // code before they are a member. Write-once, and only by the room creator.
+    "roomCodes": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.isString() && newData.val().length > 0 && root.child('rooms').child(newData.val()).child('hostId').val() === auth.uid"
+      }
+    },
+
+    "rooms": {
+      "$roomId": {
+        // Any authenticated user may read a room they are about to join.
+        ".read": "auth != null",
+        // Created by its host; afterwards only specific children are writable.
+        ".write": "auth != null && !data.exists() && newData.child('hostId').val() === auth.uid",
+
+        "code": { ".validate": "newData.isString()" },
+        "createdAt": { ".validate": "newData.val() === now" },
+        "status": { ".validate": "newData.isString()" },
+
+        "hostId": {
+          // Host migration: writable only when the current host is offline and
+          // the claimant is a connected member of this room. Clients pick the
+          // oldest connected player; a race resolves to last-write-wins, which
+          // is harmless because every candidate is a valid host.
+          ".write": "auth != null && root.child('presence').child($roomId).child(data.val()).child('connected').val() === false && root.child('presence').child($roomId).child(auth.uid).child('connected').val() === true",
+          ".validate": "newData.isString() && root.child('roomPlayers').child($roomId).child(newData.val()).exists()"
+        },
+
+        "currentMode": {
+          // Only the host chooses the mode, and only while nobody is playing.
+          ".write": "auth != null && root.child('rooms').child($roomId).child('hostId').val() === auth.uid && !root.child('games').child($roomId).child('current').exists()",
+          ".validate": "newData.isString() && newData.val().matches(/^(mozawwer|kammil|mamnou3at|mushtarak|kanatEsh)$/)"
+        },
+
+        // Live playtest tuning. Host-only, and locked while a game is running
+        // so balance cannot be changed mid-round to influence an outcome.
+        "settings": {
+          ".write": "auth != null && root.child('rooms').child($roomId).child('hostId').val() === auth.uid && !root.child('games').child($roomId).child('current').exists()"
+        }
+      }
+    },
+
+    "roomPlayers": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".indexOn": ["joinedAt"],
+
+        "$playerId": {
+          // A player owns their own record and nobody else's. Note that score
+          // is NOT stored here — see `playerScores` — precisely so that this
+          // node can stay self-writable.
+          ".write": "auth != null && auth.uid === $playerId && (root.child('rooms').child($roomId).exists())",
+          ".validate": "newData.hasChildren(['name', 'characterId', 'joinedAt'])",
+
+          "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16" },
+          "characterId": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "ready": { ".validate": "newData.isBoolean()" },
+          "joinedAt": { ".validate": "newData.val() === now || data.val() === newData.val()" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+
+    // Scores are server-authoritative. A client can read the scoreboard but can
+    // never write to it — this is what stops a player awarding themselves points.
+    "playerScores": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": false
+      }
+    },
+
+    "presence": {
+      "$roomId": {
+        ".read": "auth != null",
+        "$playerId": {
+          // Written by the client and by its onDisconnect handler.
+          ".write": "auth != null && auth.uid === $playerId",
+          "connected": { ".validate": "newData.isBoolean()" },
+          "lastSeen": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+
+    // Game state: readable by members, writable only by trusted logic. This is
+    // what prevents a player from forcing a phase change, skipping a turn,
+    // extending their own timer or making themselves the active player.
+    "games": {
+      "$roomId": {
+        ".read": "auth != null && root.child('roomPlayers').child($roomId).child(auth.uid).exists()",
+        ".write": false
+      }
+    },
+
+    // The heart of المزوّر. A player can read ONLY their own secret payload.
+    // The impostor's payload has no `word` child at all — the word never
+    // reaches their device, so there is nothing to uncover in DevTools.
+    "playerSecrets": {
+      "$roomId": {
+        "$gameId": {
+          "$playerId": {
+            ".read": "auth != null && auth.uid === $playerId",
+            ".write": false
+          }
+        }
+      }
+    },
+
+    "strokes": {
+      "$roomId": {
+        "$gameId": {
+          ".read": "auth != null && root.child('roomPlayers').child($roomId).child(auth.uid).exists()",
+          ".indexOn": ["seq"],
+
+          "$strokeId": {
+            // A stroke may only be written by its own author, only while a
+            // drawing phase is live, and only if that author is either the
+            // active player (turn-based modes) or listed as an active drawer
+            // (simultaneous modes such as الرسم المشترك).
+            ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('phase').val().matches(/^draw/) && (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid || root.child('games').child($roomId).child('current').child('activeDrawers').child(auth.uid).exists())",
+            ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'points', 'startedAt'])",
+
+            "playerId": { ".validate": "newData.val() === auth.uid" },
+            "seq": { ".validate": "newData.isNumber()" },
+            "tool": { ".validate": "newData.isString() && newData.val().matches(/^(pen|eraser)$/)" },
+            "color": { ".validate": "newData.isString() && newData.val().length <= 24" },
+            "width": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 1" },
+            "points": { ".validate": "newData.hasChildren()" },
+            "startedAt": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
+    "votes": {
+      "$roomId": {
+        "$gameId": {
+          // Votes stay sealed until the reveal phase opens them.
+          ".read": "auth != null && root.child('games').child($roomId).child('current').child('phase').val().matches(/^(reveal|result)/)",
+
+          "$voterId": {
+            // You may only cast your own vote, exactly once, and you cannot
+            // change it afterwards.
+            ".write": "auth != null && auth.uid === $voterId && !data.exists() && root.child('games').child($roomId).child('current').child('phase').val() === 'vote'",
+            ".validate": "newData.isString() && root.child('roomPlayers').child($roomId).child(newData.val()).exists()"
+          }
+        }
+      }
+    },
+
+    "guesses": {
+      "$roomId": {
+        "$gameId": {
+          ".read": "auth != null && root.child('roomPlayers').child($roomId).child(auth.uid).exists()",
+          ".indexOn": ["at"],
+
+          "$guessId": {
+            ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('phase').val().matches(/^(draw|guess)/)",
+            ".validate": "newData.hasChildren(['playerId', 'text', 'at'])",
+
+            "playerId": { ".validate": "newData.val() === auth.uid" },
+            "text": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60" },
+            "at": { ".validate": "newData.val() === now" },
+            // Correctness is decided by trusted logic, never claimed by the client.
+            "correct": { ".validate": false },
+            "rank": { ".validate": false },
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
+    // كانت إيش؟ — each link is readable only by the player whose turn it feeds,
+    // until the final reveal. This is what keeps the chain blind.
+    "chains": {
+      "$roomId": {
+        "$gameId": {
+          "$index": {
+            ".read": "auth != null && (root.child('games').child($roomId).child('current').child('phase').val().matches(/^(reveal|result)/) || root.child('games').child($roomId).child('current').child('visibleTo').child($index).child(auth.uid).exists())",
+            ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid",
+            ".validate": "newData.hasChildren(['type', 'playerId', 'content'])",
+
+            "type": { ".validate": "newData.isString() && newData.val().matches(/^(text|drawing)$/)" },
+            "playerId": { ".validate": "newData.val() === auth.uid" },
+            "content": { ".validate": "newData.isString() && newData.val().length <= 4000" },
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    }
+  }
+}

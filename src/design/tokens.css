@@ -1,0 +1,145 @@
+/*
+ * وش ذا؟ — Design Tokens
+ * -----------------------------------------------------------------------------
+ * The single source of truth for colour, type, space, elevation and motion.
+ * Nothing in the app may hardcode a hex value, a shadow or a duration.
+ *
+ * Palette intent (see ART_BIBLE.md):
+ *   - Ground is warm paper, never pure white.
+ *   - Lines are dark ink (#2A211C), never pure black.
+ *   - Accents are bold and saturated, but earthy enough to avoid a
+ *     preschool palette. Every accent is tested against ink for contrast.
+ */
+
+:root {
+  /* ---- Ground: warm paper, never #FFFFFF ---------------------------------- */
+  --wt-paper: #fdf6e8;
+  --wt-paper-raised: #fffcf5;
+  --wt-paper-sunken: #f4e9d4;
+  --wt-paper-canvas: #fffdf8;
+
+  /* ---- Ink: dark warm brown, never #000000 -------------------------------- */
+  --wt-ink: #2a211c;
+  --wt-ink-soft: #5b4f47;
+  --wt-ink-faint: #9a8d82;
+  --wt-ink-hairline: #d9cbb6;
+
+  /* ---- Accents ------------------------------------------------------------ */
+  --wt-tomato: #e2503a;
+  --wt-tomato-deep: #b53826;
+  --wt-mustard: #f0b03a;
+  --wt-mustard-deep: #c98a1c;
+  --wt-teal: #2b9e92;
+  --wt-teal-deep: #1c7269;
+  --wt-cobalt: #3a68cf;
+  --wt-cobalt-deep: #27499b;
+  --wt-grape: #7f57c9;
+  --wt-grape-deep: #5c3b9b;
+  --wt-rose: #dd6491;
+  --wt-rose-deep: #b2436c;
+
+  /* ---- Semantic ----------------------------------------------------------- */
+  --wt-primary: var(--wt-tomato);
+  --wt-primary-deep: var(--wt-tomato-deep);
+  --wt-success: var(--wt-teal);
+  --wt-success-deep: var(--wt-teal-deep);
+  --wt-warning: var(--wt-mustard);
+  --wt-warning-deep: var(--wt-mustard-deep);
+  --wt-danger: var(--wt-tomato);
+  --wt-danger-deep: var(--wt-tomato-deep);
+
+  /*
+   * Player pen colours. Chosen so that two simultaneous artists in
+   * "الرسم المشترك" stay distinguishable, and so each stays legible
+   * on the canvas ground. Order matters: index = seat order.
+   */
+  --wt-pen-1: #2a211c;
+  --wt-pen-2: #e2503a;
+  --wt-pen-3: #2b9e92;
+  --wt-pen-4: #3a68cf;
+  --wt-pen-5: #f0b03a;
+  --wt-pen-6: #7f57c9;
+  --wt-pen-7: #dd6491;
+  --wt-pen-8: #5f8b34;
+
+  /* ---- Type --------------------------------------------------------------- */
+  --wt-font-display: 'Baloo Bhaijaan 2', 'Tajawal', system-ui, sans-serif;
+  --wt-font-body: 'Tajawal', system-ui, sans-serif;
+
+  /* Fluid scale — mobile-first, clamped so 320px never overflows. */
+  --wt-text-xs: clamp(0.72rem, 0.7rem + 0.1vw, 0.8rem);
+  --wt-text-sm: clamp(0.84rem, 0.8rem + 0.2vw, 0.95rem);
+  --wt-text-base: clamp(1rem, 0.95rem + 0.25vw, 1.12rem);
+  --wt-text-lg: clamp(1.16rem, 1.05rem + 0.5vw, 1.4rem);
+  --wt-text-xl: clamp(1.4rem, 1.2rem + 0.9vw, 1.85rem);
+  --wt-text-2xl: clamp(1.75rem, 1.4rem + 1.6vw, 2.6rem);
+  --wt-text-3xl: clamp(2.3rem, 1.7rem + 2.8vw, 3.8rem);
+  --wt-text-hero: clamp(3rem, 2rem + 5vw, 5.5rem);
+
+  /* ---- Space (4px base) --------------------------------------------------- */
+  --wt-space-1: 0.25rem;
+  --wt-space-2: 0.5rem;
+  --wt-space-3: 0.75rem;
+  --wt-space-4: 1rem;
+  --wt-space-5: 1.5rem;
+  --wt-space-6: 2rem;
+  --wt-space-7: 3rem;
+  --wt-space-8: 4rem;
+
+  /* ---- Shape -------------------------------------------------------------- */
+  --wt-radius-sm: 0.5rem;
+  --wt-radius-md: 0.9rem;
+  --wt-radius-lg: 1.4rem;
+  --wt-radius-xl: 2rem;
+  --wt-radius-pill: 999px;
+
+  /* Hand-drawn line weights. */
+  --wt-stroke-hair: 1px;
+  --wt-stroke-thin: 2px;
+  --wt-stroke-bold: 3px;
+  --wt-stroke-heavy: 4px;
+
+  /*
+   * Elevation is a hard ink offset, not a soft blur. A cartoon world casts
+   * flat shadows; gaussian blur reads as corporate/SaaS.
+   */
+  --wt-lift-1: 0 2px 0 0 var(--wt-ink);
+  --wt-lift-2: 0 4px 0 0 var(--wt-ink);
+  --wt-lift-3: 0 6px 0 0 var(--wt-ink);
+  --wt-lift-pressed: 0 1px 0 0 var(--wt-ink);
+
+  /* ---- Motion ------------------------------------------------------------- */
+  --wt-dur-instant: 90ms;
+  --wt-dur-fast: 160ms;
+  --wt-dur-base: 260ms;
+  --wt-dur-slow: 420ms;
+  --wt-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --wt-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --wt-ease-anticipate: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+
+  /* ---- Layout ------------------------------------------------------------- */
+  --wt-tap-min: 48px;
+  --wt-content-max: 32rem;
+  --wt-safe-top: env(safe-area-inset-top, 0px);
+  --wt-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --wt-safe-inline-start: env(safe-area-inset-right, 0px);
+  --wt-safe-inline-end: env(safe-area-inset-left, 0px);
+}
+
+/*
+ * The game is deliberately single-theme: it is a lit paper world.
+ * A dark mode would fight the art direction, so we opt out explicitly
+ * rather than letting the UA invert form controls.
+ */
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --wt-dur-instant: 1ms;
+    --wt-dur-fast: 1ms;
+    --wt-dur-base: 1ms;
+    --wt-dur-slow: 1ms;
+  }
+}
