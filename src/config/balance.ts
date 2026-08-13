@@ -13,6 +13,7 @@
  */
 
 import { MOZAWWER, type ReadyToVoteRule } from '../../shared/mozawwer';
+import { KAMMIL, kammilDrawMs } from '../../shared/kammil';
 
 export const ROOM = {
   minPlayers: 3,
@@ -37,33 +38,11 @@ export const ROOM = {
 export { MOZAWWER };
 export type { ReadyToVoteRule };
 
-export const KAMMIL = {
-  countdownMs: 3_000,
-  /**
-   * Drawing time per artist, keyed by artist count (the guesser is excluded).
-   * Brutally short on purpose — the panic IS the game. Falls back to the
-   * highest key present, so 6+ artists all get the 5-artist value.
-   */
-  drawMsByArtistCount: {
-    2: 5_000,
-    3: 4_000,
-    4: 3_000,
-    5: 2_500,
-  } as Record<number, number>,
-  drawMsFloor: 2_000,
-  guessMs: 25_000,
-  scores: {
-    guesserCorrect: 5,
-    /** Split among artists when the guesser gets it. Their drawing worked. */
-    artistsOnSuccess: 2,
-    /** Consolation so a failed round is not a total loss. */
-    artistsOnFailure: 1,
-  },
-  replay: {
-    msPerContribution: 900,
-    holdOnNameMs: 500,
-  },
-} as const;
+/*
+ * كمّل رسمتي balance lives in shared/kammil.ts — the Cloud Function needs the
+ * same turn lengths and score values.
+ */
+export { KAMMIL, kammilDrawMs };
 
 export const MAMNOU3AT = {
   drawMs: 75_000,
@@ -131,25 +110,6 @@ export const DEFAULT_BALANCE = {
 } as const;
 
 export type Balance = typeof DEFAULT_BALANCE;
-
-/**
- * Resolve the drawing time for a كمّل رسمتي turn.
- * `artistCount` excludes the final guesser, who never draws.
- */
-export function kammilDrawMs(artistCount: number): number {
-  const table = KAMMIL.drawMsByArtistCount;
-  const keys = Object.keys(table)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  let chosen: number = KAMMIL.drawMsFloor;
-  for (const key of keys) {
-    if (artistCount >= key) {
-      chosen = table[key] ?? chosen;
-    }
-  }
-  return Math.max(chosen, KAMMIL.drawMsFloor);
-}
 
 /**
  * Decide whether the drawing stage of المزوّر may end now.

@@ -74,6 +74,11 @@
     );
   }
 
+  /* Overlay scrim. See --wt-paper-scrim for why this is not bg-paper/85. */
+  .wt-scrim {
+    background-color: var(--wt-paper-scrim);
+  }
+
   /* Safe-area-aware screen shell used by every full screen. */
   .wt-screen {
     min-height: 100dvh;

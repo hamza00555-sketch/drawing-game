@@ -14,6 +14,7 @@ import { LobbyScreen } from '../screens/LobbyScreen';
 import { ModeSelectScreen } from '../screens/ModeSelectScreen';
 import { DrawingPreview } from './DrawingPreview';
 import { MozawwerPreview, MOZAWWER_PREVIEWS } from './MozawwerPreview';
+import { KammilPreview, KAMMIL_PREVIEWS } from './KammilPreview';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 
 const players: Record<string, RoomPlayer> = {
@@ -105,6 +106,9 @@ export function PreviewGallery({ screen }: { screen: string }) {
       if ((MOZAWWER_PREVIEWS as readonly string[]).includes(screen)) {
         return <MozawwerPreview phase={screen} />;
       }
+      if ((KAMMIL_PREVIEWS as readonly string[]).includes(screen)) {
+        return <KammilPreview phase={screen} />;
+      }
 
       return (
         <main className="wt-screen wt-paper-ground">
@@ -118,6 +122,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
               'modes',
               'draw',
               ...MOZAWWER_PREVIEWS,
+              ...KAMMIL_PREVIEWS,
             ].map((name) => (
               <li key={name}>
                 <a className="underline" href={`?preview=${name}`}>

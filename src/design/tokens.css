@@ -17,6 +17,13 @@
   --wt-paper-raised: #fffcf5;
   --wt-paper-sunken: #f4e9d4;
   --wt-paper-canvas: #fffdf8;
+  /*
+   * Scrim for overlays. Declared as a literal rgba rather than relying on
+   * Tailwind's `/opacity` modifier: that modifier cannot inject alpha into a
+   * colour that is itself a CSS variable, so `bg-paper/85` compiles to nothing
+   * and the overlay silently loses its background.
+   */
+  --wt-paper-scrim: rgba(253, 246, 232, 0.88);
 
   /* ---- Ink: dark warm brown, never #000000 -------------------------------- */
   --wt-ink: #2a211c; /* 14.65:1 on paper */
