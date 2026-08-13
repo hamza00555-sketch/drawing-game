@@ -264,18 +264,37 @@ istiraha, a delivery driver who cannot find the place, someone saying "أنا
 Asset ids are `{character}_{variant}_{pose}` — `detective_saudi_suspicious`,
 `innocent_hijab_confused`, `artist_default_idle`.
 
-**A costumed character is the same character.** A generation may never change
-the face, body, size, visual age, eye shape, personality or core silhouette.
-Clothing is added *onto* the canon design.
+**A costumed character is the same character.** Clothing is added *onto* the
+canon design — it is never an excuse to redraw the character.
 
-Two specific failure modes to reject on sight:
+### What a costume may never change
 
-- A headdress that looks **pasted on top** rather than following the character's
-  actual head shape. The purple detective's ghutra must drape over a tall narrow
-  angular head and stay recognisably his.
-- A hijab that **shrinks or hides the eyes**, or flattens the egg-shaped body
-  into a generic rounded blob. The pink character's oversized eyes and thin legs
-  must stay fully readable.
+The face · the eyes · the expression · the base colour · the personality ·
+the visual age.
+
+These five are the identity test. If a player can still name the character from
+them at a glance, the variant is valid.
+
+### Silhouette: important, but not absolute
+
+Preserving the original silhouette matters and is the default goal. It is
+**not** a hard requirement for costume variants.
+
+Clothing is allowed to change the outer shape when the result is visually
+stronger, so long as the character stays recognisable by the five properties
+above. **Do not reject a successful variant merely because it altered the base
+outline.**
+
+The approved pink hijab variant is the reference case: the long hijab covers
+most of the body and clearly changes the egg silhouette, and it is canon
+anyway — the face, the oversized eyes, the innocent expression, the pink and
+the personality all survive intact, and the result reads better than the
+head-only alternative.
+
+The one failure mode still worth rejecting on sight is a costume that looks
+**pasted on top** rather than following the character's actual form. The purple
+detective's ghutra drapes over his tall narrow angular head and stays
+recognisably his; that is the standard.
 
 The `default` variant always exists and is canon. A pose missing in a costume
 falls back to `default` in code rather than blocking on new art.
@@ -353,7 +372,7 @@ from [#E2503A tomato / #F0B03A mustard / #2B9E92 teal / #3A68CF cobalt /
 #7F57C9 grape / #DD6491 rose] with at most two accent colours.
 
 COMPOSITION: [full body / bust] , flat straight-on view, centred, generous
-margin, [transparent background | plain warm paper background].
+margin, plain flat solid warm off-white background.
 
 NEGATIVE: photorealistic, 3d render, cgi, pixar, clay, anime, manga,
 watercolour, oil painting, pencil sketch, flat corporate vector, corporate
@@ -361,6 +380,19 @@ memphis, gradient mesh, glassmorphism, neon glow, chrome, realistic human,
 geometric perfection, preschool primary colours, text, letters, words,
 watermark, signature, frame, border, emoji, sticker pack, stock illustration.
 ```
+
+### Never ask a model for a transparent background
+
+Writing "transparent background" in a prompt does not produce an alpha channel.
+The model **paints the checkerboard pattern** it has seen in a million training
+images, and the result arrives as an opaque grey grid.
+
+Always ask for a *plain flat solid* background, then cut it out afterwards with
+the background-removal tool. This cost a full batch of mode scenes once; it does
+not need to happen twice.
+
+(Some models expose a real `remove_bg` parameter — that one is genuine and is
+fine to use. It is the prompt wording that fails.)
 
 ---
 

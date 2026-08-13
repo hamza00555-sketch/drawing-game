@@ -19,9 +19,16 @@
   --wt-paper-canvas: #fffdf8;
 
   /* ---- Ink: dark warm brown, never #000000 -------------------------------- */
-  --wt-ink: #2a211c;
-  --wt-ink-soft: #5b4f47;
-  --wt-ink-faint: #9a8d82;
+  --wt-ink: #2a211c; /* 14.65:1 on paper */
+  --wt-ink-soft: #5b4f47; /*  7.36:1 on paper */
+  /*
+   * Measured, not guessed. The obvious "faint" grey-brown (#9A8D82) lands at
+   * 3.00:1 on the paper ground — fine for a border, a failure for the small
+   * type it kept being used for. This value is the lightest ink that still
+   * clears 4.5:1 for body text.
+   */
+  --wt-ink-faint: #796d65; /*  4.66:1 on paper */
+  /* Borders and rules only. Never put text in this colour. */
   --wt-ink-hairline: #d9cbb6;
 
   /* ---- Accents ------------------------------------------------------------ */

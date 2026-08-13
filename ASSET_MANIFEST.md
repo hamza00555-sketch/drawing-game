@@ -81,16 +81,22 @@ Costume variants only. Same characters, per ART_BIBLE.md §13–14.
 
 | id | character | costume | size | transparent | status | file |
 |---|---|---|---|---|---|---|
-| `detective_saudi_idle` | المحقق | ghutra + igal | 900 long edge | yes | shipped | `src/assets/generated/detective_saudi_idle.webp` |
-| `innocent_hijab_idle` | البريء المشبوه | hijab | 900 long edge | yes | shipped | `src/assets/generated/innocent_hijab_idle.webp` |
+| `detective_saudi_idle` | المحقق | ghutra + igal | 380×900 | yes | shipped | `src/assets/generated/detective_saudi_idle.webp` |
+| `innocent_hijab_idle` | البريء المشبوه | full-length hijab | 575×900 | yes | shipped | `src/assets/generated/innocent_hijab_idle.webp` |
 
 Generated with the character's own image as the primary reference plus the style
 anchor, so identity is carried by the character and world by the anchor.
 
-**The first hijab attempt was rejected.** The scarf draped over the entire body,
-turning the distinctive egg silhouette into a generic dome and hiding the pink
-body — a direct failure of the §14 rule against silhouette loss. Regenerated
-with the covering explicitly restricted to the head.
+**Note on the hijab variant.** The shipped version is the full-length hijab that
+covers most of the body and visibly changes the egg silhouette. A head-only
+alternative was generated and set aside; the long version was chosen as the
+stronger image. This is the reference case for ART_BIBLE.md §14: silhouette
+preservation is the default goal, not an absolute veto, because the face, eyes,
+expression, colour and personality all survive.
+
+The beige/taupe hijab colour is approved and deliberate — it sits outside the
+token accent palette so it does not compete with the pink body, and neutral
+cloth reads as cloth.
 
 The remaining four characters deliberately have **no** Saudi variant. Adding one
 to each "for balance" is exactly the costume-theme failure ART_BIBLE.md §13

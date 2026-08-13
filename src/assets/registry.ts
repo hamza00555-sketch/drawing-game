@@ -32,6 +32,13 @@ import detectiveDefaultIdle from './generated/detective_default_idle.webp';
 import detectiveSaudiIdle from './generated/detective_saudi_idle.webp';
 import innocentHijabIdle from './generated/innocent_hijab_idle.webp';
 
+import heroHome from './generated/hero_home_confused_group.webp';
+import sceneMozawwer from './generated/mode_scene_mozawwer.webp';
+import sceneKammil from './generated/mode_scene_kammil.webp';
+import sceneMamnou3at from './generated/mode_scene_mamnou3at.webp';
+import sceneMushtarak from './generated/mode_scene_mushtarak.webp';
+import sceneKanatEsh from './generated/mode_scene_kanat_esh.webp';
+
 export type AssetId = string;
 
 export interface AssetEntry {
@@ -92,8 +99,46 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
   innocent_hijab_idle: {
     src: innocentHijabIdle,
     alt: 'البريء المشبوه بالحجاب',
-    width: 604,
+    width: 575,
     height: 900,
+  },
+
+  // Scenes. Each is a situation, not a portrait — see ART_BIBLE.md §18.
+  hero_home_confused_group: {
+    src: heroHome,
+    alt: 'الشخصيات مجتمعة حول رسمة غريبة تحاول فهمها',
+    width: 1400,
+    height: 1000,
+  },
+  mode_scene_mozawwer: {
+    src: sceneMozawwer,
+    alt: 'مجموعة ترسم بثقة وواحد متوتر يحاول الاندماج',
+    width: 700,
+    height: 410,
+  },
+  mode_scene_kammil: {
+    src: sceneKammil,
+    alt: 'رسمة تُمرَّر بسرعة بين اللاعبين',
+    width: 700,
+    height: 279,
+  },
+  mode_scene_mamnou3at: {
+    src: sceneMamnou3at,
+    alt: 'شخصية تحاول الرسم وبعض العناصر ممنوعة عليها',
+    width: 700,
+    height: 511,
+  },
+  mode_scene_mushtarak: {
+    src: sceneMushtarak,
+    alt: 'شخصيتان ترسمان على نفس الورقة بأقلام مختلفة',
+    width: 700,
+    height: 419,
+  },
+  mode_scene_kanat_esh: {
+    src: sceneKanatEsh,
+    alt: 'رسمة تنتقل بين الشخصيات وتتغير تدريجيًا',
+    width: 700,
+    height: 328,
   },
 };
 
