@@ -319,18 +319,30 @@ export function describeCallFailure(error: unknown): CallFailure {
   if (ARABIC.test(raw)) return { message: raw, functionsMissing: false };
 
   const code = (error as { code?: string } | undefined)?.code ?? '';
-  const missing =
-    code === 'functions/not-found' ||
-    code === 'functions/internal' ||
-    code === 'functions/unavailable' ||
-    code === '';
 
-  if (missing) {
+  // Nothing answered at that address: the function is not deployed.
+  if (code === 'functions/not-found' || code === 'functions/unavailable' || code === '') {
     return {
       functionsMissing: true,
       message:
         'الجولات تحتاج نشر المنطق الموثوق (Cloud Functions). ' +
         'الغرف والانضمام يشتغلون بدونه — شوف DEPLOY.md.',
+    };
+  }
+
+  /*
+   * `internal` is ambiguous and both readings are worth naming. A browser
+   * blocked by CORS — which is what a missing function looks like from the
+   * page — reports it, and so does a function that ran and threw. Claiming
+   * "not deployed" for both sent me chasing the wrong cause once already,
+   * while a real crash sat in the emulator log.
+   */
+  if (code === 'functions/internal') {
+    return {
+      functionsMissing: false,
+      message:
+        'المنطق الموثوق ما رد صح. إذا ما نشرته بعد فهذا السبب؛ ' +
+        'وإلا راجع سجل الـFunctions.',
     };
   }
 

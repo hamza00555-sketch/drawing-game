@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "check:purity": "node scripts/check-visual-purity.mjs",
     "verify": "npm run check:purity && npm run lint && npm run typecheck && npm run test",
-    "emulators": "firebase emulators:start --only auth,database"
+    "emulators": "firebase emulators:start --project demo-wesh-tha --only auth,database,functions",
+    "build:functions": "npm --prefix functions run build"
   },
   "dependencies": {
     "@fontsource/baloo-bhaijaan-2": "^5.3.0",
@@ -33,6 +34,7 @@
     "@vitejs/plugin-react": "^4.3.3",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.15.0",
+    "firebase-tools": "^15.26.0",
     "globals": "^15.12.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",

@@ -36,10 +36,18 @@ describe('describeCallFailure', () => {
     expect(failure.message).toContain('Cloud Functions');
   });
 
-  it('treats a CORS or transport failure the same way', () => {
-    // A missing function often surfaces as an opaque `internal` rather than 404.
+  it('names both readings of an opaque internal error', () => {
+    /*
+     * `internal` is what a CORS-blocked call to a missing function looks like
+     * from the page, and also what a deployed function that threw looks like.
+     * Committing to "not deployed" here once sent me hunting the wrong cause
+     * while a real crash sat in the emulator log, so the message says both.
+     */
     const failure = describeCallFailure(new CallableError('functions/internal', 'internal'));
-    expect(failure.functionsMissing).toBe(true);
+
+    expect(failure.functionsMissing).toBe(false);
+    expect(failure.message).toContain('ما نشرته');
+    expect(failure.message).toContain('سجل');
   });
 
   it('does not blame deployment for an internal error we raised ourselves', () => {

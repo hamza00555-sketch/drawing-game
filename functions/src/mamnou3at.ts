@@ -9,6 +9,7 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+import { ServerValue } from 'firebase-admin/database';
 import {
   MAMNOU3AT,
   letterHint,
@@ -140,7 +141,7 @@ export const submitMamnouGuess = onCall(async (request) => {
     playerId: uid,
     text,
     correct,
-    at: admin.database.ServerValue.TIMESTAMP,
+    at: ServerValue.TIMESTAMP,
   });
 
   if (!correct) return { correct: false };

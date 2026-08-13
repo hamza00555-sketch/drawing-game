@@ -13,6 +13,14 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+/*
+ * `ServerValue` is imported from the modular entry point, not read off
+ * `admin.database`. Under this build's module interop that namespace property
+ * is undefined at runtime, so `admin.database.ServerValue.TIMESTAMP` throws
+ * "Cannot read properties of undefined" — which reaches the player as a blank
+ * 500 on the first call of every round.
+ */
+import { ServerValue } from 'firebase-admin/database';
 import { MOZAWWER, MOZAWWER_WORDS, scoreMozawwerRound, tallyVotes, isCorrectGuess } from './game';
 import { gameSecretPath, readGameSecret } from './secrets';
 
@@ -128,7 +136,7 @@ export const startMozawwerRound = onCall(async (request) => {
       gameId,
       mode: 'mozawwer',
       phase: 'roleReveal',
-      phaseEndsAt: admin.database.ServerValue.TIMESTAMP,
+      phaseEndsAt: ServerValue.TIMESTAMP,
       currentPlayerId: turnOrder[0],
       turnOrder,
       turnIndex: 0,

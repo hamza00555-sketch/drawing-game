@@ -9,6 +9,7 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+import { ServerValue } from 'firebase-admin/database';
 import { MUSHTARAK, pickArtistPair, pickCombo, scoreMushtarakRound } from '../../shared/mushtarak';
 import { isCorrectGuess } from '../../shared/mozawwer';
 import { gameSecretPath, readGameSecret } from './secrets';
@@ -129,7 +130,7 @@ export const advanceMushtarak = onCall(async (request) => {
       await gameRef.update({
         [`gotYouUsedBy/${uid}`]: true,
         gotYouFrom: uid,
-        gotYouAt: admin.database.ServerValue.TIMESTAMP,
+        gotYouAt: ServerValue.TIMESTAMP,
       });
       return { sent: true };
     }
@@ -159,7 +160,7 @@ export const advanceMushtarak = onCall(async (request) => {
         playerId: uid,
         text,
         correct,
-        at: admin.database.ServerValue.TIMESTAMP,
+        at: ServerValue.TIMESTAMP,
       });
       return { correct };
     }
