@@ -9,6 +9,25 @@ immediately which game it belongs to.
 
 ---
 
+## 0. Canon — locked
+
+**The art direction is approved and closed.** Two artefacts are now binding:
+
+1. **`art-reference/style_anchor_cast.webp` — the Master Style Anchor.** Passed
+   as an image reference to every character or world asset from here on.
+2. **The six generated character designs — canon.** They are not redesigned and
+   not reinterpreted per generation.
+
+Nothing new may drift toward: more 3D, more photorealistic, flatter, more
+childish, more geometrically clean, a different line weight, or a different
+shading approach. Every asset must look like it came out of the same world.
+
+When generating a new pose for a character, pass **both** references: the Master
+Style Anchor (for the world) and that character's own image (for its identity).
+The anchor alone is not enough — it will drift the character.
+
+---
+
 ## 1. The one-line brief
 
 > An expressive, hand-drawn cartoon party world of odd creatures who behave like
@@ -148,24 +167,167 @@ Any of these means regenerate:
 
 ---
 
-## 12. The cast
+## 12. The cast — canon
 
-Six characters ship first. Each must pass the silhouette test.
+Six characters, all generated and locked. Colour identifies them in prose; form
+identifies them on screen.
 
-| Character | Personality | Distinguishing form |
-|---|---|---|
-| **الفنان المتفلسف** | Absolute confidence in catastrophic art | Tall, thin, lanky; oversized beret-like head shape; long drooping arms |
-| **المحقق** | Permanently suspicious of everyone | Squat and wide; heavy brow ridge; hunched forward silhouette |
-| **الملخبط** | Visibly understands nothing | Round, soft, slightly deflated; drooping antenna; wide-set unfocused eyes |
-| **المتحمس** | Too much energy, always | Compact and springy; spiky outline; permanently mid-bounce |
-| **البريء المشبوه** | Innocent face, suspiciously so | Small, neat, egg-shaped; tiny body; oversized guileless eyes |
-| **الناقد** | Treats every doodle as a gallery piece | Angular and elongated; narrow head; arms crossed as a default pose |
+| Colour | Character | Personality | Locked form |
+|---|---|---|---|
+| Red | **الفنان المتفلسف** | Confident, self-important, treats catastrophic drawings as masterpieces | Tall, thin, lanky; **the beret is core identity and never comes off**; long drooping arms |
+| Yellow | **الناقد** | Low energy, permanently unimpressed; sarcastic and judgmental | Squat and wide; heavy brow ridge; hunched forward |
+| Teal | **الملخبط** | Always visibly trying to work out what is happening | Round, soft, slightly deflated; drooping antenna; wide-set unfocused eyes |
+| Blue | **المتحمس** | Enormous energy; fast, exaggerated, physical | Compact and springy; spiky outline; poses should be mid-motion |
+| Pink | **البريء المشبوه** | Sweet and guileless to a degree that becomes funny under suspicion | Small, neat, egg-shaped; tiny body; oversized guileless eyes |
+| Purple | **المحقق** | Cold, reserved, watches everyone with quiet suspicion | Angular and elongated; narrow head; arms crossed by default |
 
-Required states per character (generated as needed, not all upfront):
+### What must survive every generation
 
-`idle` · `thinking` · `confused` · `suspicious` · `shocked` · `excited` ·
-`celebrating` · `losing` · `drawing` · `waiting` · `nervous` · `proud` ·
-`embarrassed` · `accusing` · `being_accused`
+Head shape · body shape · head-to-body ratio · limb length · hand and foot
+shape · eyes · eyebrows · mouth · special features (antenna, spikes, beret) ·
+base colour · silhouette.
+
+A player must recognise the character instantly even when the **pose**,
+**expression**, **clothing** or **body angle** changes.
+
+### Pose library
+
+Needed as the game grows, generated **only when a screen actually needs one**:
+
+`idle` · `drawing` · `thinking` · `confused` · `suspicious` · `accusing` ·
+`shocked` · `nervous` · `celebrating` · `losing` · `proud` · `waiting` ·
+`embarrassed` · `looking_at_player` · `looking_at_drawing`
+
+Gameplay-critical poses by mode:
+
+- **المزوّر** — suspicious, nervous, pretending_to_understand, accusing,
+  being_accused, revealed, escaping, confident_bluff
+- **كمّل رسمتي** — looking_at_drawing, shocked, getting_ready, holding_pen,
+  drawing_fast, panic, time_finished
+- **الممنوعات** — thinking, struggling, frustrated, proud, celebrating
+- **الرسم المشترك** — drawing_together, looking_at_partner, confused_by_partner,
+  understanding_partner, celebrating_together
+- **كانت إيش؟** — looking_at_strange_drawing, confused, writing, shocked_reveal,
+  reacting_to_result
+
+### Animation readiness
+
+If the motion can be done in code with position, rotation, scale, squash,
+stretch, bounce or opacity, **one asset is enough** — do not generate a variant.
+Generate a separate asset only when the motion genuinely requires a different
+drawn pose.
+
+---
+
+## 13. Saudi identity
+
+The world of وش ذا؟ should read as **contemporary Saudi**, naturally — not as a
+costume theme bolted onto everyone.
+
+**Hard rule: not every character wears Saudi clothing.** A cast where everyone
+is in thobe and shemagh is a failure. The target is a varied, odd, funny,
+contemporary cast that is *partly and clearly* Saudi.
+
+### Clothing, by character
+
+| Character | Treatment |
+|---|---|
+| Purple — المحقق | **Ghutra/shemagh with igal**, shaped to follow his tall narrow head |
+| Pink — البريء | **Hijab**, simple and cartoon, face and big eyes fully preserved |
+| Red — الفنان | Keeps the beret. It is his identity. |
+| Yellow, Teal, Blue | Base design unchanged. **Do not add Saudi clothing for balance.** |
+
+A costume variant may be added later if gameplay or story gives a reason. None
+is needed now.
+
+### Identity beyond clothing
+
+Saudi character should also come from environment, props, content, words,
+situations and game-night culture: dallah, finjan, coffee thermos, misbaha,
+floor seating, majlis cushions, serving trays, hospitality objects, familiar
+household things, local social situations.
+
+But: **do not turn every screen into a collection of heritage symbols.** The
+target is a *Saudi contemporary playful world*, not a *heritage festival visual
+theme*.
+
+Content carries this too. The flavour to aim for, as examples of tone only —
+not a content list to implement now: someone reserving a seat with their
+shemagh, the last samosa, the dallah being empty, someone lost at the
+istiraha, a delivery driver who cannot find the place, someone saying "أنا
+بالطريق" from their living room.
+
+---
+
+## 14. Variants are costumes, never redesigns
+
+Asset ids are `{character}_{variant}_{pose}` — `detective_saudi_suspicious`,
+`innocent_hijab_confused`, `artist_default_idle`.
+
+**A costumed character is the same character.** A generation may never change
+the face, body, size, visual age, eye shape, personality or core silhouette.
+Clothing is added *onto* the canon design.
+
+Two specific failure modes to reject on sight:
+
+- A headdress that looks **pasted on top** rather than following the character's
+  actual head shape. The purple detective's ghutra must drape over a tall narrow
+  angular head and stay recognisably his.
+- A hijab that **shrinks or hides the eyes**, or flattens the egg-shaped body
+  into a generic rounded blob. The pink character's oversized eyes and thin legs
+  must stay fully readable.
+
+The `default` variant always exists and is canon. A pose missing in a costume
+falls back to `default` in code rather than blocking on new art.
+
+---
+
+## 15. Props
+
+Any prop in the world is generated to the same anchor: pen, eraser, paper,
+dallah, finjan, misbaha, the impostor's mask, the critic's scorecard, the
+artist's tools, accusation marks, game-night props.
+
+No clipart. No stock assets. No icon packs.
+
+---
+
+## 16. Characters are not decoration
+
+Never place a character in a corner just to prove the game has characters.
+Every appearance needs a reason. A character may look at the canvas, react to
+the player, point, brace, celebrate, suspect, wait, get nervous, or mock the
+result — each placement must serve **gameplay, emotion or comedy**.
+
+---
+
+## 17. Comedy direction
+
+Comedy comes from expressions, timing, reactions, awkward pauses, the contrast
+between total confidence and a terrible drawing, misunderstanding, the reveal,
+and personality.
+
+It does **not** come from memes, emoji, or piles of text trying to be funny. The
+drawing, the situation and the cast do the work.
+
+---
+
+## 18. Scenes that must be situations, not portraits
+
+**Hero (Home).** Not characters standing and smiling at camera. A *situation*:
+several characters looking at one very strange drawing — one confident, one
+baffled, one suspicious of another, one proud of a catastrophe. The scene must
+explain the phrase «وش ذا؟» without a word of copy.
+
+**Mode selection.** Each mode gets a mini scene, never an icon:
+
+| Mode | Scene |
+|---|---|
+| المزوّر | A group drawing while one character nervously tries to blend in |
+| الممنوعات | A character straining to draw something with parts of it forbidden |
+| الرسم المشترك | Two characters drawing the same thing, chaotically |
+| كمّل رسمتي | Characters passing a drawing between them at speed |
+| كانت إيش؟ | One drawing travelling through several characters, changing as it goes |
 
 ---
 

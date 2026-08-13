@@ -1,24 +1,36 @@
 /**
  * Asset registry — the single source of truth mapping an asset id to a file.
  *
+ * ID SCHEME: `{character}_{variant}_{pose}`
+ *
+ *   artist_default_idle
+ *   detective_saudi_suspicious
+ *   innocent_hijab_confused
+ *
+ * The variant slot exists so a costume is a swap, never a second character.
+ * A Saudi-dressed detective is the SAME detective — see ART_BIBLE.md §14.
+ * Non-character art keeps a descriptive id (`hero_home_confused_group`).
+ *
  * Rules:
- *   - Every entry's file lives in `src/assets/generated/` and was produced with
+ *   - Every file lives in `src/assets/generated/` and was produced with
  *     Higgsfield following ART_BIBLE.md. Nothing here is hand-drawn.
  *   - Every entry must also exist in ASSET_MANIFEST.md with its prompt.
- *   - An id with no entry yet is not an error: <AssetSlot /> renders a neutral
- *     labelled placeholder so the screen can be built and reviewed before the
+ *   - An id with no entry is not an error: <AssetSlot /> renders a neutral
+ *     labelled placeholder so a screen can be built and reviewed before the
  *     artwork lands.
  *
- * Imports are static so Vite fingerprints and bundles them. Do not build these
+ * Imports are static so Vite fingerprints and bundles them. Never build these
  * paths dynamically — a runtime string would silently ship a broken image.
  */
 
-import artistIdle from './generated/char_artist_idle.webp';
-import detectiveIdle from './generated/char_detective_idle.webp';
-import confusedIdle from './generated/char_confused_idle.webp';
-import excitedIdle from './generated/char_excited_idle.webp';
-import innocentIdle from './generated/char_innocent_idle.webp';
-import criticIdle from './generated/char_critic_idle.webp';
+import artistDefaultIdle from './generated/artist_default_idle.webp';
+import criticDefaultIdle from './generated/critic_default_idle.webp';
+import confusedDefaultIdle from './generated/confused_default_idle.webp';
+import excitedDefaultIdle from './generated/excited_default_idle.webp';
+import innocentDefaultIdle from './generated/innocent_default_idle.webp';
+import detectiveDefaultIdle from './generated/detective_default_idle.webp';
+import detectiveSaudiIdle from './generated/detective_saudi_idle.webp';
+import innocentHijabIdle from './generated/innocent_hijab_idle.webp';
 
 export type AssetId = string;
 
@@ -33,44 +45,81 @@ export interface AssetEntry {
 }
 
 export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
-  char_artist_idle: {
-    src: artistIdle,
+  artist_default_idle: {
+    src: artistDefaultIdle,
     alt: 'الفنان المتفلسف',
     width: 394,
     height: 900,
   },
-  char_detective_idle: {
-    src: detectiveIdle,
-    alt: 'المحقق',
+  critic_default_idle: {
+    src: criticDefaultIdle,
+    alt: 'الناقد',
     width: 858,
     height: 900,
   },
-  char_confused_idle: {
-    src: confusedIdle,
+  confused_default_idle: {
+    src: confusedDefaultIdle,
     alt: 'الملخبط',
     width: 588,
     height: 900,
   },
-  char_excited_idle: {
-    src: excitedIdle,
+  excited_default_idle: {
+    src: excitedDefaultIdle,
     alt: 'المتحمس',
     width: 900,
     height: 889,
   },
-  char_innocent_idle: {
-    src: innocentIdle,
+  innocent_default_idle: {
+    src: innocentDefaultIdle,
     alt: 'البريء المشبوه',
     width: 564,
     height: 900,
   },
-  char_critic_idle: {
-    src: criticIdle,
-    alt: 'الناقد',
+  detective_default_idle: {
+    src: detectiveDefaultIdle,
+    alt: 'المحقق',
     width: 320,
+    height: 900,
+  },
+
+  // Saudi costume variants. Same characters — see ART_BIBLE.md §14.
+  detective_saudi_idle: {
+    src: detectiveSaudiIdle,
+    alt: 'المحقق بالغترة',
+    width: 380,
+    height: 900,
+  },
+  innocent_hijab_idle: {
+    src: innocentHijabIdle,
+    alt: 'البريء المشبوه بالحجاب',
+    width: 604,
     height: 900,
   },
 };
 
 export function getAsset(id: AssetId): AssetEntry | undefined {
   return assetRegistry[id];
+}
+
+/**
+ * Build an asset id, falling back to the `default` variant when a costume has
+ * no art for the requested pose yet.
+ *
+ * This is what keeps variants cheap: a room can put the detective in a ghutra
+ * without every one of his poses having to exist in that costume on day one.
+ */
+export function characterAsset(
+  characterId: string,
+  pose: string,
+  variant = 'default',
+): AssetId {
+  const requested = `${characterId}_${variant}_${pose}`;
+  if (assetRegistry[requested]) return requested;
+
+  const fallback = `${characterId}_default_${pose}`;
+  if (assetRegistry[fallback]) return fallback;
+
+  // Neither exists — return the requested id so <AssetSlot /> names the exact
+  // asset that still needs generating.
+  return requested;
 }
