@@ -312,3 +312,41 @@ latency-sensitive path costs a cold start this game cannot afford.
 
 Scores are written **only** inside `finishRound`. That is what makes
 `playerScores` safe to leave `".write": false` for every client.
+
+---
+
+## 15. The five modes
+
+All five share the engine, the canvas, the room model and the design system.
+Each contributes only its rules, its phases, its content and its round UI.
+
+| Mode | Shape | What is secret | Replay |
+|---|---|---|---|
+| **المزوّر** | Turn-based shared canvas → vote → reveal | The word, from one player | Optional |
+| **كمّل رسمتي** | Locked countdown → 2–5s turns → blind guess | The word, from the guesser | Yes — the point |
+| **الممنوعات** | One artist, simultaneous guessing | The word and its forbidden list | No |
+| **الرسم المشترك** | Two artists at once on one canvas | Each artist's half of the prompt | Yes |
+| **كانت إيش؟** | Blind chain: text → drawing → text | Every link but the one feeding your turn | No — the poster is the payoff |
+
+Their shared logic lives in `shared/mozawwer.ts`, `shared/kammil.ts`,
+`shared/mamnou3at.ts`, `shared/mushtarak.ts` and `shared/kanatEsh.ts` — each
+compiled into both the client bundle and the Cloud Functions build.
+
+### Two structures worth knowing about
+
+**`activeDrawers`** exists for الرسم المشترك alone. Every other mode gates
+strokes on `currentPlayerId`; that mode is the only one where two players may
+write strokes at the same moment, and the stroke rule checks both.
+
+**`visibleTo`** exists for كانت إيش؟ alone. It is a per-link map of which player
+may read which chain link, replaced wholesale on every turn so the previous
+player's grant is revoked. The `chains` security rule checks exactly that node,
+and `canReadLink()` in the mode mirrors it — either alone would be a single
+point of failure for the only secret that mode has.
+
+### One thing deliberately not automated
+
+كانت إيش؟ does not judge whether a link was interpreted "faithfully". Deciding
+whether a drawing matched a sentence is a human call, and a bad automatic
+verdict would hand out points the room disagrees with. Every player is scored
+for completing the chain; the faithful-link bonus is left for a future vote.

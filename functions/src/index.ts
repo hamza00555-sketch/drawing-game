@@ -27,6 +27,7 @@ export {
   endMamnouRound,
 } from './mamnou3at';
 export { startMushtarakRound, advanceMushtarak } from './mushtarak';
+export { startKanatEshRound, submitKanatEshLink, kanatEshToResult } from './kanatEsh';
 
 interface RoomPlayer {
   id: string;
