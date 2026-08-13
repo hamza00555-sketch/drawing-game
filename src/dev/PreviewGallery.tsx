@@ -16,6 +16,7 @@ import { DrawingPreview } from './DrawingPreview';
 import { MozawwerPreview, MOZAWWER_PREVIEWS } from './MozawwerPreview';
 import { KammilPreview, KAMMIL_PREVIEWS } from './KammilPreview';
 import { MamnouPreview, MAMNOU_PREVIEWS } from './MamnouPreview';
+import { MushtarakPreview, MUSHTARAK_PREVIEWS } from './MushtarakPreview';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 
 const players: Record<string, RoomPlayer> = {
@@ -113,6 +114,9 @@ export function PreviewGallery({ screen }: { screen: string }) {
       if ((MAMNOU_PREVIEWS as readonly string[]).includes(screen)) {
         return <MamnouPreview phase={screen} />;
       }
+      if ((MUSHTARAK_PREVIEWS as readonly string[]).includes(screen)) {
+        return <MushtarakPreview phase={screen} />;
+      }
 
       return (
         <main className="wt-screen wt-paper-ground">
@@ -128,6 +132,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
               ...MOZAWWER_PREVIEWS,
               ...KAMMIL_PREVIEWS,
               ...MAMNOU_PREVIEWS,
+              ...MUSHTARAK_PREVIEWS,
             ].map((name) => (
               <li key={name}>
                 <a className="underline" href={`?preview=${name}`}>

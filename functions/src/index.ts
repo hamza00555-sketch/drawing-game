@@ -26,6 +26,7 @@ export {
   submitMamnouGuess,
   endMamnouRound,
 } from './mamnou3at';
+export { startMushtarakRound, advanceMushtarak } from './mushtarak';
 
 interface RoomPlayer {
   id: string;
