@@ -79,11 +79,23 @@ export function usingEmulators(): boolean {
 
 /** True when enough config exists to boot. Lets the UI show a setup screen. */
 export function isFirebaseConfigured(): boolean {
+  return missingFirebaseKeys().length === 0;
+}
+
+/**
+ * Which required variables are absent or blank.
+ *
+ * The setup screen names them. "Firebase configuration is missing" sends
+ * someone hunting through a console; "VITE_FIREBASE_DATABASE_URL is empty"
+ * points at the one line to fix — and distinguishes a missing `.env.local`
+ * from a typo in one that exists.
+ */
+export function missingFirebaseKeys(): readonly string[] {
   try {
     readConfig();
-    return true;
-  } catch {
-    return false;
+    return [];
+  } catch (error) {
+    return error instanceof FirebaseConfigError ? error.missing : REQUIRED_KEYS;
   }
 }
 

@@ -39,6 +39,20 @@
     letter-spacing: 0;
   }
 
+  /*
+   * Latin identifiers inside Arabic prose.
+   *
+   * Without isolation, bidi reordering drags a leading dot or a trailing slash
+   * to the wrong end of the run: `.env.local` renders as `env.local.` in the
+   * middle of an Arabic sentence, which reads as a different filename. Every
+   * command, path and variable name in this app is a thing to be typed
+   * exactly, so it is isolated from the surrounding paragraph's direction.
+   */
+  code {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
   button {
     font-family: inherit;
     /* Cartoon buttons are pressed, not selected. */
