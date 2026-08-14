@@ -16,7 +16,7 @@
 | Motion | Framer Motion |
 | Auth | Firebase **Anonymous Authentication** |
 | Live state | Firebase **Realtime Database** |
-| Trusted logic | Firebase **Cloud Functions**, used sparingly |
+| Trusted logic | **Vercel serverless function** (`api/game.ts`) using the Firebase Admin SDK |
 | Files | Firebase Storage — exported posters only |
 | Hosting | **Vercel** (Firebase Hosting is not used) |
 
@@ -180,13 +180,13 @@ for clients:
 - score calculation
 - guess correctness and rank
 
-**Cloud Functions are used where rules genuinely cannot express the logic** —
+**Trusted logic is used where rules genuinely cannot express the logic** —
 role/word assignment, scoring, and phase advancement — and nowhere else. The
 guiding constraint is latency: a mode with a two-second turn cannot afford a
 cold start on its critical path, so structure and rules do as much work as
-possible before a Function is reached for.
+possible before the server is reached for.
 
-### Host migration without a Function
+### Host migration without a server round trip
 
 Losing the host must never end the party. Rather than a Function watching for
 disconnects, one narrow rule allows a connected member to claim `hostId` **only
@@ -351,7 +351,23 @@ includes `../shared`, which is why its build output lands at
 Keep `shared/` dependency-free: it is consumed by an ES module bundler and by a
 CommonJS Node build, so it must not reach for anything from either side.
 
-## 14. What the Cloud Functions own
+## 14. What the trusted logic owns
+
+**Where it runs:** a single Vercel serverless function, `api/game.ts`, which
+verifies the caller's Firebase ID token with the Admin SDK and routes to a
+handler in `server/`. Firebase is still the backend — Auth issues the identity,
+Realtime Database holds the state, the rules police every client write. Only the
+place this code executes moved, because Cloud Functions require the Blaze plan
+and this project runs on Spark.
+
+`functions/` still exists and wraps the SAME handlers as callables, purely so
+`npm run emulators` can run the whole game locally. There is no second copy of
+the logic; a copy would drift, and a scoring rule that differs between
+transports reads to players as the game lying to them.
+
+One endpoint, not one per action: Vercel's Hobby plan allows twelve serverless
+functions per deployment and there are fourteen actions, so `server/router.ts`
+dispatches by name.
 
 Only what rules cannot express:
 
@@ -385,7 +401,7 @@ passed (`closeGuess`, `closeImpostorGuess`, a timed-out chain link). Without
 that, artist and host firing together would skip an entire turn.
 
 Everything else — strokes, presence, votes, guesses, character reservations — is
-written directly by clients under security rules, because a Cloud Function on a
+written directly by clients under security rules, because a serverless call on a
 latency-sensitive path costs a cold start this game cannot afford.
 
 Scores are written **only** inside `finishRound`. That is what makes

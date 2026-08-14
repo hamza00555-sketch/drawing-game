@@ -8,13 +8,13 @@
  * two-second turn identical on ten phones whose own clocks disagree.
  */
 
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import * as admin from 'firebase-admin';
-import { KAMMIL, assignKammilRoles, kammilDrawMs, scoreKammilRound } from '../../shared/kammil';
-import { MOZAWWER_WORDS, isCorrectGuess } from '../../shared/mozawwer';
-import { gameSecretPath, readGameSecret } from './secrets';
+import { db } from './admin';
+import { GameError } from './errors';
+import type { RequestData } from './types';
 
-const db = () => admin.database();
+import { KAMMIL, assignKammilRoles, kammilDrawMs, scoreKammilRound } from '../shared/kammil';
+import { MOZAWWER_WORDS, isCorrectGuess } from '../shared/mozawwer';
+import { gameSecretPath, readGameSecret } from './secrets';
 
 interface RoomPlayer {
   id: string;
@@ -36,22 +36,20 @@ async function connectedIds(roomId: string): Promise<string[]> {
     .map((p) => p.id);
 }
 
-export const startKammilRound = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function startKammilRound(uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
+  const roomId = String(data.roomId ?? '');
   const hostId = (await db().ref(`rooms/${roomId}/hostId`).get()).val();
-  if (hostId !== uid) throw new HttpsError('permission-denied', 'المضيف فقط.');
+  if (hostId !== uid) throw new GameError('permission-denied', 'المضيف فقط.');
 
   const playerIds = await connectedIds(roomId);
   if (playerIds.length < 3) {
-    throw new HttpsError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
+    throw new GameError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
   }
 
   const { artistIds, guesserId } = assignKammilRoles(playerIds);
   const word = MOZAWWER_WORDS[Math.floor(Math.random() * MOZAWWER_WORDS.length)];
-  if (!word) throw new HttpsError('internal', 'تعذّر اختيار كلمة.');
+  if (!word) throw new GameError('internal', 'تعذّر اختيار كلمة.');
 
   const gameId = db().ref().push().key as string;
 
@@ -87,18 +85,16 @@ export const startKammilRound = onCall(async (request) => {
     });
 
   return { gameId };
-});
+}
 
-export const advanceKammil = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function advanceKammil(uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
-  const action = String(request.data?.action ?? '');
+  const roomId = String(data.roomId ?? '');
+  const action = String(data.action ?? '');
 
   const gameRef = db().ref(`games/${roomId}/current`);
   const game = (await gameRef.get()).val();
-  if (!game) throw new HttpsError('failed-precondition', 'ما في جولة شغّالة.');
+  if (!game) throw new GameError('failed-precondition', 'ما في جولة شغّالة.');
 
   const artistIds: string[] = game.artistIds ?? [];
 
@@ -126,7 +122,7 @@ export const advanceKammil = onCall(async (request) => {
        * first advanced the state and skip an entire artist's turn. The caller
        * states which turn it believes is ending; a stale answer is discarded.
        */
-      const expected = request.data?.turnIndex;
+      const expected = data.turnIndex;
       if (typeof expected === 'number' && expected !== game.turnIndex) {
         return { phase: game.phase };
       }
@@ -164,10 +160,10 @@ export const advanceKammil = onCall(async (request) => {
           return { phase: game.phase };
         }
       } else if (uid !== game.guesserId) {
-        throw new HttpsError('permission-denied', 'التخمين للاعب الأخير.');
+        throw new GameError('permission-denied', 'التخمين للاعب الأخير.');
       }
 
-      const guess = timedOut ? '' : String(request.data?.guess ?? '');
+      const guess = timedOut ? '' : String(data.guess ?? '');
       const { word } = await readGameSecret<{ word: string }>(roomId, game.gameId);
       const correct = isCorrectGuess(guess, word);
 
@@ -203,6 +199,6 @@ export const advanceKammil = onCall(async (request) => {
     }
 
     default:
-      throw new HttpsError('invalid-argument', `إجراء غير معروف: ${action}`);
+      throw new GameError('invalid-argument', `إجراء غير معروف: ${action}`);
   }
-});
+}

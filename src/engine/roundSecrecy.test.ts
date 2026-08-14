@@ -5,6 +5,9 @@ import { describe, expect, it } from 'vitest';
 /**
  * The leak this test exists to prevent.
  *
+ * Reads `server/`, which is where the trusted logic lives regardless of who
+ * hosts it — a Vercel function in production, the Firebase emulator locally.
+ *
  * `games/{roomId}/current` is readable by every member of the room. A round's
  * private facts — the word, the impostor, the taboo list, the split prompt, the
  * seed sentence — must therefore never be written into it at setup, no matter
@@ -32,7 +35,7 @@ const SECRET_KEYS = ['word', 'forbidden', 'impostorId', 'partA', 'partB', 'full'
 
 function source(file: string): string {
   return readFileSync(
-    fileURLToPath(new URL(`../../functions/src/${file}`, import.meta.url)),
+    fileURLToPath(new URL(`../../server/${file}`, import.meta.url)),
     'utf8',
   );
 }

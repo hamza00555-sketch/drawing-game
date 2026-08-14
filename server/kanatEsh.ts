@@ -9,8 +9,10 @@
  * whole chain until the reveal.
  */
 
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import * as admin from 'firebase-admin';
+import { db } from './admin';
+import { GameError } from './errors';
+import type { RequestData } from './types';
+
 import {
   KANAT_ESH,
   chainAssignments,
@@ -19,10 +21,8 @@ import {
   pickSeed,
   readableLinkIndex,
   scoreKanatEshRound,
-} from '../../shared/kanatEsh';
+} from '../shared/kanatEsh';
 import { gameSecretPath, readGameSecret } from './secrets';
-
-const db = () => admin.database();
 
 async function connectedIds(roomId: string): Promise<string[]> {
   const [playersSnap, presenceSnap] = await Promise.all([
@@ -48,17 +48,15 @@ function visibilityFor(linkIndex: number, playerId: string): Record<string, unkn
   return { [`${linkIndex}`]: { [playerId]: true } };
 }
 
-export const startKanatEshRound = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function startKanatEshRound(uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
+  const roomId = String(data.roomId ?? '');
   const hostId = (await db().ref(`rooms/${roomId}/hostId`).get()).val();
-  if (hostId !== uid) throw new HttpsError('permission-denied', 'المضيف فقط.');
+  if (hostId !== uid) throw new GameError('permission-denied', 'المضيف فقط.');
 
   const playerIds = await connectedIds(roomId);
   if (playerIds.length < 3) {
-    throw new HttpsError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
+    throw new GameError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
   }
 
   const usedSnap = await db().ref(`rooms/${roomId}/usedSeeds`).get();
@@ -110,18 +108,16 @@ export const startKanatEshRound = onCall(async (request) => {
     });
 
   return { gameId };
-});
+}
 
-export const submitKanatEshLink = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function submitKanatEshLink(uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
+  const roomId = String(data.roomId ?? '');
   const gameRef = db().ref(`games/${roomId}/current`);
   const game = (await gameRef.get()).val();
 
   if (!game || game.phase !== 'turn') {
-    throw new HttpsError('failed-precondition', 'ما في جولة شغّالة.');
+    throw new GameError('failed-precondition', 'ما في جولة شغّالة.');
   }
 
   /*
@@ -134,7 +130,7 @@ export const submitKanatEshLink = onCall(async (request) => {
   const isAuthor = game.currentPlayerId === uid;
   const expired = typeof game.phaseEndsAt === 'number' && Date.now() >= game.phaseEndsAt;
   if (!isAuthor && !expired) {
-    throw new HttpsError('permission-denied', 'مو دورك.');
+    throw new GameError('permission-denied', 'مو دورك.');
   }
 
   const index: number = game.currentIndex;
@@ -144,7 +140,7 @@ export const submitKanatEshLink = onCall(async (request) => {
   // index is recorded here so the poster knows where to look.
   // A drawing link carries the index of its stroke bucket, not text. A text
   // link closed by the timeout says so, rather than silently reading as blank.
-  const submitted = String(request.data?.text ?? '').slice(0, 200).trim();
+  const submitted = String(data.text ?? '').slice(0, 200).trim();
   const content =
     type === 'drawing' ? String(index) : isAuthor && submitted ? submitted : 'ما لحق';
 
@@ -201,7 +197,7 @@ export const submitKanatEshLink = onCall(async (request) => {
   }
 
   const nextAuthor = game.authorByIndex?.[String(nextIndex)] as string | undefined;
-  if (!nextAuthor) throw new HttpsError('internal', 'ما لقينا اللاعب التالي.');
+  if (!nextAuthor) throw new GameError('internal', 'ما لقينا اللاعب التالي.');
 
   const nextType = linkTypeAt(nextIndex);
 
@@ -215,14 +211,14 @@ export const submitKanatEshLink = onCall(async (request) => {
   });
 
   return { phase: 'turn', index: nextIndex };
-});
+}
 
-export const kanatEshToResult = onCall(async (request) => {
-  const roomId = String(request.data?.roomId ?? '');
+export async function kanatEshToResult(_uid: string, data: RequestData): Promise<unknown> {
+  const roomId = String(data.roomId ?? '');
   const gameRef = db().ref(`games/${roomId}/current`);
   const game = (await gameRef.get()).val();
   if (!game || game.phase !== 'reveal') return { phase: game?.phase ?? null };
 
   await gameRef.update({ phase: 'result' });
   return { phase: 'result' };
-});
+}

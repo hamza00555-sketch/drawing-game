@@ -68,6 +68,10 @@ export default tseslint.config(
       'scripts/**/*.mjs',
       '**/*.test.ts',
       'functions/src/**/*.ts',
+      // The trusted logic runs ON the authoritative clock, wherever it is
+      // hosted — Vercel now, the emulator locally.
+      'server/**/*.ts',
+      'api/**/*.ts',
     ],
     rules: { 'no-restricted-syntax': 'off' },
   },

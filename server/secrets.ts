@@ -22,19 +22,19 @@
  * an explicit act, not the absence of one.
  */
 
-import { HttpsError } from 'firebase-functions/v2/https';
-import * as admin from 'firebase-admin';
+import { db } from './admin';
+import { GameError } from './errors';
 
 export function gameSecretPath(roomId: string, gameId: string): string {
   return `gameSecrets/${roomId}/${gameId}`;
 }
 
 export async function readGameSecret<T>(roomId: string, gameId: string): Promise<T> {
-  const snapshot = await admin.database().ref(gameSecretPath(roomId, gameId)).get();
+  const snapshot = await db().ref(gameSecretPath(roomId, gameId)).get();
   const value = snapshot.val() as T | null;
 
   if (!value) {
-    throw new HttpsError('failed-precondition', 'ما لقينا بيانات الجولة.');
+    throw new GameError('failed-precondition', 'ما لقينا بيانات الجولة.');
   }
   return value;
 }

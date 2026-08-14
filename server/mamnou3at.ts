@@ -7,16 +7,17 @@
  * text, and the server marks it and assigns its rank.
  */
 
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import * as admin from 'firebase-admin';
-import { ServerValue } from 'firebase-admin/database';
+import { db, ServerValue } from './admin';
+import { GameError } from './errors';
+import type { RequestData } from './types';
+
 import {
   MAMNOU3AT,
   letterHint,
   pickTaboo,
   scoreMamnouRound,
-} from '../../shared/mamnou3at';
-import { isCorrectGuess } from '../../shared/mozawwer';
+} from '../shared/mamnou3at';
+import { isCorrectGuess } from '../shared/mozawwer';
 import { gameSecretPath, readGameSecret } from './secrets';
 
 /** Artist-only knowledge. The guessers hold a letter count and nothing else. */
@@ -24,8 +25,6 @@ interface MamnouSecret {
   word: string;
   forbidden: string[];
 }
-
-const db = () => admin.database();
 
 interface RoomPlayer {
   id: string;
@@ -47,17 +46,15 @@ async function connectedIds(roomId: string): Promise<string[]> {
     .map((p) => p.id);
 }
 
-export const startMamnouRound = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function startMamnouRound(uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
+  const roomId = String(data.roomId ?? '');
   const hostId = (await db().ref(`rooms/${roomId}/hostId`).get()).val();
-  if (hostId !== uid) throw new HttpsError('permission-denied', 'المضيف فقط.');
+  if (hostId !== uid) throw new GameError('permission-denied', 'المضيف فقط.');
 
   const playerIds = await connectedIds(roomId);
   if (playerIds.length < 3) {
-    throw new HttpsError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
+    throw new GameError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
   }
 
   const usedSnap = await db().ref(`rooms/${roomId}/usedWords`).get();
@@ -108,22 +105,20 @@ export const startMamnouRound = onCall(async (request) => {
     });
 
   return { gameId };
-});
+}
 
-export const submitMamnouGuess = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function submitMamnouGuess(uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
-  const text = String(request.data?.guess ?? '').slice(0, 60);
+  const roomId = String(data.roomId ?? '');
+  const text = String(data.guess ?? '').slice(0, 60);
 
   const gameRef = db().ref(`games/${roomId}/current`);
   const game = (await gameRef.get()).val();
   if (!game || game.phase !== 'draw') {
-    throw new HttpsError('failed-precondition', 'ما في جولة شغّالة.');
+    throw new GameError('failed-precondition', 'ما في جولة شغّالة.');
   }
   if (uid === game.artistId) {
-    throw new HttpsError('permission-denied', 'الرسّام ما يخمّن.');
+    throw new GameError('permission-denied', 'الرسّام ما يخمّن.');
   }
 
   const guessesRef = db().ref(`guesses/${roomId}/${game.gameId}`);
@@ -161,19 +156,17 @@ export const submitMamnouGuess = onCall(async (request) => {
   }
 
   return { correct: true };
-});
+}
 
-export const endMamnouRound = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function endMamnouRound(_uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
+  const roomId = String(data.roomId ?? '');
   const game = (await db().ref(`games/${roomId}/current`).get()).val();
   if (!game || game.phase !== 'draw') return { phase: game?.phase ?? null };
 
   await finishMamnou(roomId, game);
   return { phase: 'result' };
-});
+}
 
 async function finishMamnou(
   roomId: string,
@@ -220,8 +213,8 @@ async function finishMamnou(
   await db().ref().update(updates);
 }
 
-export const beginMamnouDrawing = onCall(async (request) => {
-  const roomId = String(request.data?.roomId ?? '');
+export async function beginMamnouDrawing(_uid: string, data: RequestData): Promise<unknown> {
+  const roomId = String(data.roomId ?? '');
   const gameRef = db().ref(`games/${roomId}/current`);
   const game = (await gameRef.get()).val();
   if (!game || game.phase !== 'brief') return { phase: game?.phase ?? null };
@@ -231,4 +224,4 @@ export const beginMamnouDrawing = onCall(async (request) => {
     phaseEndsAt: Date.now() + MAMNOU3AT.drawMs,
   });
   return { phase: 'draw' };
-});
+}

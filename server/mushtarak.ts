@@ -7,11 +7,12 @@
  * spoil by inspecting its own state.
  */
 
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import * as admin from 'firebase-admin';
-import { ServerValue } from 'firebase-admin/database';
-import { MUSHTARAK, pickArtistPair, pickCombo, scoreMushtarakRound } from '../../shared/mushtarak';
-import { isCorrectGuess } from '../../shared/mozawwer';
+import { db, ServerValue } from './admin';
+import { GameError } from './errors';
+import type { RequestData } from './types';
+
+import { MUSHTARAK, pickArtistPair, pickCombo, scoreMushtarakRound } from '../shared/mushtarak';
+import { isCorrectGuess } from '../shared/mozawwer';
 import { gameSecretPath, readGameSecret } from './secrets';
 
 /** The split prompt. Each artist gets one half via playerSecrets; nobody gets both. */
@@ -20,8 +21,6 @@ interface MushtarakSecret {
   partB: string;
   full: string;
 }
-
-const db = () => admin.database();
 
 async function connectedIds(roomId: string): Promise<string[]> {
   const [playersSnap, presenceSnap] = await Promise.all([
@@ -38,17 +37,15 @@ async function connectedIds(roomId: string): Promise<string[]> {
     .map((p) => p.id);
 }
 
-export const startMushtarakRound = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function startMushtarakRound(uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
+  const roomId = String(data.roomId ?? '');
   const hostId = (await db().ref(`rooms/${roomId}/hostId`).get()).val();
-  if (hostId !== uid) throw new HttpsError('permission-denied', 'المضيف فقط.');
+  if (hostId !== uid) throw new GameError('permission-denied', 'المضيف فقط.');
 
   const playerIds = await connectedIds(roomId);
   if (playerIds.length < 3) {
-    throw new HttpsError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
+    throw new GameError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
   }
 
   const usedSnap = await db().ref(`rooms/${roomId}/usedWords`).get();
@@ -96,18 +93,16 @@ export const startMushtarakRound = onCall(async (request) => {
     });
 
   return { gameId };
-});
+}
 
-export const advanceMushtarak = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'سجّل دخول أولاً.');
+export async function advanceMushtarak(uid: string, data: RequestData): Promise<unknown> {
 
-  const roomId = String(request.data?.roomId ?? '');
-  const action = String(request.data?.action ?? '');
+  const roomId = String(data.roomId ?? '');
+  const action = String(data.action ?? '');
 
   const gameRef = db().ref(`games/${roomId}/current`);
   const game = (await gameRef.get()).val();
-  if (!game) throw new HttpsError('failed-precondition', 'ما في جولة شغّالة.');
+  if (!game) throw new GameError('failed-precondition', 'ما في جولة شغّالة.');
 
   switch (action) {
     case 'beginDrawing': {
@@ -119,12 +114,12 @@ export const advanceMushtarak = onCall(async (request) => {
     case 'gotYou': {
       if (game.phase !== 'draw') return { phase: game.phase };
       if (!(game.artistIds ?? []).includes(uid)) {
-        throw new HttpsError('permission-denied', 'للرسّامين فقط.');
+        throw new GameError('permission-denied', 'للرسّامين فقط.');
       }
 
       const used: string[] = Object.keys(game.gotYouUsedBy ?? {});
       if (used.includes(uid)) {
-        throw new HttpsError('failed-precondition', 'استخدمتها.');
+        throw new GameError('failed-precondition', 'استخدمتها.');
       }
 
       await gameRef.update({
@@ -149,10 +144,10 @@ export const advanceMushtarak = onCall(async (request) => {
     case 'submitGuess': {
       if (game.phase !== 'guess') return { phase: game.phase };
       if ((game.artistIds ?? []).includes(uid)) {
-        throw new HttpsError('permission-denied', 'الرسّام ما يخمّن.');
+        throw new GameError('permission-denied', 'الرسّام ما يخمّن.');
       }
 
-      const text = String(request.data?.guess ?? '').slice(0, 60);
+      const text = String(data.guess ?? '').slice(0, 60);
       const secret = await readGameSecret<MushtarakSecret>(roomId, game.gameId);
       const correct = isCorrectGuess(text, secret.full);
 
@@ -216,6 +211,6 @@ export const advanceMushtarak = onCall(async (request) => {
     }
 
     default:
-      throw new HttpsError('invalid-argument', `إجراء غير معروف: ${action}`);
+      throw new GameError('invalid-argument', `إجراء غير معروف: ${action}`);
   }
-});
+}

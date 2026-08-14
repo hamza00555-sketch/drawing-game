@@ -1,13 +1,13 @@
 /**
- * Live round state — the client half of the trusted logic in `functions/`.
+ * Live round state — the client half of the trusted logic in `server/`.
  *
  * Three kinds of thing live here, and the distinction matters:
  *
  *   1. **Subscriptions** to what the server has decided. Phases, deadlines,
  *      whose turn it is, scores. The client never computes these; it reads them.
  *   2. **Direct writes** a player legitimately owns — a vote — which the
- *      security rules police without a round trip through a function.
- *   3. **Calls** into the Cloud Functions for everything a client must not be
+ *      security rules police without a round trip through a server.
+ *   3. **Calls** into the trusted logic for everything a client must not be
  *      trusted with: starting a round, advancing a phase, judging a guess.
  *
  * Every subscription targets the narrowest path that answers its question.
@@ -18,7 +18,7 @@
 import { onValue, ref, set } from 'firebase/database';
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
 import { getApp } from 'firebase/app';
-import { getDb, usingEmulators } from './firebase';
+import { ensureSignedIn, getDb, usingEmulators } from './firebase';
 import { paths } from './paths';
 import type { GameMode } from './room';
 
@@ -29,7 +29,7 @@ import type { GameMode } from './room';
  * why the word, the impostor, the split prompt, the taboo list and the seed
  * sentence are NOT here — they live in `gameSecrets`, which no client can read,
  * and cross over into these fields only once the round has revealed them.
- * See functions/src/secrets.ts.
+ * See server/secrets.ts.
  */
 export interface GameState {
   gameId: string;
@@ -263,10 +263,17 @@ export function watchVoteMarks(
 
 let functionsEmulatorConnected = false;
 
-function callable(name: string) {
+/**
+ * Local development: talk to the Functions emulator.
+ *
+ * The emulator runs the same handlers `server/` exports, wrapped as callables,
+ * so a local round exercises the real logic. Production does not use callables
+ * at all — see `callGame`.
+ */
+function emulatorCallable(name: string) {
   const functions = getFunctions(getApp());
 
-  if (usingEmulators() && !functionsEmulatorConnected) {
+  if (!functionsEmulatorConnected) {
     connectFunctionsEmulator(functions, '127.0.0.1', 5001);
     functionsEmulatorConnected = true;
   }
@@ -278,25 +285,63 @@ function callable(name: string) {
  * Call trusted logic.
  *
  * Anything that decides an outcome goes through here. The client is asking, not
- * telling: the function re-reads the true state and may well refuse.
+ * telling: the server re-reads the true state and may well refuse.
+ *
+ * In production this is an ordinary POST to `/api/game`, carrying the Firebase
+ * ID token the browser already holds. The endpoint verifies that token with the
+ * Admin SDK, so the identity behind every permission check is exactly as solid
+ * as it was under Cloud Functions — Firebase is still what issues and proves
+ * who a player is. Only the place the code runs has moved, because Cloud
+ * Functions require a paid plan and this project runs on the free one.
  */
 export async function callGame<T = unknown>(
   name: string,
   data: Record<string, unknown>,
 ): Promise<T> {
-  const result = await callable(name)(data);
-  return result.data as T;
+  if (usingEmulators()) {
+    const result = await emulatorCallable(name)(data);
+    return result.data as T;
+  }
+
+  const user = await ensureSignedIn();
+  const token = await user.getIdToken();
+
+  const response = await fetch('/api/game', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ fn: name, ...data }),
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as {
+    result?: T;
+    error?: string;
+    code?: string;
+  };
+
+  if (!response.ok) {
+    /*
+     * The server writes its refusals for the player to read, so the message is
+     * passed through untouched — `describeCallFailure` recognises them by being
+     * in Arabic. The code rides along so an unexpected failure can still be
+     * identified.
+     */
+    throw Object.assign(new Error(payload.error ?? `HTTP ${response.status}`), {
+      code: payload.code ?? `http/${response.status}`,
+    });
+  }
+
+  return payload.result as T;
 }
 
-/** Arabic script. Used to tell our own error messages from the SDK's. */
+/** Arabic script. Used to tell our own error messages from a transport's. */
 const ARABIC = /[؀-ۿ]/;
 
 export interface CallFailure {
   message: string;
-  /**
-   * True when the trusted logic does not appear to be deployed at all, rather
-   * than having refused this particular request.
-   */
+  /** True when the trusted logic does not appear to be reachable at all. */
   functionsMissing: boolean;
 }
 
@@ -305,14 +350,12 @@ export interface CallFailure {
  *
  * The distinction that matters is between "the server considered your request
  * and said no" and "there is no server". The first already arrives in Arabic,
- * written by us, and should be passed through untouched — `مو دورك`,
- * `نحتاج 3 لاعبين على الأقل`. The second arrives as an SDK string like
- * "NOT FOUND" or "internal", which tells a player nothing and, on the free
- * Spark plan, means something very specific: Cloud Functions are not deployed,
- * because deploying them requires the Blaze plan.
+ * written by us — `مو دورك`, `نحتاج 3 لاعبين على الأقل` — and is passed through
+ * untouched. The second arrives as a status code or a fetch failure, which
+ * tells a player nothing.
  *
- * The script of the message is the reliable signal. Every message our functions
- * raise is Arabic; every message the SDK invents is not.
+ * The script of the message is the reliable signal: every refusal the trusted
+ * logic raises is Arabic, and nothing a transport invents is.
  */
 export function describeCallFailure(error: unknown): CallFailure {
   const raw = error instanceof Error ? error.message : String(error);
@@ -320,33 +363,29 @@ export function describeCallFailure(error: unknown): CallFailure {
 
   const code = (error as { code?: string } | undefined)?.code ?? '';
 
-  // Nothing answered at that address: the function is not deployed.
-  if (code === 'functions/not-found' || code === 'functions/unavailable' || code === '') {
+  // Nothing answered at that address: the endpoint is not deployed, or a
+  // rewrite is swallowing /api before it gets there.
+  if (code === 'http/404' || code === 'functions/not-found' || code === 'functions/unavailable') {
     return {
       functionsMissing: true,
       message:
-        'الجولات تحتاج نشر المنطق الموثوق (Cloud Functions). ' +
-        'الغرف والانضمام يشتغلون بدونه — شوف DEPLOY.md.',
+        'المنطق الموثوق مو منشور. تأكد أن /api/game موجود ومتغيرات الخادم مضبوطة — شوف DEPLOY.md.',
     };
   }
 
-  /*
-   * `internal` is ambiguous and both readings are worth naming. A browser
-   * blocked by CORS — which is what a missing function looks like from the
-   * page — reports it, and so does a function that ran and threw. Claiming
-   * "not deployed" for both sent me chasing the wrong cause once already,
-   * while a real crash sat in the emulator log.
-   */
-  if (code === 'functions/internal') {
+  if (code === 'http/500' || code === 'internal' || code === 'functions/internal') {
     return {
       functionsMissing: false,
-      message:
-        'المنطق الموثوق ما رد صح. إذا ما نشرته بعد فهذا السبب؛ ' +
-        'وإلا راجع سجل الـFunctions.',
+      message: 'المنطق الموثوق رجع خطأ. راجع سجل الدوال في Vercel.',
     };
   }
 
-  return { message: 'ما قدرنا نبدأ الجولة. تأكد من الاتصال.', functionsMissing: false };
+  // fetch() rejects with a TypeError and no code when the request never lands.
+  if (!code || raw.includes('fetch') || raw.includes('network')) {
+    return { message: 'ما قدرنا نوصل للخادم. تأكد من الاتصال.', functionsMissing: false };
+  }
+
+  return { message: `ما قدرنا نبدأ الجولة. (${code})`, functionsMissing: false };
 }
 
 /** Which function starts a round, per mode. */
