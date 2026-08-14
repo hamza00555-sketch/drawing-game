@@ -89,10 +89,20 @@ describe('describeFirebaseFailure', () => {
     expect(describeFirebaseFailure(denied)).toContain('Rules');
   });
 
-  it('admits ignorance rather than guessing wrong', () => {
-    // A confident pointer at the wrong console page costs more than a shrug.
-    expect(describeFirebaseFailure(withCode('auth/internal-error'))).toBe(
-      'صار خطأ. تأكد من الاتصال وحاول مرة ثانية.',
-    );
+  it('admits ignorance rather than guessing wrong — but shows the code', () => {
+    /*
+     * A confident pointer at the wrong console page costs more than a shrug.
+     * The shrug still has to carry the code: without it, an unrecognised
+     * failure reaches me as a screenshot of a sentence that says nothing, and
+     * the one identifying fact stays on the player's device.
+     */
+    const message = describeFirebaseFailure(withCode('auth/internal-error'));
+
+    expect(message).toContain('صار خطأ');
+    expect(message).toContain('auth/internal-error');
+  });
+
+  it('falls back to the raw message when there is no code', () => {
+    expect(describeFirebaseFailure(new Error('maxretry'))).toContain('maxretry');
   });
 });

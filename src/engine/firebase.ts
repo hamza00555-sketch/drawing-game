@@ -158,7 +158,17 @@ export function describeFirebaseFailure(error: unknown): string {
     return 'ما قدرنا نوصل لـFirebase. تأكد من الاتصال.';
   }
 
-  return 'صار خطأ. تأكد من الاتصال وحاول مرة ثانية.';
+  /*
+   * Unrecognised. Show the raw code anyway.
+   *
+   * Hiding it behind a friendly sentence costs a whole round trip through a
+   * person: they screenshot a message that says nothing, and the one fact that
+   * would identify the failure — the code the SDK already handed us — stays in
+   * a variable. It is ugly on screen and it is the difference between a fix and
+   * another guess.
+   */
+  const detail = code || message.slice(0, 80);
+  return `صار خطأ. تأكد من الاتصال وحاول مرة ثانية.${detail ? ` (${detail})` : ''}`;
 }
 
 let app: FirebaseApp | undefined;
