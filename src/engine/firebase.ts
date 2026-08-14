@@ -71,10 +71,32 @@ function readConfig(): FirebaseOptions {
   return config;
 }
 
-/** True when the app should talk to `npm run emulators` instead of the cloud. */
+/** Hosts where an emulator can plausibly be listening: this machine. */
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '']);
+
+/**
+ * True when the app should talk to `npm run emulators` instead of the cloud.
+ *
+ * The flag alone is not enough. It travels in `.env.local`, and copying that
+ * file into a hosting provider's environment variables — or importing it
+ * wholesale — is an easy and quiet mistake. The result would be a public site
+ * that points every visitor's browser at `127.0.0.1`, which is *their own
+ * machine*: nothing listens there, nothing works, and the error blames the
+ * network rather than the setting.
+ *
+ * So the page's own origin gets a veto. Emulators are used only when the app is
+ * itself being served from this machine, which is the only situation in which
+ * an emulator could be reachable. `npm run preview` of a production build still
+ * works, because that is served from localhost too.
+ */
 export function usingEmulators(): boolean {
   const env = import.meta.env as unknown as Record<string, string | undefined>;
-  return env.VITE_USE_FIREBASE_EMULATORS === 'true';
+  if (env.VITE_USE_FIREBASE_EMULATORS !== 'true') return false;
+
+  // No `location` in unit tests: trust the flag there.
+  if (typeof location === 'undefined') return true;
+
+  return LOCAL_HOSTS.has(location.hostname);
 }
 
 /** True when enough config exists to boot. Lets the UI show a setup screen. */
