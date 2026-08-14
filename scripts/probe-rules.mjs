@@ -52,7 +52,17 @@ if (!signUp.ok) {
 
 const { idToken, localId: uid } = await signUp.json();
 const roomId = `probe-${Date.now()}`;
-const code = 'PROBE';
+
+/*
+ * A fresh code every run. Room codes are write-once by design — the rule is
+ * `!data.exists()` — so reusing one made the probe fail on its second run and
+ * report a rule bug that was actually the rule working.
+ */
+const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const code = Array.from(
+  { length: 6 },
+  () => alphabet[Math.floor(Math.random() * alphabet.length)],
+).join('');
 
 /** One write, exactly as the client makes it. */
 async function write(label, path, body, method = 'PUT') {
@@ -110,11 +120,12 @@ await write('choose a mode', `rooms/${roomId}/currentMode`, 'mozawwer');
  * once Cloud Functions are deployed.
  */
 
+// `roomCodes` is deliberately absent: a claimed code is not client-removable,
+// which is the write-once guarantee joining depends on.
 for (const path of [
   `presence/${roomId}`,
   `roomPlayers/${roomId}`,
   `roomCharacters/${roomId}`,
-  `roomCodes/${code}`,
 ]) {
   await fetch(`${DB}/${path}.json?auth=${idToken}`, { method: 'DELETE' });
 }
