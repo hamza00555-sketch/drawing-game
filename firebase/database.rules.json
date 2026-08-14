@@ -37,7 +37,17 @@
         // Created by its host; afterwards only specific children are writable.
         ".write": "auth != null && !data.exists() && newData.child('hostId').val() === auth.uid",
 
-        "code": { ".validate": "newData.isString()" },
+        // The code is claimed AFTER the room exists — the code index validates
+        // against the room's hostId, so the room has to be there first. That
+        // means this child needs its own write rule: the room-level one only
+        // permits creation, so without this the code could never be written and
+        // every room came out unjoinable.
+        //
+        // Write-once, by the host: settable while empty, frozen afterwards.
+        "code": {
+          ".write": "auth != null && root.child('rooms').child($roomId).child('hostId').val() === auth.uid && (!data.exists() || data.val() === '')",
+          ".validate": "newData.isString() && newData.val().length <= 8"
+        },
         "createdAt": { ".validate": "newData.val() === now" },
         "status": { ".validate": "newData.isString()" },
 
@@ -96,6 +106,9 @@
           ".write": "auth != null && auth.uid === $playerId && (root.child('rooms').child($roomId).exists())",
           ".validate": "newData.hasChildren(['name', 'characterId', 'joinedAt'])",
 
+          // The record carries its own id so a player object stays meaningful
+          // once it is detached from its key. It must agree with the key.
+          "id": { ".validate": "newData.val() === $playerId" },
           "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16" },
           // You may only present as a character you actually hold the
           // reservation for. Without this a client could skip the transaction
@@ -196,7 +209,12 @@
             // player appending to another player's line, or anyone drawing
             // outside their own turn, and both of those are still refused.
             ".write": "auth != null && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid) && root.child('games').child($roomId).child('current').child('phase').val().matches(/^draw/) && (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid || root.child('games').child($roomId).child('current').child('activeDrawers').child(auth.uid).exists())",
-            ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'points', 'startedAt'])",
+            // `points` is deliberately NOT required. A stroke is written in
+            // stages — header on pointer-down, point chunks every ~50ms — so
+            // demanding points up front rejects the header, which is the first
+            // write of every stroke. The `points` child validates itself once
+            // it appears.
+            ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'startedAt'])",
 
             "playerId": { ".validate": "newData.val() === auth.uid" },
             "seq": { ".validate": "newData.isNumber()" },
@@ -234,7 +252,8 @@
               // Only the player whose turn it is, only into the link they are
               // authoring right now, and only while the chain is running.
               ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('phase').val() === 'turn' && root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('currentIndexKey').val() === $index",
-              ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'points', 'startedAt'])",
+              // Same staged write as `strokes` above: the header lands first.
+              ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'startedAt'])",
 
               "playerId": { ".validate": "newData.val() === auth.uid" },
               "seq": { ".validate": "newData.isNumber()" },
