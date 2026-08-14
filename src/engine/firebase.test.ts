@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { usingEmulators } from './firebase';
+import { describeFirebaseFailure, usingEmulators } from './firebase';
 
 /**
  * The mistake these tests exist to make harmless.
@@ -61,5 +61,38 @@ describe('usingEmulators', () => {
       setFlag(value);
       expect(usingEmulators()).toBe(false);
     }
+  });
+});
+
+/**
+ * Four setup steps can each be skipped, and all four fail at the same moment —
+ * the first time anyone creates a room. Only the cause differs, so only the
+ * cause is worth printing.
+ */
+describe('describeFirebaseFailure', () => {
+  function withCode(code: string, message = 'firebase error') {
+    return Object.assign(new Error(message), { code });
+  }
+
+  it('names the missing sign-in provider', () => {
+    expect(describeFirebaseFailure(withCode('auth/operation-not-allowed'))).toContain('Anonymous');
+  });
+
+  it('names the unauthorized domain', () => {
+    expect(describeFirebaseFailure(withCode('auth/unauthorized-domain'))).toContain(
+      'Authorized domains',
+    );
+  });
+
+  it('recognises a rules refusal, which arrives as a message not a code', () => {
+    const denied = new Error('PERMISSION_DENIED: Permission denied');
+    expect(describeFirebaseFailure(denied)).toContain('Rules');
+  });
+
+  it('admits ignorance rather than guessing wrong', () => {
+    // A confident pointer at the wrong console page costs more than a shrug.
+    expect(describeFirebaseFailure(withCode('auth/internal-error'))).toBe(
+      'صار خطأ. تأكد من الاتصال وحاول مرة ثانية.',
+    );
   });
 });

@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { isFirebaseConfigured, ensureSignedIn, getCurrentUid } from '../engine/firebase';
+import {
+  isFirebaseConfigured,
+  ensureSignedIn,
+  getCurrentUid,
+  describeFirebaseFailure,
+} from '../engine/firebase';
 import { startClockSync } from '../engine/clock';
 import {
   createRoom,
@@ -131,7 +136,7 @@ export function App() {
         setError(
           caught instanceof CharacterTakenError || caught instanceof RoomError
             ? caught.message
-            : 'صار خطأ. تأكد من الاتصال وحاول مرة ثانية.',
+            : describeFirebaseFailure(caught),
         );
       } finally {
         setBusy(false);

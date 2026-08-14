@@ -121,6 +121,46 @@ export function missingFirebaseKeys(): readonly string[] {
   }
 }
 
+/**
+ * Say what actually went wrong.
+ *
+ * Setting up a Firebase project has four steps that can each be missed, and
+ * every one of them fails at the same moment — the first time a player creates
+ * a room — with a different cause and the same useless "something went wrong".
+ * Each of these messages names the console page that fixes it, because the
+ * person hitting this error is the person who owns that console.
+ *
+ * Anything unrecognised falls through to the generic message: a guess that
+ * points somewhere wrong is worse than admitting we do not know.
+ */
+export function describeFirebaseFailure(error: unknown): string {
+  const code = (error as { code?: string } | undefined)?.code ?? '';
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (code === 'auth/operation-not-allowed') {
+    return 'الدخول المجهول غير مفعّل. من Firebase: Authentication ← Sign-in method ← Anonymous ← Enable.';
+  }
+
+  if (code === 'auth/unauthorized-domain') {
+    return 'نطاق الموقع غير مصرّح له. من Firebase: Authentication ← Settings ← Authorized domains ← أضف نطاق الموقع.';
+  }
+
+  if (code === 'auth/configuration-not-found') {
+    return 'إعداد Authentication ناقص في مشروع Firebase. تأكد أنك فعّلت Anonymous.';
+  }
+
+  // Realtime Database refusals surface as a message, not a code.
+  if (message.includes('PERMISSION_DENIED') || code === 'PERMISSION_DENIED') {
+    return 'قاعدة البيانات رفضت العملية. غالبًا قواعد الأمان غير منشورة — الصق firebase/database.rules.json في Realtime Database ← Rules ← Publish.';
+  }
+
+  if (code === 'auth/network-request-failed' || message.includes('network')) {
+    return 'ما قدرنا نوصل لـFirebase. تأكد من الاتصال.';
+  }
+
+  return 'صار خطأ. تأكد من الاتصال وحاول مرة ثانية.';
+}
+
 let app: FirebaseApp | undefined;
 let db: Database | undefined;
 let auth: Auth | undefined;
