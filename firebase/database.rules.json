@@ -47,7 +47,11 @@
           // oldest connected player; a race resolves to last-write-wins, which
           // is harmless because every candidate is a valid host.
           ".write": "auth != null && root.child('presence').child($roomId).child(data.val()).child('connected').val() === false && root.child('presence').child($roomId).child(auth.uid).child('connected').val() === true",
-          ".validate": "newData.isString() && root.child('roomPlayers').child($roomId).child(newData.val()).exists()"
+          // The membership requirement applies to CHANGING the host, not to
+          // setting it the first time. A room is created before anyone can be a
+          // player in it — the player record is written afterwards — so
+          // demanding membership here rejected every room at creation.
+          ".validate": "newData.isString() && (!data.exists() || root.child('roomPlayers').child($roomId).child(newData.val()).exists())"
         },
 
         "currentMode": {

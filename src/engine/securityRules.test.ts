@@ -68,6 +68,31 @@ describe('playerSecrets', () => {
   });
 });
 
+describe('hostId', () => {
+  const validate = String(at('rooms/$roomId/hostId/.validate'));
+
+  it('allows the first write, when no player record can exist yet', () => {
+    /*
+     * A room is created before anyone is a player in it — the player record is
+     * written afterwards — so requiring membership unconditionally rejected
+     * every room at creation, with PERMISSION_DENIED and no clue as to which
+     * rule refused. The emulator does not enforce this the way production does,
+     * which is exactly why it needs a test rather than a playthrough.
+     */
+    expect(validate).toContain('!data.exists()');
+  });
+
+  it('still requires membership when the host changes', () => {
+    expect(validate).toContain("root.child('roomPlayers').child($roomId).child(newData.val()).exists()");
+  });
+
+  it('only lets a connected player take over from an offline host', () => {
+    const write = String(at('rooms/$roomId/hostId/.write'));
+    expect(write).toContain("child(data.val()).child('connected').val() === false");
+    expect(write).toContain("child(auth.uid).child('connected').val() === true");
+  });
+});
+
 describe('scores', () => {
   it('cannot be written by a client', () => {
     // The one rule that stops a player awarding themselves the round.
