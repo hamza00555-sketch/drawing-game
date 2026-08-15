@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { auth } from '../server/admin';
-import { GameError, STATUS } from '../server/errors';
-import { resolve } from '../server/router';
+import { auth } from '../server/admin.js';
+import { GameError, STATUS } from '../server/errors.js';
+import { resolve } from '../server/router.js';
 
 /**
  * The trusted logic, served from Vercel.

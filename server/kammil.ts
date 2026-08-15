@@ -8,13 +8,13 @@
  * two-second turn identical on ten phones whose own clocks disagree.
  */
 
-import { db } from './admin';
-import { GameError } from './errors';
-import type { RequestData } from './types';
+import { db } from './admin.js';
+import { GameError } from './errors.js';
+import type { RequestData } from './types.js';
 
-import { KAMMIL, assignKammilRoles, kammilDrawMs, scoreKammilRound } from '../shared/kammil';
-import { MOZAWWER_WORDS, isCorrectGuess } from '../shared/mozawwer';
-import { gameSecretPath, readGameSecret } from './secrets';
+import { KAMMIL, assignKammilRoles, kammilDrawMs, scoreKammilRound } from '../shared/kammil.js';
+import { MOZAWWER_WORDS, isCorrectGuess } from '../shared/mozawwer.js';
+import { gameSecretPath, readGameSecret } from './secrets.js';
 
 interface RoomPlayer {
   id: string;

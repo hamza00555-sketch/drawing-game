@@ -22,8 +22,8 @@
  * an explicit act, not the absence of one.
  */
 
-import { db } from './admin';
-import { GameError } from './errors';
+import { db } from './admin.js';
+import { GameError } from './errors.js';
 
 export function gameSecretPath(roomId: string, gameId: string): string {
   return `gameSecrets/${roomId}/${gameId}`;

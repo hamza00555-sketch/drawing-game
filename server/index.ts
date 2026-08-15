@@ -11,9 +11,9 @@
  * why every node they own is `".write": false` for clients.
  */
 
-import { db, ServerValue } from './admin';
-import { GameError } from './errors';
-import type { RequestData } from './types';
+import { db, ServerValue } from './admin.js';
+import { GameError } from './errors.js';
+import type { RequestData } from './types.js';
 
 /*
  * `ServerValue` is imported from the modular entry point, not read off
@@ -22,19 +22,19 @@ import type { RequestData } from './types';
  * "Cannot read properties of undefined" — which reaches the player as a blank
  * 500 on the first call of every round.
  */
-import { MOZAWWER, MOZAWWER_WORDS, scoreMozawwerRound, tallyVotes, isCorrectGuess } from '../shared/mozawwer';
-import { gameSecretPath, readGameSecret } from './secrets';
+import { MOZAWWER, MOZAWWER_WORDS, scoreMozawwerRound, tallyVotes, isCorrectGuess } from '../shared/mozawwer.js';
+import { gameSecretPath, readGameSecret } from './secrets.js';
 
 // Each mode lives in its own module; re-exported so they deploy together.
-export { startKammilRound, advanceKammil } from './kammil';
+export { startKammilRound, advanceKammil } from './kammil.js';
 export {
   startMamnouRound,
   beginMamnouDrawing,
   submitMamnouGuess,
   endMamnouRound,
-} from './mamnou3at';
-export { startMushtarakRound, advanceMushtarak } from './mushtarak';
-export { startKanatEshRound, submitKanatEshLink, kanatEshToResult } from './kanatEsh';
+} from './mamnou3at.js';
+export { startMushtarakRound, advanceMushtarak } from './mushtarak.js';
+export { startKanatEshRound, submitKanatEshLink, kanatEshToResult } from './kanatEsh.js';
 
 interface RoomPlayer {
   id: string;

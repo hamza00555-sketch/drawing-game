@@ -13,19 +13,19 @@
  * there are fourteen actions, so they share one endpoint and route by name.
  */
 
-import { GameError } from './errors';
-import type { RequestData } from './types';
+import { GameError } from './errors.js';
+import type { RequestData } from './types.js';
 
-import { startMozawwerRound, advanceMozawwer, returnToLobby } from './index';
-import { startKammilRound, advanceKammil } from './kammil';
+import { startMozawwerRound, advanceMozawwer, returnToLobby } from './index.js';
+import { startKammilRound, advanceKammil } from './kammil.js';
 import {
   startMamnouRound,
   beginMamnouDrawing,
   submitMamnouGuess,
   endMamnouRound,
-} from './mamnou3at';
-import { startMushtarakRound, advanceMushtarak } from './mushtarak';
-import { startKanatEshRound, submitKanatEshLink, kanatEshToResult } from './kanatEsh';
+} from './mamnou3at.js';
+import { startMushtarakRound, advanceMushtarak } from './mushtarak.js';
+import { startKanatEshRound, submitKanatEshLink, kanatEshToResult } from './kanatEsh.js';
 
 export type Handler = (uid: string, data: RequestData) => Promise<unknown>;
 

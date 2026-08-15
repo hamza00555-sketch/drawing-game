@@ -7,13 +7,13 @@
  * spoil by inspecting its own state.
  */
 
-import { db, ServerValue } from './admin';
-import { GameError } from './errors';
-import type { RequestData } from './types';
+import { db, ServerValue } from './admin.js';
+import { GameError } from './errors.js';
+import type { RequestData } from './types.js';
 
-import { MUSHTARAK, pickArtistPair, pickCombo, scoreMushtarakRound } from '../shared/mushtarak';
-import { isCorrectGuess } from '../shared/mozawwer';
-import { gameSecretPath, readGameSecret } from './secrets';
+import { MUSHTARAK, pickArtistPair, pickCombo, scoreMushtarakRound } from '../shared/mushtarak.js';
+import { isCorrectGuess } from '../shared/mozawwer.js';
+import { gameSecretPath, readGameSecret } from './secrets.js';
 
 /** The split prompt. Each artist gets one half via playerSecrets; nobody gets both. */
 interface MushtarakSecret {

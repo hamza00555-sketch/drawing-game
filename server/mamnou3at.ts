@@ -7,18 +7,18 @@
  * text, and the server marks it and assigns its rank.
  */
 
-import { db, ServerValue } from './admin';
-import { GameError } from './errors';
-import type { RequestData } from './types';
+import { db, ServerValue } from './admin.js';
+import { GameError } from './errors.js';
+import type { RequestData } from './types.js';
 
 import {
   MAMNOU3AT,
   letterHint,
   pickTaboo,
   scoreMamnouRound,
-} from '../shared/mamnou3at';
-import { isCorrectGuess } from '../shared/mozawwer';
-import { gameSecretPath, readGameSecret } from './secrets';
+} from '../shared/mamnou3at.js';
+import { isCorrectGuess } from '../shared/mozawwer.js';
+import { gameSecretPath, readGameSecret } from './secrets.js';
 
 /** Artist-only knowledge. The guessers hold a letter count and nothing else. */
 interface MamnouSecret {

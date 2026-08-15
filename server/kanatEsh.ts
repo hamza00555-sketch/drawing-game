@@ -9,9 +9,9 @@
  * whole chain until the reveal.
  */
 
-import { db } from './admin';
-import { GameError } from './errors';
-import type { RequestData } from './types';
+import { db } from './admin.js';
+import { GameError } from './errors.js';
+import type { RequestData } from './types.js';
 
 import {
   KANAT_ESH,
@@ -21,8 +21,8 @@ import {
   pickSeed,
   readableLinkIndex,
   scoreKanatEshRound,
-} from '../shared/kanatEsh';
-import { gameSecretPath, readGameSecret } from './secrets';
+} from '../shared/kanatEsh.js';
+import { gameSecretPath, readGameSecret } from './secrets.js';
 
 async function connectedIds(roomId: string): Promise<string[]> {
   const [playersSnap, presenceSnap] = await Promise.all([
