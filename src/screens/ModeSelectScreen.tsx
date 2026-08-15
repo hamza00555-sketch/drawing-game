@@ -44,21 +44,21 @@ const MODES: readonly ModeEntry[] = [
     name: 'الممنوعات',
     line: 'ارسمها، بس بدون أهم أجزائها.',
     asset: 'mode_scene_mamnou3at',
-    ready: false,
+    ready: true,
   },
   {
     id: 'mushtarak',
     name: 'الرسم المشترك',
     line: 'اثنين يرسمون، وكل واحد يعرف نص القصة.',
     asset: 'mode_scene_mushtarak',
-    ready: false,
+    ready: true,
   },
   {
     id: 'kanatEsh',
     name: 'كانت إيش؟',
     line: 'جملة تتحول لرسمة، والرسمة تتحول لكارثة.',
     asset: 'mode_scene_kanat_esh',
-    ready: false,
+    ready: true,
   },
 ];
 
