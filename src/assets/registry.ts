@@ -43,6 +43,14 @@ import sceneMamnou3at from './generated/mode_scene_mamnou3at.webp';
 import sceneMushtarak from './generated/mode_scene_mushtarak.webp';
 import sceneKanatEsh from './generated/mode_scene_kanat_esh.webp';
 
+import splashBackdrop from './generated/splash_backdrop.webp';
+import revealRoleImpostor from './generated/reveal_role_impostor.webp';
+import unmaskImpostor from './generated/unmask_impostor.webp';
+import accusationGroup from './generated/accusation_group.webp';
+import countdown3Surprised from './generated/countdown_3_surprised.webp';
+import countdown2GrabsPen from './generated/countdown_2_grabs_pen.webp';
+import countdown1Ready from './generated/countdown_1_ready.webp';
+
 export type AssetId = string;
 
 export interface AssetEntry {
@@ -169,6 +177,49 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
     alt: 'رسمة تنتقل بين الشخصيات وتتغير تدريجيًا',
     width: 700,
     height: 328,
+  },
+
+  splash_backdrop: {
+    src: splashBackdrop,
+    alt: 'مجموعة من شخصيات اللعبة تتجمع وتحدّق بدهشة نحو رسمة غريبة',
+    width: 1600,
+    height: 1578,
+  },
+  reveal_role_impostor: {
+    src: revealRoleImpostor,
+    alt: 'قناع تنكري أسود مائل بعينين غير متماثلتين',
+    width: 600,
+    height: 446,
+  },
+  unmask_impostor: {
+    src: unmaskImpostor,
+    alt: 'القناع التنكري يطير بعيدًا وسط انفجار من الخطوط الدرامية',
+    width: 700,
+    height: 567,
+  },
+  accusation_group: {
+    src: accusationGroup,
+    alt: 'ثلاث شخصيات تشير بأصابعها بغضب نحو المزوّر المكشوف',
+    width: 700,
+    height: 528,
+  },
+  countdown_3_surprised: {
+    src: countdown3Surprised,
+    alt: 'شخصية صغيرة بعين واحدة تندهش وهي ترى الرسمة',
+    width: 621,
+    height: 700,
+  },
+  countdown_2_grabs_pen: {
+    src: countdown2GrabsPen,
+    alt: 'الشخصية نفسها تندفع لتمسك بالقلم',
+    width: 634,
+    height: 700,
+  },
+  countdown_1_ready: {
+    src: countdown1Ready,
+    alt: 'الشخصية نفسها تستعد للرسم ممسكة بالقلم بثبات',
+    width: 640,
+    height: 700,
   },
 };
 

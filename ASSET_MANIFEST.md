@@ -131,7 +131,7 @@ player picks one and a mode needs it.
 | id | purpose | character | expression | size | transparent | screens | status | file |
 |---|---|---|---|---|---|---|---|---|
 | `hero_home_confused_group` | Home hero: the whole main cast around one baffling scribble — one proud, one unimpressed, one baffled, one bouncing, one innocently pleased, one eyeing a neighbour. Explains «وش ذا؟» with no copy. | main cast | mixed | 1400×1000 | yes | Home | shipped | `src/assets/generated/hero_home_confused_group.webp` |
-| `splash_backdrop` | Splash artwork behind the wordmark | main cast | mixed | 1200×1600 | yes | Splash | queued | — |
+| `splash_backdrop` | Splash artwork behind the wordmark: five cast members huddled, staring down at something surprising, wide open margin at top for the wordmark | main cast | mixed | 1600×1578 | yes | Splash | shipped | `src/assets/generated/splash_backdrop.webp` |
 
 ## Batch 3 — Mode selection scenes
 
@@ -160,17 +160,37 @@ Generated alongside the screens that use them.
 | id | purpose | screens | status |
 |---|---|---|---|
 | `reveal_role_artist` | "ارسم" role card art | Role Reveal | queued |
-| `reveal_role_impostor` | "أنت المزوّر" role card art | Role Reveal | queued |
-| `countdown_3_surprised` | Countdown beat 3: sees the drawing, startled | كمّل رسمتي | queued |
-| `countdown_2_grabs_pen` | Countdown beat 2: grabs the pen | كمّل رسمتي | queued |
-| `countdown_1_ready` | Countdown beat 1: braced to draw | كمّل رسمتي | queued |
+| `reveal_role_impostor` | "أنت المزوّر" role card art — a sneaky black domino mask, not a specific character (the impostor can be anyone) | Role Reveal | shipped |
+| `countdown_3_surprised` | Countdown beat 3: a nameless one-eyed creature sees the drawing, startled | كمّل رسمتي | shipped |
+| `countdown_2_grabs_pen` | Countdown beat 2: the same creature dives for the pen | كمّل رسمتي | shipped |
+| `countdown_1_ready` | Countdown beat 1: the same creature braced, pen in hand | كمّل رسمتي | shipped |
 | `reaction_correct` | Celebration on a correct guess | all modes | queued |
 | `reaction_wrong` | Baffled stare on a wrong guess | all modes | queued |
 | `reaction_timer_panic` | Rising panic as time runs out | all modes | queued |
 | `reaction_pen_dropped` | Pen lost the instant time expires | كمّل رسمتي | queued |
-| `unmask_impostor` | The mask comes off — dramatic reveal | المزوّر | queued |
-| `accusation_group` | Everyone pointing at the unmasked impostor | المزوّر | queued |
+| `unmask_impostor` | The mask comes off — dramatic reveal, same mask prop flying off in a burst | المزوّر | shipped |
+| `accusation_group` | Three cast members pointing accusingly at the unmasked impostor | المزوّر | shipped |
 | `poster_frame_decor` | Decorative border elements for the share poster | كانت إيش؟ | queued |
+
+**Batch 4 generation notes.**
+
+- `reveal_role_impostor` / `unmask_impostor` — deliberately not tied to any one
+  character, since any player can be the impostor. A generic domino-mask prop
+  in the established ink-line style instead, generated once and referenced
+  again (not re-described from scratch) for the "coming off" beat so the two
+  read as the same object at two moments.
+- `countdown_1/2/3` — a new nameless one-eyed round creature, not one of the
+  ten cast members, for the same reason: the countdown fires for whoever's
+  turn it is. Described identically across all three prompts (single mustard
+  body, one antenna, one eye) rather than chained via identity reference,
+  since each beat is shown alone for one second — minor cross-frame drift is
+  invisible in practice.
+- `accusation_group` — generated with the artist, critic and confused
+  character references alongside the style anchor; reads clearly as three of
+  the established cast, not generic figures.
+- All seven generated with Nano Banana (image-reference mode), backgrounds
+  cut with the background remover tool, trimmed to content bounds and resized
+  to 600–1600px long edge depending on on-screen size, WebP q88.
 
 ## Batch 5 — Functional icons
 
@@ -184,6 +204,18 @@ and never an icon-pack glyph.
 | `icon_eraser` | Eraser tool | Drawing | queued |
 | `icon_undo` | Undo | Drawing | queued |
 | `symbol_got_you` | The "فهمتك" signal | الرسم المشترك | queued |
+
+## Batch 6 — App icon
+
+The browser tab / home-screen icon. Referenced directly from `index.html` as
+platform `<link rel="icon">` / `<link rel="apple-touch-icon">` tags rather
+than through `<AssetSlot />`, since it is a platform-level asset outside any
+in-game screen — but it is still Higgsfield-generated against this same art
+direction, never hand-drawn.
+
+| id | purpose | size | transparent | status | file |
+|---|---|---|---|---|---|
+| `app_icon` | The artist and confused characters together, pencil raised, looking at a scribble — reads as "characters + drawing" even at 16px | 2048×2048 source, exported at 512/192/180/32/16 | no (solid paper background — favicons render on inconsistent chrome, transparency there looks broken) | shipped | `public/icon-512.png`, `icon-192.png`, `apple-touch-icon.png`, `favicon-32.png`, `favicon-16.png` |
 
 ---
 
