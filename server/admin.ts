@@ -11,7 +11,7 @@
  * Everything else in `server/` imports `db()` and never touches this again.
  */
 
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 
 let started = false;
 
