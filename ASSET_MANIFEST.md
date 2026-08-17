@@ -335,6 +335,66 @@ Arabic label for its own garment.
   icon still stand. Those composite scenes still show the generated cast, so
   they are the remaining inconsistency with this batch.
 
+## Batch 9 — Scenes composed from the owner's cast (current direction)
+
+Batch 7's hero, splash and mode scenes still showed the rejected generated
+cast even after Batch 8 replaced the character art itself — those composites
+were the one inconsistency Batch 8 left standing. Fixing them is not a
+generation problem: a generated group shot would put the rejected cast right
+back on the app's most visible screens. Instead they are COMPOSED, by
+`scripts/build-scene.py`, out of the same pose cutouts Batch 8 produced —
+extended to the full nine-pose set per character via `--all`, since a scene
+needs poses beyond the four that ship as character art — plus a handful of
+generated props for the one thing no character sheet supplies: paper, an
+easel, the forbidden-item cards.
+
+Each scene is a small JSON placement list in `art-reference/scenes.json`:
+which cutout, where its ground point sits on the stage (0..1), how tall it is
+as a fraction of stage height, and whether it is mirrored. Figures overlap by
+design — that is what reads as a group rather than a row of stickers.
+
+| id | size | file |
+|---|---|---|
+| `hero_home_confused_group` | 1400×644 | `src/assets/generated/hero_home_confused_group.webp` |
+| `splash_backdrop` | 960×711 | `src/assets/generated/splash_backdrop.webp` |
+| `mode_scene_mozawwer` | 615×400 | `src/assets/generated/mode_scene_mozawwer.webp` |
+| `mode_scene_kammil` | 700×348 | `src/assets/generated/mode_scene_kammil.webp` |
+| `mode_scene_mamnou3at` | 668×440 | `src/assets/generated/mode_scene_mamnou3at.webp` |
+| `mode_scene_mushtarak` | 678×480 | `src/assets/generated/mode_scene_mushtarak.webp` |
+| `mode_scene_kanat_esh` | 700×382 | `src/assets/generated/mode_scene_kanat_esh.webp` |
+
+**Props** (generated, `gpt_image_2`, style image = `artist_sheet.png` so line
+weight and colouring match the cut cast; background removed the same way as
+the character sheets — outline defines the object, enclosed white fills in,
+background white does not, which handles a white sheet of paper on a white
+field where no brightness threshold could):
+
+| id | size | file |
+|---|---|---|
+| `scribble_sheet` | 900×778 | `art-reference/props/scribble_sheet.webp` |
+| `cat_sheet` | 852×900 | `art-reference/props/cat_sheet.webp` |
+| `half_sheet` | 900×793 | `art-reference/props/half_sheet.webp` |
+| `two_color_sheet` | 900×889 | `art-reference/props/two_color_sheet.webp` |
+| `easel` | 562×900 | `art-reference/props/easel.webp` |
+| `forbidden_cards` | 329×900 | `art-reference/props/forbidden_cards.webp` |
+| `blank_sheet` | 800×900 | `art-reference/props/blank_sheet.webp` |
+| `pencil` | 884×900 | `art-reference/props/pencil.webp` |
+
+**Batch 9 notes.**
+
+- The full pose library (`art-reference/pose-library/`, 9 poses × 10
+  characters) is committed alongside the 4-per-character shipped set, because
+  `scenes.json` references specific pose indices from it and a scene rebuild
+  needs them without re-running the cutter.
+- Files were **replaced in place under their existing ids** — no code change
+  beyond `width`/`height` in `registry.ts`, since a composed scene's aspect
+  ratio isn't chosen up front the way a generated one's was.
+- To change a scene: edit its entry in `scenes.json` and re-run
+  `scripts/build-scene.py art-reference/scenes.json src/assets/generated
+  --only <scene_id>`.
+- **Batch 7 is now fully superseded** for character-bearing assets. Its
+  `logo_wordmark` and `app_icon` still stand — neither shows a character.
+
 ## Batch 5 — Functional icons
 
 Only generated once the tool UI is settled. Until then the drawing tools use

@@ -1,0 +1,93 @@
+{
+  "hero_home_confused_group": {
+    "width": 1400,
+    "height": 768,
+    "pieces": [
+      { "piece": "critic_1", "x": 0.20, "y": 0.94, "h": 0.66 },
+      { "piece": "innocent_7", "x": 0.79, "y": 0.94, "h": 0.66 },
+      { "piece": "artist_7", "x": 0.08, "y": 0.99, "h": 0.86 },
+      { "piece": "detective_7", "x": 0.92, "y": 0.99, "h": 0.84, "flip": true },
+      { "piece": "confused_7", "x": 0.37, "y": 1.0, "h": 0.74 },
+      { "piece": "excited_2", "x": 0.62, "y": 1.0, "h": 0.72, "flip": true },
+      { "piece": "scribble_sheet", "x": 0.5, "y": 1.02, "h": 0.38 }
+    ]
+  },
+
+  "splash_backdrop": {
+    "width": 960,
+    "height": 1000,
+    "pieces": [
+      { "piece": "critic_2", "x": 0.28, "y": 0.72, "h": 0.4 },
+      { "piece": "detective_8", "x": 0.5, "y": 0.72, "h": 0.44 },
+      { "piece": "confused_1", "x": 0.72, "y": 0.72, "h": 0.4 },
+      { "piece": "artist_1", "x": 0.14, "y": 1.0, "h": 0.56 },
+      { "piece": "excited_2", "x": 0.4, "y": 1.0, "h": 0.5, "flip": true },
+      { "piece": "innocent_7", "x": 0.63, "y": 1.0, "h": 0.5 },
+      { "piece": "trickster_1", "x": 0.87, "y": 1.0, "h": 0.52, "flip": true }
+    ]
+  },
+
+  "mode_scene_mozawwer": {
+    "width": 700,
+    "height": 400,
+    "pieces": [
+      { "piece": "artist_1", "x": 0.15, "y": 0.8, "h": 0.78 },
+      { "piece": "confident_2", "x": 0.4, "y": 0.8, "h": 0.68 },
+      { "piece": "innocent_1", "x": 0.63, "y": 0.8, "h": 0.66 },
+      { "piece": "dramatic_2", "x": 0.87, "y": 0.8, "h": 0.86 },
+      { "piece": "cat_sheet", "x": 0.15, "y": 1.0, "h": 0.34 },
+      { "piece": "cat_sheet", "x": 0.4, "y": 1.0, "h": 0.34, "flip": true },
+      { "piece": "cat_sheet", "x": 0.63, "y": 1.0, "h": 0.34 },
+      { "piece": "scribble_sheet", "x": 0.87, "y": 1.0, "h": 0.34 }
+    ]
+  },
+
+  "mode_scene_kammil": {
+    "width": 700,
+    "height": 380,
+    "pieces": [
+      { "piece": "excited_6", "x": 0.13, "y": 0.82, "h": 0.76, "flip": true },
+      { "piece": "confused_7", "x": 0.38, "y": 0.82, "h": 0.72 },
+      { "piece": "trickster_7", "x": 0.63, "y": 0.82, "h": 0.72 },
+      { "piece": "dramatic_3", "x": 0.88, "y": 0.82, "h": 0.84 },
+      { "piece": "half_sheet", "x": 0.26, "y": 1.0, "h": 0.34 },
+      { "piece": "blank_sheet", "x": 0.51, "y": 1.0, "h": 0.34 },
+      { "piece": "scribble_sheet", "x": 0.76, "y": 1.0, "h": 0.34 }
+    ]
+  },
+
+  "mode_scene_mamnou3at": {
+    "width": 700,
+    "height": 440,
+    "pieces": [
+      { "piece": "easel", "x": 0.33, "y": 1.0, "h": 0.86 },
+      { "piece": "critic_7", "x": 0.66, "y": 1.0, "h": 0.78, "flip": true },
+      { "piece": "forbidden_cards", "x": 0.9, "y": 0.96, "h": 0.72 }
+    ]
+  },
+
+  "mode_scene_mushtarak": {
+    "width": 700,
+    "height": 480,
+    "pieces": [
+      { "piece": "artist_7", "x": 0.17, "y": 0.9, "h": 0.86 },
+      { "piece": "detective_7", "x": 0.83, "y": 0.9, "h": 0.84, "flip": true },
+      { "piece": "two_color_sheet", "x": 0.5, "y": 1.0, "h": 0.52 }
+    ]
+  },
+
+  "mode_scene_kanat_esh": {
+    "width": 700,
+    "height": 400,
+    "pieces": [
+      { "piece": "innocent_1", "x": 0.13, "y": 0.86, "h": 0.68 },
+      { "piece": "confused_7", "x": 0.38, "y": 0.86, "h": 0.72 },
+      { "piece": "trickster_1", "x": 0.63, "y": 0.86, "h": 0.7 },
+      { "piece": "dramatic_8", "x": 0.88, "y": 0.86, "h": 0.78 },
+      { "piece": "cat_sheet", "x": 0.13, "y": 1.0, "h": 0.28 },
+      { "piece": "half_sheet", "x": 0.38, "y": 1.0, "h": 0.28 },
+      { "piece": "scribble_sheet", "x": 0.63, "y": 1.0, "h": 0.28 },
+      { "piece": "scribble_sheet", "x": 0.88, "y": 1.0, "h": 0.28, "flip": true }
+    ]
+  }
+}

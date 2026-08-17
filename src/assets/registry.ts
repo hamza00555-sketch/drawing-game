@@ -4,21 +4,26 @@
  * ID SCHEME: `{character}_{variant}_{pose}`
  *
  *   artist_default_idle
- *   detective_saudi_suspicious
- *   innocent_hijab_confused
+ *   detective_costume_idle
+ *   innocent_default_face
  *
  * The variant slot exists so a costume is a swap, never a second character.
  * A costumed detective is the SAME detective — see ART_BIBLE.md §14.
  * Non-character art keeps a descriptive id (`hero_home_confused_group`).
  *
  * Rules:
- *   - Every file lives in `src/assets/generated/`. The CHARACTER art is cut
- *     from the owner's own hand-made pose sheets in `art-reference/
- *     character-sheets/` by `scripts/cut-character-sheet.py`; re-run that
- *     rather than editing a .webp. Everything else was produced with
- *     Higgsfield following ART_BIBLE.md.
+ *   - Every file lives in `src/assets/generated/`, and nothing here is edited
+ *     by hand. Three kinds, by provenance:
+ *       CHARACTERS — cut from the owner's own pose sheets in
+ *       `art-reference/character-sheets/` by `scripts/cut-character-sheet.py`.
+ *       SCENES — composed from those same cutouts plus generated props by
+ *       `scripts/build-scene.py`, driven by `art-reference/scenes.json`. Not
+ *       generated as pictures: a generated group shot would put the rejected
+ *       cast back on the most visible screens.
+ *       EVERYTHING ELSE — Higgsfield, following ART_BIBLE.md.
+ *     Change any of them by re-running its script, not by touching the .webp.
  *   - Every entry must also exist in ASSET_MANIFEST.md with its prompt, or —
- *     for the cut character art — its source sheet and pose index.
+ *     for cut and composed art — its source and how it was built.
  *   - An id with no entry is not an error: <AssetSlot /> renders a neutral
  *     labelled placeholder so a screen can be built and reviewed before the
  *     artwork lands.
@@ -345,37 +350,37 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
     src: heroHome,
     alt: 'الشخصيات مجتمعة حول رسمة غريبة تحاول فهمها',
     width: 1400,
-    height: 768,
+    height: 644,
   },
   mode_scene_mozawwer: {
     src: sceneMozawwer,
     alt: 'مجموعة ترسم بثقة وواحد متوتر يحاول الاندماج',
-    width: 700,
-    height: 386,
+    width: 615,
+    height: 400,
   },
   mode_scene_kammil: {
     src: sceneKammil,
     alt: 'رسمة تُمرَّر بسرعة بين اللاعبين',
     width: 700,
-    height: 291,
+    height: 348,
   },
   mode_scene_mamnou3at: {
     src: sceneMamnou3at,
     alt: 'شخصية تحاول الرسم وبعض العناصر ممنوعة عليها',
-    width: 700,
-    height: 442,
+    width: 668,
+    height: 440,
   },
   mode_scene_mushtarak: {
     src: sceneMushtarak,
     alt: 'شخصيتان ترسمان على نفس الورقة بأقلام مختلفة',
-    width: 700,
-    height: 483,
+    width: 678,
+    height: 480,
   },
   mode_scene_kanat_esh: {
     src: sceneKanatEsh,
     alt: 'رسمة تنتقل بين الشخصيات وتتغير تدريجيًا',
     width: 700,
-    height: 386,
+    height: 382,
   },
 
   /*
@@ -394,7 +399,7 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
     src: splashBackdrop,
     alt: 'مجموعة من شخصيات اللعبة تتجمع وتحدّق بدهشة نحو رسمة غريبة',
     width: 960,
-    height: 1000,
+    height: 711,
   },
   reveal_role_impostor: {
     src: revealRoleImpostor,

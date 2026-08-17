@@ -211,11 +211,32 @@ def cut(sheet_path: str, out_dir: str, character: str) -> None:
                 f"{len(poses)} detected"
             )
         im = fit(cutout(rgb, mask, poses[index]), 420 if role == "face" else 900)
-        name = f"{character}_{'default' if role != 'costume' else 'saudi'}_"
-        name += "idle.webp" if role == "costume" else f"{role}.webp"
+        # Asset ids are `{character}_{variant}_{pose}`. The costume is a variant
+        # in the idle pose, not a pose of its own.
+        name = (
+            f"{character}_costume_idle.webp"
+            if role == "costume"
+            else f"{character}_default_{role}.webp"
+        )
         path = os.path.join(out_dir, name)
         im.save(path, "WEBP", quality=90)
         print(f"  {name:34} {str(im.size):12} {os.path.getsize(path) // 1024:>4} KB")
+
+
+def cut_all(sheet_path: str, out_dir: str, character: str) -> None:
+    """Export every detected pose as `{character}_{index}.webp`.
+
+    The shipped art uses four poses per character, but the scenes are composed
+    from the owner's real cutouts rather than from anything generated, so the
+    other five need to exist somewhere. This writes the full library; it is a
+    working set, not shipped art.
+    """
+    rgb, mask, poses = load(sheet_path)
+    os.makedirs(out_dir, exist_ok=True)
+    for i, silhouette in enumerate(poses):
+        im = fit(cutout(rgb, mask, silhouette), 900)
+        im.save(os.path.join(out_dir, f"{character}_{i}.webp"), "WEBP", quality=92)
+    print(f"  {character}: {len(poses)} poses")
 
 
 if __name__ == "__main__":
@@ -224,9 +245,12 @@ if __name__ == "__main__":
     ap.add_argument("out")
     ap.add_argument("character")
     ap.add_argument("--contact", action="store_true", help="render numbered poses")
+    ap.add_argument("--all", action="store_true", help="export every pose")
     args = ap.parse_args()
 
     if args.contact:
         contact(args.sheet, args.out)
+    elif args.all:
+        cut_all(args.sheet, args.out, args.character)
     else:
         cut(args.sheet, args.out, args.character)
