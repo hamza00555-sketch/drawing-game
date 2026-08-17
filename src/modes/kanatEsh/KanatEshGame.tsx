@@ -37,6 +37,7 @@ export function KanatEshGame({
   scores,
   onBackToLobby,
   onNextRound,
+  onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
 
@@ -212,6 +213,7 @@ export function KanatEshGame({
       isHost={isHost}
       onNextRound={onNextRound}
       onBackToLobby={onBackToLobby}
+      onChangeMode={onChangeMode}
     />
   );
 }

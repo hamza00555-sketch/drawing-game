@@ -29,6 +29,7 @@ export function MamnouGame({
   scores,
   onBackToLobby,
   onNextRound,
+  onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
   const secret = usePlayerSecret(roomId, game.gameId, selfId);
@@ -118,6 +119,7 @@ export function MamnouGame({
           isHost={isHost}
           onNextRound={onNextRound}
           onBackToLobby={onBackToLobby}
+          onChangeMode={onChangeMode}
         />
       );
   }

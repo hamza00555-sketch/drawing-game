@@ -24,6 +24,8 @@ export interface LiveRoundProps {
   onBackToLobby: () => void;
   /** Host-only: deal a fresh round of the same mode. */
   onNextRound: () => void;
+  /** Host-only: clear the finished round and go straight to mode select. */
+  onChangeMode: () => void;
 }
 
 /**

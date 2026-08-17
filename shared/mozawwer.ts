@@ -174,8 +174,61 @@ export function normalizeGuess(input: string): string {
     .toLowerCase();
 }
 
+/** Edit distance, for typo tolerance. Short words get none — at 3 letters or
+ * fewer, one edit is usually a different word ("قطة" → "قلة"), not a typo. */
+function levenshtein(a: string, b: string): number {
+  const rows = a.length;
+  const cols = b.length;
+  if (rows === 0) return cols;
+  if (cols === 0) return rows;
+
+  let previous = Array.from({ length: cols + 1 }, (_, j) => j);
+  for (let i = 1; i <= rows; i += 1) {
+    const current = [i];
+    for (let j = 1; j <= cols; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        (current[j - 1] ?? 0) + 1,
+        (previous[j] ?? 0) + 1,
+        (previous[j - 1] ?? 0) + cost,
+      );
+    }
+    previous = current;
+  }
+  return previous[cols] as number;
+}
+
+function typoTolerance(wordLength: number): number {
+  if (wordLength <= 3) return 0;
+  if (wordLength <= 6) return 1;
+  return 2;
+}
+
+/**
+ * A guess counts as correct if it names the word — not only if it types the
+ * word and nothing else.
+ *
+ * Two allowances beyond exact match, both aimed at "the player clearly meant
+ * this word", not at accepting a different one:
+ *   - the word appears as a whole word inside a longer guess ("قطة سوداء" for
+ *     "قطة" — describing it further should not fail it);
+ *   - a small edit-distance tolerance absorbs a typo, scaled down to zero for
+ *     short words where one edit is usually a genuinely different word.
+ *
+ * This does not resolve true synonyms (a different word with the same
+ * meaning) — that needs a per-word list of accepted answers in the content
+ * itself, not a string-comparison rule.
+ */
 export function isCorrectGuess(guess: string, word: string): boolean {
-  return normalizeGuess(guess) === normalizeGuess(word);
+  const normGuess = normalizeGuess(guess);
+  const normWord = normalizeGuess(word);
+  if (!normGuess || !normWord) return false;
+  if (normGuess === normWord) return true;
+
+  const guessWords = normGuess.split(' ').filter(Boolean);
+  if (guessWords.length > 1 && guessWords.includes(normWord)) return true;
+
+  return levenshtein(normGuess, normWord) <= typoTolerance(normWord.length);
 }
 
 export interface MozawwerRoundInput {

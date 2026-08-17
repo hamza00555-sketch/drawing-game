@@ -121,7 +121,8 @@ describe('assignKammilRoles', () => {
   it('excludes the guesser from the artists', () => {
     const { artistIds, guesserId } = assignKammilRoles(['p1', 'p2', 'p3', 'p4'], () => 0);
     expect(guesserId).toBe('p1');
-    expect(artistIds).toEqual(['p2', 'p3', 'p4']);
+    expect(artistIds.sort()).toEqual(['p2', 'p3', 'p4']);
+    expect(artistIds).not.toContain(guesserId);
   });
 
   it('does not always pick the same seat', () => {
@@ -130,6 +131,23 @@ describe('assignKammilRoles', () => {
     const first = assignKammilRoles(['p1', 'p2', 'p3'], () => 0).guesserId;
     const last = assignKammilRoles(['p1', 'p2', 'p3'], () => 0.99).guesserId;
     expect(first).not.toBe(last);
+  });
+
+  it('does not always draw in join order', () => {
+    // Filtering the guesser out of the join-ordered list would silently
+    // leave the remaining artists in join order — whoever connects first
+    // would always draw first, every round. Same guesser both times (first
+    // draw picks 'p1' either way) so only the shuffle differs.
+    function sequence(...values: number[]): () => number {
+      let i = 0;
+      return () => values[Math.min(i++, values.length - 1)] as number;
+    }
+
+    const joinOrder = ['p1', 'p2', 'p3', 'p4', 'p5'];
+    const a = assignKammilRoles(joinOrder, sequence(0, 0, 0, 0));
+    const b = assignKammilRoles(joinOrder, sequence(0, 0.9, 0.9, 0.9));
+    expect(a.guesserId).toBe(b.guesserId);
+    expect(a.artistIds).not.toEqual(b.artistIds);
   });
 
   it('refuses a room too small to have both artists and a guesser', () => {

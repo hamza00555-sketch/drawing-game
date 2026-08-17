@@ -123,6 +123,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
           isHost
           onNextRound={noop}
           onBackToLobby={noop}
+          onChangeMode={noop}
         />
       );
 

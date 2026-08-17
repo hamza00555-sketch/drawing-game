@@ -131,6 +131,7 @@ export function MamnouPreview({ phase }: { phase: string }) {
           isHost
           onNextRound={noop}
           onBackToLobby={noop}
+          onChangeMode={noop}
         />
       );
 

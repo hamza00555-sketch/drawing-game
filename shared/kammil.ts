@@ -15,8 +15,10 @@
  * anything properly, which is what makes the result worth looking at.
  *
  * Keep this file dependency-free — it is consumed by an ES module bundler and a
- * CommonJS Node build.
+ * CommonJS Node build. No npm packages, only sibling files in shared/.
  */
+
+import { shuffle } from './random.js';
 
 export const KAMMIL = {
   /** Pen locked while the artist sees the drawing so far and the word. */
@@ -72,7 +74,10 @@ export function kammilDrawMs(artistCount: number): number {
  * Split the room into artists and the one guesser.
  *
  * The guesser is picked at random rather than always being last to join, so the
- * same person does not end up guessing every round of a long session.
+ * same person does not end up guessing every round of a long session. The
+ * draw order among the remaining artists is shuffled too — otherwise it would
+ * silently fall back to join order, and whoever connected first would always
+ * draw first, every round.
  */
 export function assignKammilRoles(
   playerIds: readonly string[],
@@ -84,9 +89,10 @@ export function assignKammilRoles(
 
   const index = Math.min(Math.floor(random() * playerIds.length), playerIds.length - 1);
   const guesserId = playerIds[index] as string;
+  const remaining = playerIds.filter((id) => id !== guesserId);
 
   return {
-    artistIds: playerIds.filter((id) => id !== guesserId),
+    artistIds: shuffle(remaining, random),
     guesserId,
   };
 }

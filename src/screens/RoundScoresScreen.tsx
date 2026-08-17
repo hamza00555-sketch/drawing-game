@@ -26,6 +26,7 @@ export interface RoundScoresScreenProps {
   isHost: boolean;
   onNextRound: () => void;
   onBackToLobby: () => void;
+  onChangeMode: () => void;
 }
 
 export function RoundScoresScreen({
@@ -37,6 +38,7 @@ export function RoundScoresScreen({
   isHost,
   onNextRound,
   onBackToLobby,
+  onChangeMode,
 }: RoundScoresScreenProps) {
   const ranked = Object.values(players).sort(
     (a, b) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0),
@@ -47,9 +49,18 @@ export function RoundScoresScreen({
       footer={
         <>
           {isHost ? (
-            <GameButton tone="primary" size="lg" block onClick={onNextRound}>
-              جولة ثانية
-            </GameButton>
+            <>
+              <GameButton tone="primary" size="lg" block onClick={onNextRound}>
+                جولة ثانية
+              </GameButton>
+              <button
+                type="button"
+                onClick={onChangeMode}
+                className="min-h-tap font-body text-sm text-ink-soft underline underline-offset-4"
+              >
+                غيّر نمط اللعب
+              </button>
+            </>
           ) : (
             <p className="text-center font-body text-sm text-ink-soft">في انتظار المضيف</p>
           )}

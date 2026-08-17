@@ -159,6 +159,7 @@ export function MozawwerPreview({ phase }: { phase: string }) {
           isHost
           onNextRound={noop}
           onBackToLobby={noop}
+          onChangeMode={noop}
         />
       );
 

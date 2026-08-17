@@ -32,6 +32,7 @@ export function KammilGame({
   scores,
   onBackToLobby,
   onNextRound,
+  onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
   const secret = usePlayerSecret(roomId, game.gameId, selfId);
@@ -142,6 +143,7 @@ export function KammilGame({
           isHost={isHost}
           onNextRound={onNextRound}
           onBackToLobby={onBackToLobby}
+          onChangeMode={onChangeMode}
         />
       );
   }

@@ -182,6 +182,10 @@ export function App() {
           void callGame('returnToLobby', { roomId }).catch(() => undefined);
           setRoute({ name: 'lobby' });
         }}
+        onChangeMode={() => {
+          void callGame('returnToLobby', { roomId }).catch(() => undefined);
+          setRoute({ name: 'modeSelect' });
+        }}
       />
     );
   }
@@ -262,7 +266,24 @@ export function App() {
               .finally(() => setBusy(false));
           }}
           onLeave={() => void handleLeave()}
-          onCopyCode={() => void navigator.clipboard?.writeText(room.code)}
+          onShareCode={async () => {
+            const text = `انضم للعبتي في «وش ذا؟» — الكود: ${room.code}`;
+            if (navigator.share) {
+              try {
+                await navigator.share({ title: 'وش ذا؟', text });
+                return 'shared';
+              } catch {
+                // The share sheet itself was cancelled or unavailable — fall
+                // through to the clipboard rather than leaving the tap silent.
+              }
+            }
+            try {
+              await navigator.clipboard?.writeText(text);
+              return 'copied';
+            } catch {
+              return 'failed';
+            }
+          }}
         />
       );
   }

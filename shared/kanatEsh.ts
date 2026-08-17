@@ -13,8 +13,10 @@
  * genuine — and the drift is the entire game.
  *
  * Compiled into both the client and the Cloud Functions build.
- * Keep dependency-free.
+ * Keep dependency-free — no npm packages, only sibling files in shared/.
  */
+
+import { shuffle } from './random.js';
 
 export const KANAT_ESH = {
   drawMs: 45_000,
@@ -97,7 +99,9 @@ export function linkTypeAt(index: number): LinkType {
  * Which player authors each link.
  *
  * Rotated so that consecutive links are always different people — reading your
- * own drawing back would make the round trivially accurate.
+ * own drawing back would make the round trivially accurate. The rotation
+ * starts from a shuffled order, not join order — otherwise whoever connects
+ * first always opens the chain, every single round.
  */
 export function chainAssignments(
   playerIds: readonly string[],
@@ -107,9 +111,10 @@ export function chainAssignments(
     throw new Error('كانت إيش؟ يحتاج 3 لاعبين على الأقل.');
   }
 
+  const order = shuffle(playerIds);
   const out: string[] = [];
   for (let i = 1; i < links; i += 1) {
-    out.push(playerIds[(i - 1) % playerIds.length] as string);
+    out.push(order[(i - 1) % order.length] as string);
   }
   return out;
 }

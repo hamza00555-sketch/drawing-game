@@ -136,4 +136,29 @@ describe('normalizeGuess', () => {
   it('still rejects a genuinely different word', () => {
     expect(isCorrectGuess('قطة', 'كلب')).toBe(false);
   });
+
+  it('accepts the word named inside a longer guess', () => {
+    expect(isCorrectGuess('قطة سوداء', 'قطة')).toBe(true);
+    expect(isCorrectGuess('انها دلة قهوة', 'دلة')).toBe(true);
+  });
+
+  it('absorbs a small typo on a long enough word', () => {
+    expect(isCorrectGuess('سيارره', 'سيارة')).toBe(true); // one doubled letter
+    expect(isCorrectGuess('مسدس', 'مسدص')).toBe(true); // one swapped letter, 4 letters
+  });
+
+  it('gives short words no tolerance at all', () => {
+    // "دلة" (3 letters) with one edit is a different word, not a typo.
+    expect(isCorrectGuess('دلاّة', 'دلة')).toBe(false);
+  });
+
+  it('does not let typo tolerance turn one short word into another', () => {
+    expect(isCorrectGuess('قلة', 'قطة')).toBe(false);
+    expect(isCorrectGuess('كف', 'كلب')).toBe(false);
+  });
+
+  it('rejects an empty guess', () => {
+    expect(isCorrectGuess('', 'قطة')).toBe(false);
+    expect(isCorrectGuess('   ', 'قطة')).toBe(false);
+  });
 });

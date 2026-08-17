@@ -27,6 +27,7 @@ export interface MamnouResultScreenProps {
   isHost: boolean;
   onNextRound: () => void;
   onBackToLobby: () => void;
+  onChangeMode: () => void;
 }
 
 export function MamnouResultScreen({
@@ -41,6 +42,7 @@ export function MamnouResultScreen({
   isHost,
   onNextRound,
   onBackToLobby,
+  onChangeMode,
 }: MamnouResultScreenProps) {
   const artist = players[artistId];
 
@@ -49,9 +51,18 @@ export function MamnouResultScreen({
       footer={
         <>
           {isHost ? (
-            <GameButton tone="primary" size="lg" block onClick={onNextRound}>
-              جولة ثانية
-            </GameButton>
+            <>
+              <GameButton tone="primary" size="lg" block onClick={onNextRound}>
+                جولة ثانية
+              </GameButton>
+              <button
+                type="button"
+                onClick={onChangeMode}
+                className="min-h-tap font-body text-sm text-ink-soft underline underline-offset-4"
+              >
+                غيّر نمط اللعب
+              </button>
+            </>
           ) : (
             <p className="text-center font-body text-sm text-ink-soft">في انتظار المضيف</p>
           )}

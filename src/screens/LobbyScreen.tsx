@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { GameButton } from '../design/components/GameButton';
 import { PlayerAvatar, type PlayerStatus } from '../design/components/PlayerAvatar';
 import { Screen } from '../design/components/Screen';
@@ -38,7 +39,13 @@ export interface LobbyScreenProps {
   onChangeMode: () => void;
   onStart: () => void;
   onLeave: () => void;
-  onCopyCode?: () => void;
+  /**
+   * Tries the native share sheet first and falls back to the clipboard,
+   * reporting which one actually happened so the lobby only shows "تم النسخ"
+   * when a copy is what really occurred — the share sheet already gives its
+   * own confirmation.
+   */
+  onShareCode?: () => Promise<'shared' | 'copied' | 'failed'>;
 }
 
 export function LobbyScreen({
@@ -53,10 +60,19 @@ export function LobbyScreen({
   onChangeMode,
   onStart,
   onLeave,
-  onCopyCode,
+  onShareCode,
 }: LobbyScreenProps) {
+  const [justCopied, setJustCopied] = useState(false);
   const roster = Object.values(players).sort((a, b) => a.joinedAt - b.joinedAt);
   const connectedCount = roster.filter((p) => presence[p.id]?.connected).length;
+
+  async function handleShare() {
+    const result = await onShareCode?.();
+    if (result === 'copied') {
+      setJustCopied(true);
+      window.setTimeout(() => setJustCopied(false), 2000);
+    }
+  }
 
   const isHost = selfId === hostId;
   const enoughPlayers = connectedCount >= ROOM.minPlayers;
@@ -110,15 +126,16 @@ export function LobbyScreen({
       <div className="flex flex-1 flex-col gap-5 py-4">
         <section className="text-center">
           <p className="font-body text-sm text-ink-soft">كود الغرفة</p>
+          <p dir="ltr" className="mt-1 font-display text-3xl tracking-[0.3em] text-ink">
+            {code}
+          </p>
           <button
             type="button"
-            onClick={onCopyCode}
-            dir="ltr"
-            className="mt-1 min-h-tap font-display text-3xl tracking-[0.3em] text-ink"
+            onClick={handleShare}
+            className="mt-2 min-h-tap rounded-pill border-thin border-ink-hairline px-4 font-body text-sm text-ink-soft active:translate-y-[1px]"
           >
-            {code}
+            {justCopied ? 'تم النسخ' : 'شارك الكود مع أصدقائك'}
           </button>
-          <p className="font-body text-xs text-ink-faint">شاركه مع أصدقائك</p>
         </section>
 
         {/*
