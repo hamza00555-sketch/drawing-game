@@ -225,6 +225,13 @@ image reference, which is what keeps the ten of them in one world.
 | `calm_default_idle` | الهادي — low wide dome, entirely unbothered | 900×694 | yes | shipped | `src/assets/generated/calm_default_idle.webp` |
 | `trickster_default_idle` | المشاغب — lopsided, hands behind back, smirking | 455×900 | yes | shipped | `src/assets/generated/trickster_default_idle.webp` |
 | `hero_home_confused_group` | Home hero: all six around one unidentifiable scribble, six different reactions | 1400×768 | yes | shipped | `src/assets/generated/hero_home_confused_group.webp` |
+| `splash_backdrop` | Splash: the six clustered and peering forward, open space at the top for the wordmark | 960×1000 | yes | shipped | `src/assets/generated/splash_backdrop.webp` |
+| `mode_scene_mozawwer` | Three drawing confidently, a fourth sweating and faking it | 700×386 | yes | shipped | `src/assets/generated/mode_scene_mozawwer.webp` |
+| `mode_scene_mamnou3at` | Straining at an easel beside three crossed-out icons | 700×442 | yes | shipped | `src/assets/generated/mode_scene_mamnou3at.webp` |
+| `mode_scene_mushtarak` | Two on one sheet, a red half and a blue half that do not match | 700×483 | yes | shipped | `src/assets/generated/mode_scene_mushtarak.webp` |
+| `mode_scene_kammil` | Four passing a sheet down the line at speed, panicking | 700×291 | yes | shipped | `src/assets/generated/mode_scene_kammil.webp` |
+| `mode_scene_kanat_esh` | A chain of four, the drawing degrading from a clear cat to a scribble | 700×386 | yes | shipped | `src/assets/generated/mode_scene_kanat_esh.webp` |
+| `app_icon` | The artist holding up a pencil beside the puzzled green one, chest-up and bold enough to read at 16px | 2044×2044 source | no (favicons render on unpredictable chrome) | shipped | `public/icon-512.png`, `icon-192.png`, `apple-touch-icon.png`, `favicon-32.png`, `favicon-16.png` |
 
 **Batch 7 notes.**
 
@@ -235,7 +242,13 @@ image reference, which is what keeps the ten of them in one world.
   resolving; the ids are retired once nothing references them.
 - Character files were **replaced in place under their existing ids**, so every
   screen picked up the new art with no code change. Only the `width`/`height`
-  in `registry.ts` moved.
+  in `registry.ts` moved. The same applies to the mode scenes, the hero, the
+  splash backdrop and the app icon.
+- `splash_backdrop` is exported at a lower quality (q82, 1000px) than the rest:
+  it is on screen for 1.6 seconds and was 752 KB at the standard settings.
+- **Batches 1–4 and 6 are now fully superseded.** Every id they listed has been
+  regenerated in the new direction. They are kept as the record of what the
+  game looked like before the reset, not as live rows.
 
 ## Batch 5 — Functional icons
 

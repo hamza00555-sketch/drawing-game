@@ -153,31 +153,31 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
     src: sceneMozawwer,
     alt: 'مجموعة ترسم بثقة وواحد متوتر يحاول الاندماج',
     width: 700,
-    height: 410,
+    height: 386,
   },
   mode_scene_kammil: {
     src: sceneKammil,
     alt: 'رسمة تُمرَّر بسرعة بين اللاعبين',
     width: 700,
-    height: 279,
+    height: 291,
   },
   mode_scene_mamnou3at: {
     src: sceneMamnou3at,
     alt: 'شخصية تحاول الرسم وبعض العناصر ممنوعة عليها',
     width: 700,
-    height: 511,
+    height: 442,
   },
   mode_scene_mushtarak: {
     src: sceneMushtarak,
     alt: 'شخصيتان ترسمان على نفس الورقة بأقلام مختلفة',
     width: 700,
-    height: 419,
+    height: 483,
   },
   mode_scene_kanat_esh: {
     src: sceneKanatEsh,
     alt: 'رسمة تنتقل بين الشخصيات وتتغير تدريجيًا',
     width: 700,
-    height: 328,
+    height: 386,
   },
 
   /*
@@ -195,8 +195,8 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
   splash_backdrop: {
     src: splashBackdrop,
     alt: 'مجموعة من شخصيات اللعبة تتجمع وتحدّق بدهشة نحو رسمة غريبة',
-    width: 1600,
-    height: 1578,
+    width: 960,
+    height: 1000,
   },
   reveal_role_impostor: {
     src: revealRoleImpostor,
