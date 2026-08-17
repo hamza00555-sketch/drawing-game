@@ -3,6 +3,14 @@
 Every visual asset in the game, generated or queued. Nothing renders in the app
 that is not listed here.
 
+> **Style reset in progress.** ART_BIBLE.md §0 replaced the warm-paper "ugly-cute
+> ink" direction with a modern grid-notebook/marker-sticker one. Batches 1–6
+> below are the **old** direction and are being superseded asset by asset as
+> the new cast, scenes and screens are generated — see **Batch 7** for the new
+> Master Style Anchor and the current state of the reset. An old row is not
+> removed from this file until its replacement has shipped and been wired in,
+> so the registry never points at a missing file mid-transition.
+
 ## Naming
 
 Character art is `{character}_{variant}_{pose}`:
@@ -25,11 +33,11 @@ Non-character art keeps a descriptive id: `hero_home_confused_group`,
 
 1. Read `ART_BIBLE.md`.
 2. Define what the asset must communicate.
-3. Write the prompt from the §13 template.
+3. Write the prompt from the §20 template.
 4. Generate with **Higgsfield**, passing **two** references for character art:
-   the Master Style Anchor (`art-reference/style_anchor_cast.webp`) for the
-   world, and that character's own image for its identity. The anchor alone
-   drifts the character.
+   the Master Style Anchor (`art-reference/style_anchor_v2.webp`) for the
+   world, and that character's own new-style image for its identity once one
+   exists. The anchor alone drifts the character.
 5. Check against the acceptance checklist at the end of this file.
 6. If it fails, regenerate — never hand-fix, never redraw in code.
 7. Add the row here and register it in `src/assets/registry.ts`.
@@ -151,7 +159,7 @@ in the prompt. Models do not produce alpha from that instruction — they paint 
 checkerboard. One scene came back with the grid painted BETWEEN the characters,
 which survived background removal as opaque patches inside the artwork and could
 not be fixed without drawing. Regenerated with a plain solid background and cut
-out afterwards. See ART_BIBLE.md §13.
+out afterwards. See ART_BIBLE.md §20.
 
 ## Batch 4 — Gameplay moments
 

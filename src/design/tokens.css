@@ -4,73 +4,85 @@
  * The single source of truth for colour, type, space, elevation and motion.
  * Nothing in the app may hardcode a hex value, a shadow or a duration.
  *
- * Palette intent (see ART_BIBLE.md):
- *   - Ground is warm paper, never pure white.
- *   - Lines are dark ink (#2A211C), never pure black.
- *   - Accents are bold and saturated, but earthy enough to avoid a
- *     preschool palette. Every accent is tested against ink for contrast.
+ * Palette intent (see ART_BIBLE.md §0, §6 — style reset):
+ *   - Ground is white, with a light blue grid-paper surface in margin zones.
+ *   - Lines are near-black (#151515), not the old warm brown.
+ *   - Blue (`cobalt`) is the brand primary; yellow (`mustard`) is the one
+ *     structural accent. Both are used for real UI chrome now, not only as
+ *     one of six equal character accents.
+ *   - Character colours are kept close to their pre-reset identity hues so
+ *     the roster stays recognisable, pushed toward flatter, more saturated
+ *     sticker tones. Every text colour is contrast-checked against white.
+ *
+ * Token and Tailwind class NAMES (`paper`, `ink`, `tomato`, ...) are kept
+ * as-is across the reset even though "paper" no longer means warm paper —
+ * renaming them would mean touching every className in the app for a label
+ * change with no visual effect. Only the values moved.
  */
 
 :root {
-  /* ---- Ground: warm paper, never #FFFFFF ---------------------------------- */
-  --wt-paper: #fdf6e8;
-  --wt-paper-raised: #fffcf5;
-  --wt-paper-sunken: #f4e9d4;
-  --wt-paper-canvas: #fffdf8;
+  /* ---- Ground: white, with a grid surface for margin/page zones ----------- */
+  --wt-paper: #ffffff;
+  --wt-paper-raised: #ffffff;
+  /* The grid-paper surface — margins and page background, never behind live
+   * UI content (a card, the canvas, a form field). See ART_BIBLE.md §9. */
+  --wt-paper-sunken: #eef2fe;
+  --wt-paper-canvas: #ffffff;
   /*
    * Scrim for overlays. Declared as a literal rgba rather than relying on
    * Tailwind's `/opacity` modifier: that modifier cannot inject alpha into a
    * colour that is itself a CSS variable, so `bg-paper/85` compiles to nothing
    * and the overlay silently loses its background.
    */
-  --wt-paper-scrim: rgba(253, 246, 232, 0.88);
+  --wt-paper-scrim: rgba(255, 255, 255, 0.88);
 
-  /* ---- Ink: dark warm brown, never #000000 -------------------------------- */
-  --wt-ink: #2a211c; /* 14.65:1 on paper */
-  --wt-ink-soft: #5b4f47; /*  7.36:1 on paper */
+  /* ---- Ink: near-black, not warm brown ------------------------------------ */
+  --wt-ink: #151515; /* 18.26:1 on white */
+  --wt-ink-soft: #52525b; /*  7.73:1 on white */
   /*
-   * Measured, not guessed. The obvious "faint" grey-brown (#9A8D82) lands at
-   * 3.00:1 on the paper ground — fine for a border, a failure for the small
-   * type it kept being used for. This value is the lightest ink that still
-   * clears 4.5:1 for body text.
+   * Measured, not guessed. This is the lightest grey that still clears
+   * 4.5:1 on white for body text.
    */
-  --wt-ink-faint: #796d65; /*  4.66:1 on paper */
+  --wt-ink-faint: #6b7280; /*  4.83:1 on white */
   /* Borders and rules only. Never put text in this colour. */
-  --wt-ink-hairline: #d9cbb6;
+  --wt-ink-hairline: #dce3f5;
 
-  /* ---- Accents ------------------------------------------------------------ */
-  --wt-tomato: #e2503a;
-  --wt-tomato-deep: #b53826;
-  --wt-mustard: #f0b03a;
-  --wt-mustard-deep: #c98a1c;
-  --wt-teal: #2b9e92;
-  --wt-teal-deep: #1c7269;
-  --wt-cobalt: #3a68cf;
-  --wt-cobalt-deep: #27499b;
-  --wt-grape: #7f57c9;
-  --wt-grape-deep: #5c3b9b;
-  --wt-rose: #dd6491;
-  --wt-rose-deep: #b2436c;
+  /* ---- Accents -------------------------------------------------------------
+   * Character identity colours, roughly one per main-cast member — see
+   * ART_BIBLE.md §12 for who owns which. `cobalt` and `mustard` additionally
+   * carry brand/UI duty (§6): cobalt is the primary action colour, mustard is
+   * the secondary. */
+  --wt-tomato: #ff5a3c; /* الفنان, and the one red/urgent UI accent */
+  --wt-tomato-deep: #d83f24;
+  --wt-mustard: #ffc53d; /* الناقد, and the brand/secondary accent */
+  --wt-mustard-deep: #d89a1e;
+  --wt-teal: #2ebd6b; /* الملخبط */
+  --wt-teal-deep: #1f9455;
+  --wt-cobalt: #2954e8; /* المتحمس, and the brand primary */
+  --wt-cobalt-deep: #1d3eb0;
+  --wt-grape: #7b6fc9; /* المحقق */
+  --wt-grape-deep: #5b4fa8;
+  --wt-rose: #f472a8; /* البريء */
+  --wt-rose-deep: #d34a85;
 
   /*
    * Extended accents for the four player-only characters. Ten characters is
    * more than a palette can separate on hue alone, which is why the cast is
-   * designed to be told apart by silhouette first — see ART_BIBLE.md §12.
-   * These are chosen to sit in gaps: yellow-green, orange between tomato and
-   * mustard, a desaturated blue-grey, and a warm brown.
+   * designed to be told apart by silhouette + signature prop first — see
+   * ART_BIBLE.md §12. These sit in the gaps between the main six.
    */
-  --wt-lime: #7ba63c;
-  --wt-lime-deep: #5c7d27;
-  --wt-ember: #d9772b;
-  --wt-ember-deep: #a8541a;
-  --wt-slate: #7e93a3;
-  --wt-slate-deep: #566876;
-  --wt-cocoa: #8a5a3b;
-  --wt-cocoa-deep: #653f28;
+  --wt-lime: #8bc53f;
+  --wt-lime-deep: #6b9e2a;
+  --wt-ember: #ff8a3d;
+  --wt-ember-deep: #d96a1f;
+  --wt-slate: #8c9bb5;
+  --wt-slate-deep: #6b7a94;
+  --wt-cocoa: #a9704a;
+  --wt-cocoa-deep: #805333;
 
   /* ---- Semantic ----------------------------------------------------------- */
-  --wt-primary: var(--wt-tomato);
-  --wt-primary-deep: var(--wt-tomato-deep);
+  --wt-primary: var(--wt-cobalt);
+  --wt-primary-deep: var(--wt-cobalt-deep);
   --wt-success: var(--wt-teal);
   --wt-success-deep: var(--wt-teal-deep);
   --wt-warning: var(--wt-mustard);
@@ -84,16 +96,16 @@
    * variable, so the drawing code must use literal hex. These exist only for
    * CSS-side uses such as swatches and legends. Change one, change both.
    */
-  --wt-pen-artist: #d13d24;
-  --wt-pen-critic: #c98a1c;
-  --wt-pen-confused: #1c7269;
-  --wt-pen-excited: #27499b;
-  --wt-pen-innocent: #b2436c;
-  --wt-pen-detective: #5c3b9b;
-  --wt-pen-confident: #5c7d27;
-  --wt-pen-dramatic: #a8541a;
-  --wt-pen-calm: #566876;
-  --wt-pen-trickster: #653f28;
+  --wt-pen-artist: #d83f24;
+  --wt-pen-critic: #d89a1e;
+  --wt-pen-confused: #1f9455;
+  --wt-pen-excited: #1d3eb0;
+  --wt-pen-innocent: #d34a85;
+  --wt-pen-detective: #5b4fa8;
+  --wt-pen-confident: #6b9e2a;
+  --wt-pen-dramatic: #d96a1f;
+  --wt-pen-calm: #6b7a94;
+  --wt-pen-trickster: #805333;
 
   /* ---- Type --------------------------------------------------------------- */
   --wt-font-display: 'Baloo Bhaijaan 2', 'Tajawal', system-ui, sans-serif;

@@ -75,17 +75,39 @@
 
 @layer components {
   /*
-   * The paper ground. A very low-contrast tint keeps the surface from reading
-   * as flat digital white without competing with gameplay. This is a surface
-   * treatment, not an illustration — no shapes, no drawn marks.
+   * The grid-paper ground (ART_BIBLE.md §9). Thin, low-contrast graph-paper
+   * lines on white — a notebook page, not an illustration. Never applied
+   * behind a card, the drawing canvas, or a form field: only the margin/page
+   * zone around live content gets the grid, or it starts fighting legibility.
+   * A slightly bolder line every 4th cell reads as "engineering paper"
+   * without needing a second image layer.
    */
   .wt-paper-ground {
+    --wt-grid-cell: 24px;
+    --wt-grid-line: #e4ebfc;
+    --wt-grid-line-bold: #cdd9f7;
     background-color: var(--wt-paper);
-    background-image: radial-gradient(
-      circle at 50% 0%,
-      var(--wt-paper-raised) 0%,
-      var(--wt-paper) 55%
-    );
+    background-image:
+      repeating-linear-gradient(
+        to bottom,
+        var(--wt-grid-line-bold) 0 1px,
+        transparent 1px calc(var(--wt-grid-cell) * 4)
+      ),
+      repeating-linear-gradient(
+        to left,
+        var(--wt-grid-line-bold) 0 1px,
+        transparent 1px calc(var(--wt-grid-cell) * 4)
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--wt-grid-line) 0 1px,
+        transparent 1px var(--wt-grid-cell)
+      ),
+      repeating-linear-gradient(
+        to left,
+        var(--wt-grid-line) 0 1px,
+        transparent 1px var(--wt-grid-cell)
+      );
   }
 
   /* Overlay scrim. See --wt-paper-scrim for why this is not bg-paper/85. */

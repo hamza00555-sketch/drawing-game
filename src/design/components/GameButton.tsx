@@ -24,7 +24,7 @@ export interface GameButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
 }
 
 const TONE: Record<ButtonTone, string> = {
-  primary: 'bg-tomato text-paper border-ink',
+  primary: 'bg-cobalt text-paper border-ink',
   secondary: 'bg-mustard text-ink border-ink',
   quiet: 'bg-paper-raised text-ink border-ink',
   danger: 'bg-tomato-deep text-paper border-ink',

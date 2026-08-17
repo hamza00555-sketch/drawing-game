@@ -9,142 +9,182 @@ immediately which game it belongs to.
 
 ---
 
-## 0. Canon — locked
+## 0. Canon — reset
 
-**The art direction is approved and closed.** Two artefacts are now binding:
+**The direction below replaces everything before it.** The previous canon —
+warm-paper "ugly-cute" ink cartoons, `art-reference/style_anchor_cast.webp`,
+the six original character renders — is retired. Nothing from the old world is
+passed as a reference for new generations; the roster's *names, personalities
+and roles* carry over (§12), the *drawings* do not.
 
-1. **`art-reference/style_anchor_cast.webp` — the Master Style Anchor.** Passed
-   as an image reference to every character or world asset from here on.
-2. **The six generated character designs — canon.** They are not redesigned and
-   not reinterpreted per generation.
+This reset happened for a concrete reason: the old brief explicitly banned
+"flat vector mascots, tidy geometry, SaaS illustration style" as its primary
+failure mode. The new direction is deliberately closer to that — a clean,
+modern, sticker/marker-illustration language, moved from a printed-comic world
+to an app-native one. That is the point, not a drift to correct.
 
-Nothing new may drift toward: more 3D, more photorealistic, flatter, more
-childish, more geometrically clean, a different line weight, or a different
-shading approach. Every asset must look like it came out of the same world.
-
-When generating a new pose for a character, pass **both** references: the Master
-Style Anchor (for the world) and that character's own image (for its identity).
-The anchor alone is not enough — it will drift the character.
+A **new Master Style Anchor** is generated first (§19) and becomes the binding
+reference for every asset after it, exactly as the old one was — pass it, plus
+the specific character's own canon image once one exists, to every new
+generation. "Same world as the anchor" is still the acceptance bar; the world
+itself changed.
 
 ---
 
 ## 1. The one-line brief
 
-> An expressive, hand-drawn cartoon party world of odd creatures who behave like
-> people — drawn with a thick, slightly imperfect ink line on warm paper.
+> A modern Arabic app drawn like a confident marker sketch in a clean grid
+> notebook — bold black outlines, one strong blue, one yellow spark, white
+> space that breathes, doodles living in the margins instead of on the stage.
 
 Two failure modes to hold in mind at all times:
 
-- **Too corporate.** Flat vector mascots, even shapes, tidy geometry, SaaS
-  illustration style. Dead on arrival.
-- **Too childish.** Preschool primaries, rounded-everything, baby faces, nursery
-  decoration. This is a game adults play at a game night. It is *funny*, not
-  *cute for toddlers*.
+- **Too sterile.** Perfect vector shapes with no hand in them at all, a
+  generic SaaS dashboard wearing a mascot. If it could be reskinned for a
+  budgeting app with no other changes, it has failed.
+- **Too messy.** Doodle debris crowding the actual UI, sketch lines fighting
+  the content for attention, a page that reads as noisy rather than playful.
 
-The target sits between them: **comedic, a bit ugly on purpose, warm, alive**.
+The target sits between them: **confident, legible, warm through personality
+and colour rather than through texture — a notebook that a design team kept,
+not a napkin sketch.**
 
 ---
 
 ## 2. Line
 
-- **Thick, confident outlines** with visible pressure variation — thicker at the
-  bottom of forms and where shapes overlap, thinner at the top.
-- The line is **ink brown `#2A211C`**, never pure black.
-- Contours are **slightly imperfect**: a circle wobbles, a straight edge drifts.
-  Perfect curves read as vector and kill the hand-drawn feel.
-- Lines **overshoot at corners** occasionally, like a marker sketch.
-- Line weight is consistent across assets: heavy on the silhouette, medium on
-  major internal forms, light on interior detail. Never hairline.
+- **Uniform, confident black outlines** — `#151515`, not a warm brown, not a
+  soft grey. This is the single biggest shift from the old system: black
+  outlines are now correct, not a mistake to avoid.
+- Weight is **consistent per asset**, chosen by size: heavier on hero
+  illustrations and the logo, lighter (but still solid, never hairline) on
+  small UI-scale character crops and icons.
+- A little hand felt at the edges — a corner overshoots very slightly, a curve
+  is not a perfect Bézier — but far subtler than the old "wobbling contour"
+  rule. The line should read as *drawn with a good marker and a steady hand*,
+  not as a shaky sketch.
+- **Doodle linework** (stars, arrows, swirls, question marks, motion lines) is
+  a **separate, thinner register** from the character/UI outline weight, and
+  lives in the page margins around content — never laid over a card, a canvas,
+  or a character's own silhouette.
 
 ## 3. Shape language
 
-- **Rounded, organic silhouettes.** Blobby, tapered, asymmetric.
-- Asymmetry is required. Both sides of a face or body should differ slightly.
-- **Big simple masses** with a few small sharp details for contrast — a tiny
-  tooth, a bent antenna, a crooked pupil.
-- Silhouette is king: every character must be identifiable as a **black shape
-  alone**. This is a hard acceptance test, not a guideline.
+- **Simplified, iconic silhouettes** — closer to a well-cut sticker than to a
+  loose cartoon blob. A body reads as one or two clear geometric masses (a
+  rounded marker/pen barrel, an egg, a dome) rather than an organic wobble.
+- Each character keeps **one signature silhouette idea** carried over from the
+  old cast (the artist is a tall marker-shaped form, the critic is a wide low
+  mass, and so on — see §12) — reinterpreted in the new simplified shape
+  language, not copied stroke for stroke.
+- Limbs and clothing are now **legible as limbs and clothing** — arms, hands,
+  a thobe, a hijab, a ghutra with visible drape — rather than rubber-hose
+  abstractions. This is the other major shift: the cast reads as *small
+  people in costume* now, not as odd creatures.
+- Silhouette still matters, but the acceptance bar changes with the shape
+  language: a character must be nameable from **outline + one signature prop
+  or garment** (the beret, the ghutra, the hijab, the magnifying glass), not
+  from silhouette alone the way the old blob-cast required.
 
 ## 4. Proportion
 
-- **Large expressive heads**, roughly 45–60% of total height.
-- **Small bodies**, short torsos.
-- **Merged head-and-body blobs are an accepted variant** — several of the
-  established cast are a single mass carrying the face, with no neck. Use this
-  to widen silhouette variety, not as the default for every character.
-- **Flexible rubber-hose arms** — no elbows, no joints, they curve.
-- **Simple mitten or three-finger hands.** No detailed anatomy.
-- **Small feet**, often just a rounded stub or a simple shoe shape.
-- Proportions **vary between characters**. A cast where every body is the same
-  blob in a different colour is a failed cast.
+- **Large heads on compact bodies**, roughly 40–50% of total height — slightly
+  less extreme than the old cast, because clothing and limbs now carry some of
+  the visual weight the oversized head used to carry alone.
+- Bodies are **short and simple**: a marker/pen barrel, a rounded torso, an
+  egg — never a long or wandering shape.
+- **Real arms and hands**, sleeves and all where clothing calls for them.
+  Simple three-to-four-finger hands, expressive enough to hold a pencil, cross
+  in judgement, or point in accusation clearly.
+- **Small simple feet or shoes**, enough to plant a pose, not anatomical.
+- Proportions still **vary between characters** — the flame-tall drama queen
+  and the flattened, low "الهادي" stay proportionally distinct from the rest
+  of the cast; simplifying the shape language must not flatten the *variety*.
 
 ## 5. Faces
 
-- **Eyes** carry all the acting. Solid ink pupils on white; size, spacing and
-  pupil position change dramatically with emotion. Eyes may be different sizes
-  on the same face.
-- **Eyebrows** are separate floating ink strokes — the fastest read for
-  suspicion, doubt and outrage. Essential for المزوّر.
-- **Mouths** are bold single shapes: a wide open smile, a wobbling line, a tight
-  small circle. Teeth appear only as simple blocks.
-- **No noses** on most characters, or a tiny simple one on a few — one more way
-  to make faces distinguishable.
-- Expressions are **exaggerated past realism**. Shock means the whole face
-  rearranges.
+- **Eyes carry the acting**, as before — bold circles or ovals, solid pupils,
+  size and spacing doing most emotional work. Under the new line system they
+  read as clean shapes, not sketchy scribbles.
+- **Eyebrows are the fastest emotional read** and stay a separate stroke
+  floating above the eye, exactly as before — critical for المزوّر's
+  suspicion and doubt.
+- **Mouths are bold single shapes.** Simpler under the new system: a curve, a
+  wide open smile, a flat worried line — teeth only as a simple block when a
+  laugh or shock calls for it.
+- Expressions stay **exaggerated past realism** — the shift is in linework and
+  proportion, not in how hard a face is allowed to react.
 
 ## 6. Colour
 
-Ground and ink come from `src/design/tokens.css` and never vary:
+Ground, ink and the two brand colours come from `src/design/tokens.css` and
+never vary:
 
 | Role | Value |
 |---|---|
-| Paper ground | `#FDF6E8` warm off-white |
-| Raised paper | `#FFFCF5` |
-| Ink (all lines) | `#2A211C` |
+| Page ground | `#FFFFFF` white, or the grid surface (§9) in the margin zone |
+| Ink (all outlines, body text) | `#151515` near-black |
+| Brand primary | `#2954E8` royal blue |
+| Brand accent | `#FFC53D` warm yellow |
 
-Accents — bold and saturated, but earthy rather than fluorescent:
+Character body colours — kept close to the old cast's identity colours so the
+roster stays recognisable through the reset, pushed toward flatter, more
+saturated sticker tones:
 
-`#E2503A` tomato · `#F0B03A` mustard · `#2B9E92` teal · `#3A68CF` cobalt ·
-`#7F57C9` grape · `#DD6491` rose
+`#FF5A3C` red (الفنان) · `#FFC53D` yellow (الناقد, shared with the brand
+accent) · `#2EBD6B` green (الملخبط) · `#2954E8` blue (المتحمس, shared with the
+brand primary — deliberate: the excited character and the brand share one
+blue) · `#F472A8` pink (البريء) · `#7B6FC9` purple (المحقق)
 
 Rules:
 
-- Each character gets **one dominant body colour** plus at most **two accents**.
-- **No gradients as a style.** At most one soft internal shading pass.
-- **No neon, no pastel wash, no primary red/blue/yellow triads** (that is the
-  preschool trap).
-- Colour must never be the only thing distinguishing two characters — see §4.
+- **Blue and yellow are structural** — UI chrome, the logo, primary actions.
+  They are not "just two more accents" among the character colours.
+- Each character keeps **one dominant body colour**, flat, with at most one
+  small accent (a scarf, a sash) — no multi-colour costumes.
+- **No gradients, no neon, no pastel wash.** Flat, confident, saturated fills.
+- Colour is reinforced by **silhouette + signature prop**, never the only
+  thing separating two characters (§3).
 
 ## 7. Shading
 
-- **Flat fills** plus a **single shadow tone** — one darker value of the fill
-  colour, applied loosely, offset consistently as if lit from the upper left.
-- Shadow edges may miss the outline slightly. Misregistration reads as print
-  and is desirable.
+- **Flat fills**, optionally one soft shadow tone for grounding (a character
+  standing on a surface, a card lifted off the page) — lighter-handed than the
+  old system's loose misregistered shadow, closer to a clean flat drop shadow
+  or none at all.
 - **No airbrush, no glow, no rim light, no ambient occlusion, no 3D render.**
-- Optional: a light dry-brush or paper grain texture, kept subtle.
+- No paper-grain or dry-brush texture — that belonged to the warm-paper world
+  and reads as dated against a clean white/grid ground.
 
 ## 8. Detail level
 
-Low to medium. Read at **48px** first: silhouette and expression must survive.
-Interior detail exists to reward a closer look, never to carry the read.
-Backgrounds in character assets are **transparent** unless the asset is
-explicitly a scene.
+Low. Read at **48px** first: silhouette, signature prop and expression must
+survive. Interior detail is minimal by design — this is a sticker language,
+not an illustration one. Character assets ship on a **transparent**
+background unless the asset is explicitly a scene or a UI mockup.
 
-## 9. Backgrounds and scenes
+## 9. Backgrounds and the grid system
 
-- Backgrounds stay **light and low-contrast** so they never compete with
-  gameplay or with a drawing on the canvas.
-- Environments are **suggested, not built**: a floor line, a single prop, a
-  loose shape of colour. No detailed rooms, no perspective grids.
-- **Flat, straight-on staging.** No dramatic camera angles, no vanishing points.
+- **Two zones, not one wash.** The actual UI surface (cards, the canvas, form
+  fields) is clean white — the grid never runs behind live content, it would
+  fight legibility. The **margin/page zone** around and behind the UI carries
+  a **light blue grid-paper pattern**: thin, low-contrast graph-paper lines on
+  white, evoking a notebook page without competing with anything on it.
+- Doodles (§2) live in that same margin zone, never inside a card or on the
+  canvas.
+- Scene illustrations (hero art, mode scenes) sit on **plain white**, cut out
+  and composited by the app onto whichever zone they land in — never
+  generated with the grid baked into the character art itself.
+- **Flat, straight-on staging** for any scene with multiple characters. No
+  dramatic camera angles, no vanishing points, no built environments — a
+  floor line and a prop or two is enough.
 
 ## 10. Motion (applied in code, planned in art)
 
-Assets are generated as stills; motion is applied in code with Framer Motion
-using squash & stretch, anticipation, overshoot and stagger. Character art
-should therefore be drawn with **clear pivot logic** — a body that can
-plausibly squash vertically and stretch horizontally without breaking.
+Unchanged in principle: assets are generated as stills, motion is Framer
+Motion in code — squash, stretch, anticipation, overshoot, stagger. The
+simplified new shapes make this *easier*, not harder: a marker-barrel body or
+an egg squashes cleanly with no loose limbs to break the illusion.
 
 ---
 
@@ -154,16 +194,17 @@ Any of these means regenerate:
 
 - Photorealism, 3D render, Pixar-style CG, clay render
 - Anime or manga styling
-- Watercolour, oil paint, pencil-sketch rendering
-- Flat corporate vector (Corporate Memphis / Alegria)
+- Watercolour, oil paint, loose pencil-sketch rendering
 - Gradient meshes, glassmorphism, neon glow, chrome
 - Realistic human beings
-- Clean geometric perfection
-- Preschool primary palettes and nursery motifs
-- Text or lettering baked into the artwork
+- Preschool primary palettes and nursery motifs (this is a confident sticker
+  language, not a toddler one — see §1)
+- Text or lettering baked into character/scene artwork (the logo is the one
+  deliberate exception, §19)
 - Watermarks, signatures, borders, frames
 - Emoji, or anything derived from emoji design language
 - Generic stock-illustration mascots
+- Doodle marks drawn **over** a character's own body or a UI surface (§2, §9)
 
 ---
 
@@ -183,14 +224,14 @@ Colour identifies them in prose; form identifies them on screen.
 
 ### Main cast
 
-| Colour | Character | Personality | Locked form |
+| Colour | Character | Personality | Locked form (new shape language) |
 |---|---|---|---|
-| Red | **الفنان المتفلسف** | Confident, self-important, treats catastrophic drawings as masterpieces | Tall, thin, lanky; **the beret is core identity and never comes off**; long drooping arms |
-| Yellow | **الناقد** | Low energy, permanently unimpressed; sarcastic and judgmental | Squat and wide; heavy brow ridge; hunched forward |
-| Teal | **الملخبط** | Always visibly trying to work out what is happening | Round, soft, slightly deflated; drooping antenna; wide-set unfocused eyes |
-| Blue | **المتحمس** | Enormous energy; fast, exaggerated, physical | Compact and springy; spiky outline; poses should be mid-motion |
-| Pink | **البريء المشبوه** | Sweet and guileless to a degree that becomes funny under suspicion | Small, neat, egg-shaped; tiny body; oversized guileless eyes |
-| Purple | **المحقق** | Cold, reserved, watches everyone with quiet suspicion | Angular and elongated; narrow head; arms crossed by default |
+| Red | **الفنان المتفلسف** | Confident, self-important, treats catastrophic drawings as masterpieces | A tall marker/pen-barrel body; **the black beret is core identity and never comes off**; holds a brush or palette |
+| Yellow | **الناقد** | Low energy, permanently unimpressed; sarcastic and judgmental | Wide, low, egg-shaped; a scarf or shemagh wrap; arms crossed by default; heavy flat brow |
+| Green | **الملخبط** | Always visibly trying to work out what is happening | Round, soft, slightly slouched thobe-like silhouette; a puzzled tilt to the head; wide-set unfocused eyes |
+| Blue | **المتحمس** | Enormous energy; fast, exaggerated, physical | Compact and spiky-haired; caped or wrapped in motion lines; poses mid-motion, fist raised |
+| Pink | **البريء المشبوه** | Sweet and guileless to a degree that becomes funny under suspicion | Small, neat, rounded silhouette in a simple hijab; hands clasped; oversized guileless eyes |
+| Purple | **المحقق** | Cold, reserved, watches everyone with quiet suspicion | Tall and narrow in a full thobe and ghutra with igal; holds a magnifying glass; narrowed eyes |
 
 ### Player-only cast
 
@@ -199,12 +240,12 @@ personalities. None of them wears Saudi clothing: the two costume variants in
 the main cast already carry that representation, and adding more "for balance"
 is the costume-theme failure §13 forbids.
 
-| Colour | Character | Personality | Locked form |
+| Colour | Character | Personality | Locked form (new shape language) |
 |---|---|---|---|
-| Lime | **الواثق زيادة** | Certain he has the answer, consistently wrong | Huge barrel torso with a comically tiny head — the inverse of the cast's usual big-head proportion; hands on hips, wide planted stance |
-| Ember | **الدرامي** | Every minor event is a catastrophe | Tall wavy flame-like body with **no legs**, tapering to a curl; enormous arms flung overhead |
-| Slate | **الهادي** | Minimal reactions amid total chaos | The smallest and lowest: a wide flattened dome, wider than tall, barely any limbs |
-| Cocoa | **المشاغب** | Enjoys wrecking it more than winning | Lopsided and asymmetric; one arm thick and one thin, leaning off-balance, hands hidden behind the back |
+| Lime | **الواثق زيادة** | Certain he has the answer, consistently wrong | Barrel-chested with a comically small head; hands on hips, wide planted stance |
+| Ember | **الدرامي** | Every minor event is a catastrophe | Tall and narrow, a dramatic scarf or collar flaring behind; arms flung overhead |
+| Slate | **الهادي** | Minimal reactions amid total chaos | The smallest and lowest of the ten: a wide flattened dome, barely any limbs showing |
+| Cocoa | **المشاغب** | Enjoys wrecking it more than winning | Lopsided posture, one shoulder higher than the other, hands hidden behind the back |
 
 The closest silhouette pair in the full ten is **الناقد** and **الواثق زيادة**,
 both wide masses. They separate on the triangular negative space under the
@@ -214,8 +255,8 @@ an actual silhouette lineup, not by eye on the colour versions.
 ### What must survive every generation
 
 Head shape · body shape · head-to-body ratio · limb length · hand and foot
-shape · eyes · eyebrows · mouth · special features (antenna, spikes, beret) ·
-base colour · silhouette.
+shape · eyes · eyebrows · mouth · signature garment or prop (beret, ghutra,
+hijab, magnifying glass, spiky hair) · base colour · silhouette.
 
 A player must recognise the character instantly even when the **pose**,
 **expression**, **clothing** or **body angle** changes.
@@ -380,35 +421,72 @@ explain the phrase «وش ذا؟» without a word of copy.
 
 ---
 
-## 13. Prompt template
+## 19. Master Style Anchor & logo
+
+The reset (§0) needs a new binding reference before anything else is
+regenerated against it.
+
+### Master Style Anchor
+
+A single image establishing the new world: two or three cast members
+reinterpreted in the new shape language (§3–§5), on plain white, generated
+first and reviewed against the acceptance checklist (§21) before anything
+else is produced. Every subsequent character or scene generation passes this
+image as a reference alongside that character's own canon art once it exists.
+
+### Logo
+
+The logo is the one place text is allowed baked into generated art (§11) —
+everywhere else, the game name is set in the app's own Arabic type, never as
+an image.
+
+Requirements:
+
+- **«وش ذا؟» in Arabic**, hand-lettered with the same confident marker feel
+  as the line system (§2) — thick, slightly imperfect letterforms, not a
+  digital font.
+- Ink black `#151515` primary letterforms, with the brand blue `#2954E8` and
+  yellow `#FFC53D` (§6) used the way the reference uses them: one word or
+  stroke picked out in colour, not a rainbow treatment.
+- Reads clearly at icon scale (down to 32px) as well as full lockup scale.
+- Generated in the required set: full lockup (with the "لعبة الرسم
+  والتخمين" tagline ribbon), wide/horizontal lockup, icon-only mark (for
+  favicon/app-icon use), a version staged on the grid background (§9), and a
+  version staged inside the app UI (a card or splash screen).
+- The mark may be surrounded by the same margin-zone doodles as any other
+  screen (§2, §9) — stars, a pencil, question marks — but the wordmark itself
+  stays legible as the focal point, never crowded.
+
+## 20. Prompt template
 
 Every generation starts from this. Fill the bracketed slots; never drop the
 style block.
 
 ```
 [SUBJECT AND ACTION — one clear sentence, e.g.
- "a squat suspicious cartoon creature leaning forward, eyes narrowed,
-  one eyebrow raised, pointing an accusing finger"]
+ "a confident cartoon character in a black beret, holding a paintbrush,
+  looking proudly at a terrible drawing"]
 
-STYLE: expressive hand-drawn cartoon illustration, thick uneven ink outlines
-with visible pressure variation, dark warm brown line art (#2A211C) never pure
-black, slightly imperfect wobbling contours, flat colour fills with a single
-soft shadow tone, rounded organic asymmetric shapes, large expressive head on a
-small body, rubber-hose arms without joints, mitten hands, exaggerated cartoon
-facial expression, bold readable silhouette.
+STYLE: modern hand-drawn marker/sticker illustration, confident uniform black
+outlines (#151515), minimal hand-drawn imperfection — a steady marker, not a
+shaky sketch — flat colour fills with at most one soft grounding shadow,
+simplified iconic silhouettes (a rounded body mass, real legible limbs and
+clothing, not rubber-hose abstraction), large head on a compact body, bold
+readable silhouette at small sizes.
 
-PALETTE: warm off-white paper background (#FDF6E8), one dominant body colour
-from [#E2503A tomato / #F0B03A mustard / #2B9E92 teal / #3A68CF cobalt /
-#7F57C9 grape / #DD6491 rose] with at most two accent colours.
+PALETTE: plain white background, one dominant body colour from [#FF5A3C red /
+#FFC53D yellow / #2EBD6B green / #2954E8 blue / #F472A8 pink / #7B6FC9 purple]
+with at most one small accent (a scarf, a sash) — never a multi-colour
+costume.
 
-COMPOSITION: [full body / bust] , flat straight-on view, centred, generous
-margin, plain flat solid warm off-white background.
+COMPOSITION: [full body / bust], flat straight-on view, centred, generous
+margin, plain flat solid white background.
 
 NEGATIVE: photorealistic, 3d render, cgi, pixar, clay, anime, manga,
-watercolour, oil painting, pencil sketch, flat corporate vector, corporate
-memphis, gradient mesh, glassmorphism, neon glow, chrome, realistic human,
-geometric perfection, preschool primary colours, text, letters, words,
-watermark, signature, frame, border, emoji, sticker pack, stock illustration.
+watercolour, oil painting, loose pencil sketch, gradient mesh, glassmorphism,
+neon glow, chrome, realistic human, preschool primary colours, nursery
+decoration, text, letters, words, watermark, signature, frame, border, emoji,
+sticker pack, stock illustration, rubber-hose limbs, warm paper texture.
 ```
 
 ### Never ask a model for a transparent background
@@ -426,19 +504,24 @@ fine to use. It is the prompt wording that fails.)
 
 ---
 
-## 14. Acceptance checklist
+## 21. Acceptance checklist
 
 An asset ships only if every line is true:
 
-1. Same world as the existing assets — could sit beside them on one screen.
-2. Silhouette test passes: recognisable as a solid black shape.
+1. Same world as the new Master Style Anchor — could sit beside it on one
+   screen.
+2. Silhouette + signature prop/garment together identify the character (§3).
 3. Readable at 48px.
-4. Ink is warm brown, not pure black.
-5. Line has visible weight variation and is not geometrically perfect.
-6. Palette is on-spec; not preschool, not neon.
-7. Shading is flat plus one shadow tone. No render effects.
-8. No text, watermark, frame or signature.
-9. Transparent background where required.
-10. Expression is exaggerated enough to read instantly.
+4. Ink is near-black `#151515`, uniform weight, not a wobbling sketch line.
+5. Palette is on-spec: white ground, one dominant flat body colour, blue/
+   yellow reserved for brand and المتحمس.
+6. Shading is flat, at most one soft grounding shadow. No render effects, no
+   paper-grain texture.
+7. No text, watermark, frame or signature (except the logo itself, §19).
+8. Transparent background where required; grid/doodles are never baked into
+   character art (§9).
+9. Expression is exaggerated enough to read instantly.
+10. Limbs and clothing read as real limbs and clothing, not rubber-hose
+    abstraction.
 
 Fail any line, regenerate. Do not fix art by hand or in code.

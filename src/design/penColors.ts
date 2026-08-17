@@ -16,22 +16,22 @@
  */
 
 export const PEN_COLORS = {
-  artist: '#d13d24',
-  critic: '#c98a1c',
-  confused: '#1c7269',
-  excited: '#27499b',
-  innocent: '#b2436c',
-  detective: '#5c3b9b',
-  confident: '#5c7d27',
-  dramatic: '#a8541a',
-  calm: '#566876',
-  trickster: '#653f28',
+  artist: '#d83f24',
+  critic: '#d89a1e',
+  confused: '#1f9455',
+  excited: '#1d3eb0',
+  innocent: '#d34a85',
+  detective: '#5b4fa8',
+  confident: '#6b9e2a',
+  dramatic: '#d96a1f',
+  calm: '#6b7a94',
+  trickster: '#805333',
 } as const satisfies Record<string, string>;
 
 export type PenColorKey = keyof typeof PEN_COLORS;
 
 /** Default ink for canvases with no per-player colouring. */
-export const DEFAULT_PEN = '#2a211c';
+export const DEFAULT_PEN = '#151515';
 
 /**
  * A player's pen, from the character they chose.
