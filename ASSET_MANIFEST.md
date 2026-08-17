@@ -393,7 +393,8 @@ field where no brightness threshold could):
   `scripts/build-scene.py art-reference/scenes.json src/assets/generated
   --only <scene_id>`.
 - **Batch 7 is now fully superseded** for character-bearing assets. Its
-  `logo_wordmark` and `app_icon` still stand — neither shows a character.
+  `logo_wordmark` still stands — it shows no character. Its `app_icon` was
+  later superseded too, by Batch 11.
 
 ## Batch 10 — Hero regenerated as one Higgsfield illustration (current direction)
 
@@ -441,6 +442,83 @@ Background removed with `remove_background`, trimmed to content with an
 - The splash backdrop and the five mode scenes are still Batch 9 composites.
   They were not requested to change, but the same one-shot-generation approach
   would likely improve them the same way if that's ever wanted.
+
+## Batch 11 — Every remaining generated asset moved to Higgsfield (current direction)
+
+Requested explicitly, following Batch 10: "ابا كل الرسومات المولدة تصير بهيقزفيلد في
+كل الاقسام" — every generated graphic, in every section, should be built the
+Batch 10 way. Two different problems were in scope, not one:
+
+- **Batch 9's mode scenes and splash backdrop** were composites of pose
+  cutouts, same as the old hero — pasted-together lighting, no natural
+  overlap. Batch 10's fix (one `gpt_image_2` generation, single-pose idle
+  cutouts as references, not the full pose sheet) applies directly.
+- **Batch 7's `accusation_group`, the impostor mask art, the countdown
+  creature and the app icon** were never touched by Batch 8 or 9 at all —
+  they were still flat-vector generations from before the owner's own
+  characters became canon, so they clashed with the current cast outright (one
+  even used the wrong colour for a character) or, for the icon, showed a
+  character design that no longer exists. These needed the style fix as much
+  as the characters did, whether or not they show a character.
+
+**Splash and mode scenes** — six references or fewer per scene (the exact
+cast the scene needs), single-pose idle cutouts, same coloured-pencil prompt
+header as Batch 10:
+
+| id | size | file |
+|---|---|---|
+| `splash_backdrop` | 1028×972 | `src/assets/generated/splash_backdrop.webp` |
+| `mode_scene_mozawwer` | 1341×658 | `src/assets/generated/mode_scene_mozawwer.webp` |
+| `mode_scene_kammil` | 1346×624 | `src/assets/generated/mode_scene_kammil.webp` |
+| `mode_scene_mamnou3at` | 1049×756 | `src/assets/generated/mode_scene_mamnou3at.webp` |
+| `mode_scene_mushtarak` | 1049×739 | `src/assets/generated/mode_scene_mushtarak.webp` |
+| `mode_scene_kanat_esh` | 1333×698 | `src/assets/generated/mode_scene_kanat_esh.webp` |
+
+**المزوّر art** — `accusation_group` reuses three idle cutouts (الفنان،
+الناقد، الملخبط) pointing at the unmasked impostor. The mask art is
+deliberately not tied to any character (ART_BIBLE.md, unchanged from Batch 4)
+so it carries no character reference, only a style one:
+
+| id | size | file |
+|---|---|---|
+| `accusation_group` | 1086×837 | `src/assets/generated/accusation_group.webp` |
+| `reveal_role_impostor` | 951×641 | `src/assets/generated/reveal_role_impostor.webp` |
+| `unmask_impostor` | 1113×851 | `src/assets/generated/unmask_impostor.webp` |
+
+**Countdown creature** — a nameless one-eyed character, not one of the ten
+(unchanged from Batch 4). Generated as a CHAIN, not three independent
+generations: beat 3 was generated first from a style reference only, then its
+own job output was passed as the character reference for beats 2 and 1. That
+is what keeps it the same creature across all three beats — three independent
+generations of "a nameless one-eyed creature" would not agree with each other
+on what it looks like.
+
+| id | size | file |
+|---|---|---|
+| `countdown_3_surprised` | 1048×645 | `src/assets/generated/countdown_3_surprised.webp` |
+| `countdown_2_grabs_pen` | 1115×630 | `src/assets/generated/countdown_2_grabs_pen.webp` |
+| `countdown_1_ready` | 773×713 | `src/assets/generated/countdown_1_ready.webp` |
+
+**App icon** — الفنان and الملخبط, chest-up, high contrast, regenerated
+because the old icon showed a moustached character and a taqiyah-wearing
+green character that match nothing in the current cast:
+
+| id | size | file |
+|---|---|---|
+| `app_icon` | 1142×1142 source, exported at 512/192/180/32/16 | `public/icon-512.png`, `icon-192.png`, `apple-touch-icon.png`, `favicon-32.png`, `favicon-16.png` |
+
+**Batch 11 notes.**
+
+- Same background-removal step throughout: `remove_background`, trimmed to
+  content, small padding, WebP q90 for the illustrations. The icon is the one
+  exception — exported onto a solid paper background, not transparent, per the
+  existing rule that favicons render on unpredictable browser chrome.
+- At 16×16 the icon reads as two colour blocks, not two characters — an
+  inherent limit of any detailed art at that size, not specific to this
+  generation. 32px and up read clearly.
+- **Batches 4, 6, 7 and 9 are now fully superseded** — nothing in this
+  document past Batch 8 (the owner's cast) still describes a shipped asset.
+  They are kept as the historical record of how the art direction got here.
 
 ## Batch 5 — Functional icons
 
