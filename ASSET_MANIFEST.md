@@ -520,6 +520,76 @@ green character that match nothing in the current cast:
   document past Batch 8 (the owner's cast) still describes a shipped asset.
   They are kept as the historical record of how the art direction got here.
 
+## Batch 12 — Hand-drawn UI chrome (current direction)
+
+Requested explicitly: "يكون لون الfill تبعه يكون سكرابل والحدود تكون كأنها
+مرسومة بالقلم واي حدود في الاطبيق يكون كأنه مرسوم بالقلم" — button fills should
+read as pencil scribble, and every border in the app should look pen-drawn.
+This is UI CHROME, not illustration content — same boundary GameButton.tsx
+already draws ("the shape is built in code — that is functional UI. Anything
+illustrative inside one comes from Higgsfield") — so the two assets below are
+Higgsfield output, wired in globally through `src/index.css`, not new
+per-component artwork.
+
+| id | purpose | size | file |
+|---|---|---|---|
+| `ui_border_sketch` | A single wobbly hand-inked rounded-rect loop, used as a `border-image` 9-slice | 941×941, transparent | `src/assets/generated/ui_border_sketch.webp` |
+| `ui_scribble_fill` | A tileable pencil-hatch alpha texture, layered over each brand colour's flat fill | 512×512, transparent | `src/assets/generated/ui_scribble_fill.webp` |
+
+**Why CSS wiring, not a new component.** Every bordered element in the app —
+buttons, cards, mode tiles, the character picker, text fields — already shares
+the same Tailwind border-WIDTH utility classes (`.border-hair/-thin/-bold
+/-heavy`) and the same brand-colour `bg-*` classes. Two rules added once in
+`src/index.css`, keyed to those exact class names, reach every one of them
+with zero per-component changes: `border-image` swaps the flat CSS line for
+the pen-drawn ring wherever a border-width class appears, and a background
+layer overlays the scribble texture wherever a brand colour appears as a fill.
+
+**Two rounds to get the border right.**
+
+- The first `ui_border_sketch` generation had a stroke only ~2% of the canvas
+  width. Once sliced into a 9-slice corner region and scaled down to a
+  realistic border width (10-18px), that stroke was crushed to sub-pixel and
+  read as a plain thin line — no wobble, no ink texture, indistinguishable
+  from the CSS border it replaced. Measuring the asset confirmed it: an
+  18px-thick stroke inside a 280px slice, scaled to an 18px destination width,
+  renders at under 2px.
+- Regenerated with an explicitly thick stroke (~9% of canvas) and a smaller
+  corner radius (~8%, versus the first pass's ~45%, which had left almost no
+  straight edge to use as the repeating middle tile). The corrected asset
+  measures a 44px stroke inside a 941px canvas with the corner arc flattening
+  into a straight run at ~230px — slicing there keeps enough of the stroke's
+  own thickness relative to the slice for it to survive scaling down to a
+  normal UI border width and still read as pencil-and-ink.
+
+**One regression caught and fixed before shipping.** `border-image` ignores
+`border-color` entirely. Several screens (the character picker, colour
+swatches, mode tiles, vote chips) distinguish selected from unselected ONLY by
+switching between the `border-ink` and `border-ink-hairline` color classes at
+the same width class — painting both with the same thick inked ring would have
+silently erased that signal app-wide. Fixed by excluding `.border-ink-hairline`
+from the border-image rule with `:not()`, so a hairline stays a plain quiet
+line. This also reads correctly on its own terms: a confident pen ring for
+something chosen or emphasised, a faint pencil guideline for a structural
+divider or an option not taken.
+
+**Scribble fill is scoped to actual brand colours** (`bg-cobalt`, `bg-mustard`,
+`bg-tomato`, `bg-teal`, `bg-grape`, `bg-rose`, `bg-ink`, and their `-deep`
+variants) and deliberately excludes the neutral `bg-paper*` surfaces — texturing
+a whole screen's white background would read as dirt on the page, not a
+scribbled object.
+
+**Batch 12 notes.**
+
+- The texture tiles seamlessly: generated as a plain edge-to-edge hatch swatch,
+  then made to wrap using the standard offset-and-heal technique (roll by half
+  the tile size, blend the resulting centre seam against a mirrored copy in a
+  soft feathered band). Verified by rendering a 3×3 tiled grid before shipping.
+- `background-blend-mode: soft-light` blends the texture against whatever
+  `background-color` Tailwind's own utility already set — the two rules never
+  touch the same CSS property, so layer order between `@layer components` and
+  Tailwind's `utilities` layer doesn't matter here.
+
 ## Batch 5 — Functional icons
 
 Only generated once the tool UI is settled. Until then the drawing tools use

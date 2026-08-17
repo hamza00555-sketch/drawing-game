@@ -124,4 +124,88 @@
     padding-block-end: max(var(--wt-space-4), var(--wt-safe-bottom));
     padding-inline: var(--wt-space-4);
   }
+
+  /*
+   * Hand-drawn border chrome. The ring itself is Higgsfield output
+   * (src/assets/generated/ui_border_sketch.webp) — a single wobbly pen-drawn
+   * rounded-rect loop; nothing here is a hand-coded illustration, this is the
+   * CSS wiring that lets it stand in for a flat CSS line.
+   *
+   * Bound directly to the border-WIDTH utility classes Tailwind already
+   * generates (.border-hair/.border-thin/.border-bold/.border-heavy), which
+   * every bordered element in the app already carries — buttons, cards, mode
+   * tiles, the character picker, text fields. That means every one of them
+   * picks this up with no per-component change. border-image-width is set in
+   * px, independent of the underlying border-width: the box-model math (and
+   * therefore every screen's spacing) is untouched, but the artwork gets
+   * enough room to actually read as pencil-and-ink rather than degrading to a
+   * near-solid line at 2-3px. `outset` lets the stroke bleed slightly past the
+   * box edge, the way a real pen overshoots a ruled line.
+   *
+   * Excludes `.border-ink-hairline`. A border-image ignores border-color
+   * entirely, and several screens (the character picker, colour swatches,
+   * mode tiles, vote chips) tell selected from unselected ONLY by switching
+   * between `border-ink` and `border-ink-hairline` at the same width class —
+   * painting both with the same thick inked ring would silently erase that
+   * signal. Leaving the hairline colour on a plain flat line keeps "quiet /
+   * not selected" reading as quiet, and reads as the correct pairing anyway:
+   * a confident pen ring for something chosen or emphasised, a faint pencil
+   * guideline for a structural divider or an option not taken.
+   */
+  .border:not(.border-ink-hairline),
+  .border-hair:not(.border-ink-hairline),
+  .border-thin:not(.border-ink-hairline),
+  .border-bold:not(.border-ink-hairline),
+  .border-heavy:not(.border-ink-hairline) {
+    border-style: solid;
+    border-image-source: url('./assets/generated/ui_border_sketch.webp');
+    /* The source PNG is 941x941; 230 is where the rounded corner arc has
+       flattened into the straight run, measured from the actual asset. */
+    border-image-slice: 230;
+    border-image-outset: 2px;
+    border-image-repeat: round;
+  }
+  .border-hair:not(.border-ink-hairline) {
+    border-image-width: 12px;
+  }
+  .border-thin:not(.border-ink-hairline) {
+    border-image-width: 15px;
+  }
+  .border-bold:not(.border-ink-hairline) {
+    border-image-width: 18px;
+  }
+  .border-heavy:not(.border-ink-hairline) {
+    border-image-width: 22px;
+  }
+
+  /*
+   * Scribble fill. Same provenance note as the border above — the texture is
+   * Higgsfield output (ui_scribble_fill.webp), a tileable pencil-hatch alpha
+   * mask; this just layers it over each brand colour's flat fill.
+   *
+   * Scoped to the actual paint colours (button tones, badges, anything
+   * carrying real brand hue) and NOT to the neutral paper/canvas surfaces —
+   * texturing a whole screen's white background would read as dirt on the
+   * page, not a scribbled object. That split is also why this lives in its
+   * own rule instead of on the border selector above: every bordered element
+   * gets the hand-drawn ring, only the coloured ones get the scribble fill.
+   */
+  .bg-cobalt,
+  .bg-cobalt-deep,
+  .bg-mustard,
+  .bg-mustard-deep,
+  .bg-tomato,
+  .bg-tomato-deep,
+  .bg-teal,
+  .bg-teal-deep,
+  .bg-grape,
+  .bg-grape-deep,
+  .bg-rose,
+  .bg-rose-deep,
+  .bg-ink {
+    background-image: url('./assets/generated/ui_scribble_fill.webp');
+    background-repeat: repeat;
+    background-size: 160px 160px;
+    background-blend-mode: soft-light;
+  }
 }
