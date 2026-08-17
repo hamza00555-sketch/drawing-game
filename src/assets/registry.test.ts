@@ -3,7 +3,7 @@ import { characterAsset, getAsset } from './registry';
 
 describe('characterAsset', () => {
   it('resolves a registered variant pose', () => {
-    expect(characterAsset('detective', 'idle', 'saudi')).toBe('detective_saudi_idle');
+    expect(characterAsset('detective', 'idle', 'costume')).toBe('detective_costume_idle');
   });
 
   it('falls back to the default variant when the costume lacks that pose', () => {

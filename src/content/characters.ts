@@ -57,7 +57,19 @@ export interface GameCharacter {
   variants: readonly CharacterVariant[];
 }
 
-const DEFAULT_ONLY = [{ id: 'default', label: 'الأساسي' }] as const;
+/**
+ * Every character has exactly one costume, and it is a different garment for
+ * each: a thobe, a ghutra, a hijab, but equally a nightcap, a fez, a beanie.
+ * That is why the variant id is `costume` and not `saudi` — the slot holds
+ * whatever accessory characterises this particular member of the cast, and
+ * only some of them are Saudi dress. The label is per-character because
+ * "بالغترة" is wrong for a character wearing a scarf.
+ */
+const costume = (label: string) =>
+  [
+    { id: 'default', label: 'الأساسي' },
+    { id: 'costume', label },
+  ] as const;
 
 export const CHARACTERS: readonly GameCharacter[] = [
   // ---- Main cast: the faces of وش ذا؟ -------------------------------------
@@ -70,7 +82,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Confident, self-important, treats his own catastrophic drawings as masterpieces. The beret is core to his identity and is never removed.',
     mainCast: true,
     penColor: PEN_COLORS.artist,
-    variants: DEFAULT_ONLY,
+    variants: costume('بالثوب'),
   },
   {
     id: 'critic',
@@ -81,7 +93,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Low energy, permanently unimpressed, sarcastic and judgmental. Expressions read as "I have seen better" even at good moments.',
     mainCast: true,
     penColor: PEN_COLORS.critic,
-    variants: DEFAULT_ONLY,
+    variants: costume('بالوشاح'),
   },
   {
     id: 'confused',
@@ -92,7 +104,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Always visibly trying to work out what is happening. The go-to face for bewilderment, doubt and confusion.',
     mainCast: true,
     penColor: PEN_COLORS.confused,
-    variants: DEFAULT_ONLY,
+    variants: costume('بالطاقية'),
   },
   {
     id: 'excited',
@@ -103,7 +115,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Enormous energy. Movement is fast, exaggerated and physical — jumping, flailing, never still. Poses should be mid-motion.',
     mainCast: true,
     penColor: PEN_COLORS.excited,
-    variants: DEFAULT_ONLY,
+    variants: costume('بعصابة الرأس'),
   },
   {
     id: 'innocent',
@@ -114,10 +126,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Sweet and guileless to a degree that becomes funny the moment suspicion or accusation is in the air.',
     mainCast: true,
     penColor: PEN_COLORS.innocent,
-    variants: [
-      { id: 'default', label: 'الأساسي' },
-      { id: 'hijab', label: 'بالحجاب' },
-    ],
+    variants: costume('بالحجاب'),
   },
   {
     id: 'detective',
@@ -128,10 +137,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Cold, reserved, watches everyone with quiet suspicion. Especially suited to المزوّر.',
     mainCast: true,
     penColor: PEN_COLORS.detective,
-    variants: [
-      { id: 'default', label: 'الأساسي' },
-      { id: 'saudi', label: 'بالغترة' },
-    ],
+    variants: costume('بالغترة'),
   },
 
   // ---- Player-only cast: widens choice, does not carry the identity --------
@@ -144,7 +150,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Absolutely certain he has the answer, and consistently wrong. Chest out, hands on hips, never doubts himself for a second.',
     mainCast: false,
     penColor: PEN_COLORS.confident,
-    variants: DEFAULT_ONLY,
+    variants: costume('بالشماغ'),
   },
   {
     id: 'dramatic',
@@ -155,7 +161,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Every minor event is an absolute catastrophe. Reactions are enormous and theatrical, arms flung wide, wailing at nothing.',
     mainCast: false,
     penColor: PEN_COLORS.dramatic,
-    variants: DEFAULT_ONLY,
+    variants: costume('بالطربوش'),
   },
   {
     id: 'calm',
@@ -166,7 +172,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Minimal reactions while everything around him is chaos. The comedy is the contrast — he barely moves.',
     mainCast: false,
     penColor: PEN_COLORS.calm,
-    variants: DEFAULT_ONLY,
+    variants: costume('بطاقية النوم'),
   },
   {
     id: 'trickster',
@@ -177,7 +183,7 @@ export const CHARACTERS: readonly GameCharacter[] = [
       'Enjoys wrecking the situation far more than winning it. Lopsided, leaning, always hiding something behind his back.',
     mainCast: false,
     penColor: PEN_COLORS.trickster,
-    variants: DEFAULT_ONLY,
+    variants: costume('بالبندانة'),
   },
 ] as const;
 

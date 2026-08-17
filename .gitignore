@@ -25,3 +25,6 @@ functions/lib
 
 # Vercel
 .vercel
+
+# Python bytecode from the asset scripts
+__pycache__/

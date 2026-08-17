@@ -8,13 +8,17 @@
  *   innocent_hijab_confused
  *
  * The variant slot exists so a costume is a swap, never a second character.
- * A Saudi-dressed detective is the SAME detective — see ART_BIBLE.md §14.
+ * A costumed detective is the SAME detective — see ART_BIBLE.md §14.
  * Non-character art keeps a descriptive id (`hero_home_confused_group`).
  *
  * Rules:
- *   - Every file lives in `src/assets/generated/` and was produced with
- *     Higgsfield following ART_BIBLE.md. Nothing here is hand-drawn.
- *   - Every entry must also exist in ASSET_MANIFEST.md with its prompt.
+ *   - Every file lives in `src/assets/generated/`. The CHARACTER art is cut
+ *     from the owner's own hand-made pose sheets in `art-reference/
+ *     character-sheets/` by `scripts/cut-character-sheet.py`; re-run that
+ *     rather than editing a .webp. Everything else was produced with
+ *     Higgsfield following ART_BIBLE.md.
+ *   - Every entry must also exist in ASSET_MANIFEST.md with its prompt, or —
+ *     for the cut character art — its source sheet and pose index.
  *   - An id with no entry is not an error: <AssetSlot /> renders a neutral
  *     labelled placeholder so a screen can be built and reviewed before the
  *     artwork lands.
@@ -24,17 +28,45 @@
  */
 
 import artistDefaultIdle from './generated/artist_default_idle.webp';
+import artistDefaultFace from './generated/artist_default_face.webp';
+import artistDefaultAction from './generated/artist_default_action.webp';
+import artistCostumeIdle from './generated/artist_costume_idle.webp';
 import criticDefaultIdle from './generated/critic_default_idle.webp';
+import criticDefaultFace from './generated/critic_default_face.webp';
+import criticDefaultAction from './generated/critic_default_action.webp';
+import criticCostumeIdle from './generated/critic_costume_idle.webp';
 import confusedDefaultIdle from './generated/confused_default_idle.webp';
+import confusedDefaultFace from './generated/confused_default_face.webp';
+import confusedDefaultAction from './generated/confused_default_action.webp';
+import confusedCostumeIdle from './generated/confused_costume_idle.webp';
 import excitedDefaultIdle from './generated/excited_default_idle.webp';
+import excitedDefaultFace from './generated/excited_default_face.webp';
+import excitedDefaultAction from './generated/excited_default_action.webp';
+import excitedCostumeIdle from './generated/excited_costume_idle.webp';
 import innocentDefaultIdle from './generated/innocent_default_idle.webp';
+import innocentDefaultFace from './generated/innocent_default_face.webp';
+import innocentDefaultAction from './generated/innocent_default_action.webp';
+import innocentCostumeIdle from './generated/innocent_costume_idle.webp';
 import detectiveDefaultIdle from './generated/detective_default_idle.webp';
+import detectiveDefaultFace from './generated/detective_default_face.webp';
+import detectiveDefaultAction from './generated/detective_default_action.webp';
+import detectiveCostumeIdle from './generated/detective_costume_idle.webp';
 import confidentDefaultIdle from './generated/confident_default_idle.webp';
+import confidentDefaultFace from './generated/confident_default_face.webp';
+import confidentDefaultAction from './generated/confident_default_action.webp';
+import confidentCostumeIdle from './generated/confident_costume_idle.webp';
 import dramaticDefaultIdle from './generated/dramatic_default_idle.webp';
+import dramaticDefaultFace from './generated/dramatic_default_face.webp';
+import dramaticDefaultAction from './generated/dramatic_default_action.webp';
+import dramaticCostumeIdle from './generated/dramatic_costume_idle.webp';
 import calmDefaultIdle from './generated/calm_default_idle.webp';
+import calmDefaultFace from './generated/calm_default_face.webp';
+import calmDefaultAction from './generated/calm_default_action.webp';
+import calmCostumeIdle from './generated/calm_costume_idle.webp';
 import tricksterDefaultIdle from './generated/trickster_default_idle.webp';
-import detectiveSaudiIdle from './generated/detective_saudi_idle.webp';
-import innocentHijabIdle from './generated/innocent_hijab_idle.webp';
+import tricksterDefaultFace from './generated/trickster_default_face.webp';
+import tricksterDefaultAction from './generated/trickster_default_action.webp';
+import tricksterCostumeIdle from './generated/trickster_costume_idle.webp';
 
 import heroHome from './generated/hero_home_confused_group.webp';
 import sceneMozawwer from './generated/mode_scene_mozawwer.webp';
@@ -68,37 +100,145 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
   artist_default_idle: {
     src: artistDefaultIdle,
     alt: 'الفنان المتفلسف',
-    width: 459,
+    width: 341,
+    height: 900,
+  },
+  artist_default_face: {
+    src: artistDefaultFace,
+    alt: 'وجه الفنان المتفلسف',
+    width: 420,
+    height: 398,
+  },
+  artist_default_action: {
+    src: artistDefaultAction,
+    alt: 'الفنان المتفلسف متحرك',
+    width: 506,
+    height: 900,
+  },
+  artist_costume_idle: {
+    src: artistCostumeIdle,
+    alt: 'الفنان المتفلسف بالثوب',
+    width: 349,
     height: 900,
   },
   critic_default_idle: {
     src: criticDefaultIdle,
     alt: 'الناقد',
-    width: 418,
+    width: 686,
+    height: 900,
+  },
+  critic_default_face: {
+    src: criticDefaultFace,
+    alt: 'وجه الناقد',
+    width: 420,
+    height: 386,
+  },
+  critic_default_action: {
+    src: criticDefaultAction,
+    alt: 'الناقد متحرك',
+    width: 854,
+    height: 900,
+  },
+  critic_costume_idle: {
+    src: criticCostumeIdle,
+    alt: 'الناقد بالوشاح',
+    width: 680,
     height: 900,
   },
   confused_default_idle: {
     src: confusedDefaultIdle,
     alt: 'الملخبط',
-    width: 411,
+    width: 518,
+    height: 900,
+  },
+  confused_default_face: {
+    src: confusedDefaultFace,
+    alt: 'وجه الملخبط',
+    width: 373,
+    height: 420,
+  },
+  confused_default_action: {
+    src: confusedDefaultAction,
+    alt: 'الملخبط متحرك',
+    width: 786,
+    height: 900,
+  },
+  confused_costume_idle: {
+    src: confusedCostumeIdle,
+    alt: 'الملخبط بالطاقية',
+    width: 534,
     height: 900,
   },
   excited_default_idle: {
     src: excitedDefaultIdle,
     alt: 'المتحمس',
-    width: 488,
+    width: 663,
+    height: 900,
+  },
+  excited_default_face: {
+    src: excitedDefaultFace,
+    alt: 'وجه المتحمس',
+    width: 420,
+    height: 405,
+  },
+  excited_default_action: {
+    src: excitedDefaultAction,
+    alt: 'المتحمس متحرك',
+    width: 900,
+    height: 751,
+  },
+  excited_costume_idle: {
+    src: excitedCostumeIdle,
+    alt: 'المتحمس بعصابة الرأس',
+    width: 649,
     height: 900,
   },
   innocent_default_idle: {
     src: innocentDefaultIdle,
     alt: 'البريء المشبوه',
-    width: 401,
+    width: 549,
+    height: 900,
+  },
+  innocent_default_face: {
+    src: innocentDefaultFace,
+    alt: 'وجه البريء المشبوه',
+    width: 420,
+    height: 404,
+  },
+  innocent_default_action: {
+    src: innocentDefaultAction,
+    alt: 'البريء المشبوه متحرك',
+    width: 788,
+    height: 900,
+  },
+  innocent_costume_idle: {
+    src: innocentCostumeIdle,
+    alt: 'البريء المشبوه بالحجاب',
+    width: 569,
     height: 900,
   },
   detective_default_idle: {
     src: detectiveDefaultIdle,
     alt: 'المحقق',
-    width: 406,
+    width: 323,
+    height: 900,
+  },
+  detective_default_face: {
+    src: detectiveDefaultFace,
+    alt: 'وجه المحقق',
+    width: 343,
+    height: 420,
+  },
+  detective_default_action: {
+    src: detectiveDefaultAction,
+    alt: 'المحقق متحرك',
+    width: 342,
+    height: 900,
+  },
+  detective_costume_idle: {
+    src: detectiveCostumeIdle,
+    alt: 'المحقق بالغترة',
+    width: 427,
     height: 900,
   },
 
@@ -106,39 +246,97 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
   confident_default_idle: {
     src: confidentDefaultIdle,
     alt: 'الواثق زيادة',
-    width: 662,
+    width: 763,
+    height: 900,
+  },
+  confident_default_face: {
+    src: confidentDefaultFace,
+    alt: 'وجه الواثق زيادة',
+    width: 420,
+    height: 333,
+  },
+  confident_default_action: {
+    src: confidentDefaultAction,
+    alt: 'الواثق زيادة متحرك',
+    width: 692,
+    height: 900,
+  },
+  confident_costume_idle: {
+    src: confidentCostumeIdle,
+    alt: 'الواثق زيادة بالشماغ',
+    width: 786,
     height: 900,
   },
   dramatic_default_idle: {
     src: dramaticDefaultIdle,
     alt: 'الدرامي',
-    width: 641,
+    width: 313,
+    height: 900,
+  },
+  dramatic_default_face: {
+    src: dramaticDefaultFace,
+    alt: 'وجه الدرامي',
+    width: 290,
+    height: 420,
+  },
+  dramatic_default_action: {
+    src: dramaticDefaultAction,
+    alt: 'الدرامي متحرك',
+    width: 475,
+    height: 900,
+  },
+  dramatic_costume_idle: {
+    src: dramaticCostumeIdle,
+    alt: 'الدرامي بالطربوش',
+    width: 596,
     height: 900,
   },
   calm_default_idle: {
     src: calmDefaultIdle,
     alt: 'الهادي',
     width: 900,
-    height: 694,
+    height: 541,
+  },
+  calm_default_face: {
+    src: calmDefaultFace,
+    alt: 'وجه الهادي',
+    width: 420,
+    height: 361,
+  },
+  calm_default_action: {
+    src: calmDefaultAction,
+    alt: 'الهادي متحرك',
+    width: 900,
+    height: 478,
+  },
+  calm_costume_idle: {
+    src: calmCostumeIdle,
+    alt: 'الهادي بطاقية النوم',
+    width: 900,
+    height: 613,
   },
   trickster_default_idle: {
     src: tricksterDefaultIdle,
     alt: 'المشاغب',
-    width: 455,
+    width: 479,
     height: 900,
   },
-
-  // Saudi costume variants. Same characters — see ART_BIBLE.md §14.
-  detective_saudi_idle: {
-    src: detectiveSaudiIdle,
-    alt: 'المحقق بالغترة',
-    width: 406,
+  trickster_default_face: {
+    src: tricksterDefaultFace,
+    alt: 'وجه المشاغب',
+    width: 417,
+    height: 420,
+  },
+  trickster_default_action: {
+    src: tricksterDefaultAction,
+    alt: 'المشاغب متحرك',
+    width: 534,
     height: 900,
   },
-  innocent_hijab_idle: {
-    src: innocentHijabIdle,
-    alt: 'البريء المشبوه بالحجاب',
-    width: 401,
+  trickster_costume_idle: {
+    src: tricksterCostumeIdle,
+    alt: 'المشاغب بالبندانة',
+    width: 519,
     height: 900,
   },
 

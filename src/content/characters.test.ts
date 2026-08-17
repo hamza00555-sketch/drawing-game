@@ -37,12 +37,20 @@ describe('main cast', () => {
     expect(CHARACTERS.filter((c) => !c.mainCast)).toHaveLength(4);
   });
 
-  it('carries every Saudi variant, so representation sits in the identity cast', () => {
-    const withVariants = CHARACTERS.filter((c) => c.variants.length > 1);
-    expect(withVariants.length).toBeGreaterThan(0);
-    for (const character of withVariants) {
-      expect(character.mainCast, `${character.id} should be main cast`).toBe(true);
+  it('gives every character a default plus exactly one costume', () => {
+    for (const character of CHARACTERS) {
+      expect(
+        character.variants.map((v) => v.id),
+        `${character.id} variants`,
+      ).toEqual(['default', 'costume']);
     }
+  });
+
+  it('labels each costume for its own garment, not one shared label', () => {
+    // The slot holds a thobe for one character and a nightcap for another, so a
+    // single label would be wrong for most of the cast.
+    const labels = CHARACTERS.map((c) => c.variants[1]!.label);
+    expect(new Set(labels).size).toBe(labels.length);
   });
 });
 
