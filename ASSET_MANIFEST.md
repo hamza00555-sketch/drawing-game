@@ -200,6 +200,43 @@ Generated alongside the screens that use them.
   cut with the background remover tool, trimmed to content bounds and resized
   to 600–1600px long edge depending on on-screen size, WebP q88.
 
+## Batch 7 — Style reset (current direction)
+
+ART_BIBLE.md §0 retired the warm-paper direction. These are the assets in the
+**new** grid-notebook / coloured-pencil sticker language, generated with
+**GPT Image 2** (`gpt_image_2`) — chosen over the previous model because it
+holds the reference style and renders Arabic letterforms correctly.
+
+Every character generation passes `art-reference/style_anchor_v2.webp` as an
+image reference, which is what keeps the ten of them in one world.
+
+| id | purpose | size | transparent | status | file |
+|---|---|---|---|---|---|
+| `style_anchor_v2` | **Master Style Anchor** — the six-character line-up establishing line, pencil texture, sticker border and palette. Reference only, never bundled. | 1800×1018 | no | shipped | `art-reference/style_anchor_v2.webp` |
+| `logo_wordmark` | The «وش ذا؟» lockup with tagline ribbon. The one asset that legitimately carries text (ART_BIBLE.md §19). | 1198×1200 | yes | shipped | `src/assets/generated/logo_wordmark.webp` |
+| `artist_default_idle` | الفنان — paint-splattered thobe, beret, brush and palette | 459×900 | yes | shipped | `src/assets/generated/artist_default_idle.webp` |
+| `critic_default_idle` | الناقد — brown shemagh, arms crossed | 418×900 | yes | shipped | `src/assets/generated/critic_default_idle.webp` |
+| `confused_default_idle` | الملخبط — white taqiyah, hand on chin | 411×900 | yes | shipped | `src/assets/generated/confused_default_idle.webp` |
+| `excited_default_idle` | المتحمس — gold-trimmed vest, sneakers, mid-jump | 488×900 | yes | shipped | `src/assets/generated/excited_default_idle.webp` |
+| `innocent_default_idle` | البريء — pink hijab, hands clasped | 401×900 | yes | shipped | `src/assets/generated/innocent_default_idle.webp` |
+| `detective_default_idle` | المحقق — ghutra and igal, magnifying glass | 406×900 | yes | shipped | `src/assets/generated/detective_default_idle.webp` |
+| `confident_default_idle` | الواثق زيادة — barrel chest, tiny head, hands on hips | 662×900 | yes | shipped | `src/assets/generated/confident_default_idle.webp` |
+| `dramatic_default_idle` | الدرامي — flaring orange scarf, arms flung overhead | 641×900 | yes | shipped | `src/assets/generated/dramatic_default_idle.webp` |
+| `calm_default_idle` | الهادي — low wide dome, entirely unbothered | 900×694 | yes | shipped | `src/assets/generated/calm_default_idle.webp` |
+| `trickster_default_idle` | المشاغب — lopsided, hands behind back, smirking | 455×900 | yes | shipped | `src/assets/generated/trickster_default_idle.webp` |
+| `hero_home_confused_group` | Home hero: all six around one unidentifiable scribble, six different reactions | 1400×768 | yes | shipped | `src/assets/generated/hero_home_confused_group.webp` |
+
+**Batch 7 notes.**
+
+- The **costume variants are now redundant.** `innocent_hijab_idle` and
+  `detective_saudi_idle` exist only because the old base designs wore no Saudi
+  clothing; in the new direction the base designs already do (ART_BIBLE.md
+  §13). Their files currently duplicate the base art so the registry keeps
+  resolving; the ids are retired once nothing references them.
+- Character files were **replaced in place under their existing ids**, so every
+  screen picked up the new art with no code change. Only the `width`/`height`
+  in `registry.ts` moved.
+
 ## Batch 5 — Functional icons
 
 Only generated once the tool UI is settled. Until then the drawing tools use

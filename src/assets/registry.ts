@@ -43,6 +43,7 @@ import sceneMamnou3at from './generated/mode_scene_mamnou3at.webp';
 import sceneMushtarak from './generated/mode_scene_mushtarak.webp';
 import sceneKanatEsh from './generated/mode_scene_kanat_esh.webp';
 
+import logoWordmark from './generated/logo_wordmark.webp';
 import splashBackdrop from './generated/splash_backdrop.webp';
 import revealRoleImpostor from './generated/reveal_role_impostor.webp';
 import unmaskImpostor from './generated/unmask_impostor.webp';
@@ -67,37 +68,37 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
   artist_default_idle: {
     src: artistDefaultIdle,
     alt: 'الفنان المتفلسف',
-    width: 394,
+    width: 459,
     height: 900,
   },
   critic_default_idle: {
     src: criticDefaultIdle,
     alt: 'الناقد',
-    width: 858,
+    width: 418,
     height: 900,
   },
   confused_default_idle: {
     src: confusedDefaultIdle,
     alt: 'الملخبط',
-    width: 588,
+    width: 411,
     height: 900,
   },
   excited_default_idle: {
     src: excitedDefaultIdle,
     alt: 'المتحمس',
-    width: 900,
-    height: 889,
+    width: 488,
+    height: 900,
   },
   innocent_default_idle: {
     src: innocentDefaultIdle,
     alt: 'البريء المشبوه',
-    width: 564,
+    width: 401,
     height: 900,
   },
   detective_default_idle: {
     src: detectiveDefaultIdle,
     alt: 'المحقق',
-    width: 320,
+    width: 406,
     height: 900,
   },
 
@@ -105,25 +106,25 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
   confident_default_idle: {
     src: confidentDefaultIdle,
     alt: 'الواثق زيادة',
-    width: 900,
-    height: 859,
+    width: 662,
+    height: 900,
   },
   dramatic_default_idle: {
     src: dramaticDefaultIdle,
     alt: 'الدرامي',
-    width: 673,
+    width: 641,
     height: 900,
   },
   calm_default_idle: {
     src: calmDefaultIdle,
     alt: 'الهادي',
     width: 900,
-    height: 441,
+    height: 694,
   },
   trickster_default_idle: {
     src: tricksterDefaultIdle,
     alt: 'المشاغب',
-    width: 625,
+    width: 455,
     height: 900,
   },
 
@@ -131,13 +132,13 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
   detective_saudi_idle: {
     src: detectiveSaudiIdle,
     alt: 'المحقق بالغترة',
-    width: 380,
+    width: 406,
     height: 900,
   },
   innocent_hijab_idle: {
     src: innocentHijabIdle,
     alt: 'البريء المشبوه بالحجاب',
-    width: 575,
+    width: 401,
     height: 900,
   },
 
@@ -146,7 +147,7 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
     src: heroHome,
     alt: 'الشخصيات مجتمعة حول رسمة غريبة تحاول فهمها',
     width: 1400,
-    height: 1000,
+    height: 768,
   },
   mode_scene_mozawwer: {
     src: sceneMozawwer,
@@ -179,6 +180,18 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
     height: 328,
   },
 
+  /*
+   * The wordmark. This is the ONE asset that legitimately carries text — the
+   * game name is hand-lettered art, not type we could set (ART_BIBLE.md §19).
+   * Everywhere else, Arabic copy is real text so it stays selectable,
+   * translatable and readable by a screen reader.
+   */
+  logo_wordmark: {
+    src: logoWordmark,
+    alt: 'وش ذا؟ — لعبة الرسم والتخمين',
+    width: 1198,
+    height: 1200,
+  },
   splash_backdrop: {
     src: splashBackdrop,
     alt: 'مجموعة من شخصيات اللعبة تتجمع وتحدّق بدهشة نحو رسمة غريبة',

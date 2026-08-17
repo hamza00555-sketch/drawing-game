@@ -35,13 +35,22 @@ export function SplashScreen({ onDone, holdMs = 1600 }: SplashScreenProps) {
       className="wt-screen wt-paper-ground w-full cursor-default items-center justify-center border-0 p-0"
     >
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        {/*
+         * The wordmark is generated art, not type (ART_BIBLE.md §19), so the
+         * entrance animates the image itself. It still lands as an <h1> for
+         * anything reading the page rather than looking at it.
+         */}
         <motion.h1
           initial={reduceMotion ? false : { scale: 0.7, rotate: -4, opacity: 0 }}
           animate={{ scale: 1, rotate: -2, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 260, damping: 14 }}
-          className="font-display text-hero text-ink"
+          className="w-full"
         >
-          وش ذا؟
+          <AssetSlot
+            id="logo_wordmark"
+            priority
+            className="mx-auto w-full max-w-[17rem] object-contain"
+          />
         </motion.h1>
 
         <motion.div

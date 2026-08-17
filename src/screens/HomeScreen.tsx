@@ -48,15 +48,25 @@ export function HomeScreen({ onCreate, onJoin, onSettings }: HomeScreenProps) {
        * stretch to `flex-1` instead just moves the dead space inside the image
        * box — `object-contain` then centres the artwork in a container far
        * taller than the art, and the gap reappears above it.
+       *
+       * The wordmark is hand-lettered art rather than type (ART_BIBLE.md §19),
+       * so it is an image — but it still carries the game's name as its alt
+       * text, and an <h1> wraps it so the page keeps a real heading.
        */}
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-        <h1 className="font-display text-3xl leading-none text-ink">وش ذا؟</h1>
+        <h1 className="w-full">
+          <AssetSlot
+            id="logo_wordmark"
+            priority
+            className="mx-auto max-h-[26vh] w-auto max-w-[72%] object-contain"
+          />
+        </h1>
 
         <AssetSlot
           id="hero_home_confused_group"
           alt="مجموعة شخصيات تحاول فهم رسمة غريبة"
           priority
-          className="max-h-[52vh] w-full object-contain"
+          className="max-h-[38vh] w-full object-contain"
         />
       </div>
     </Screen>

@@ -236,9 +236,10 @@ Colour identifies them in prose; form identifies them on screen.
 ### Player-only cast
 
 Designed to fill silhouette gaps the main cast leaves, not to repeat its
-personalities. None of them wears Saudi clothing: the two costume variants in
-the main cast already carry that representation, and adding more "for balance"
-is the costume-theme failure §13 forbids.
+personalities. Since the reset they wear Saudi dress like everyone else (§13) —
+they appear beside the main six in the character picker, and a mixed-dress
+lineup there would read as two different games. Silhouette, not costume, is
+what separates them.
 
 | Colour | Character | Personality | Locked form (new shape language) |
 |---|---|---|---|
@@ -292,24 +293,33 @@ drawn pose.
 
 ## 13. Saudi identity
 
-The world of وش ذا؟ should read as **contemporary Saudi**, naturally — not as a
-costume theme bolted onto everyone.
+The world of وش ذا؟ reads as **contemporary Saudi**, naturally.
 
-**Hard rule: not every character wears Saudi clothing.** A cast where everyone
-is in thobe and shemagh is a failure. The target is a varied, odd, funny,
-contemporary cast that is *partly and clearly* Saudi.
+**This rule was inverted by the style reset (§0).** The previous version said
+"not every character wears Saudi clothing" and treated a fully-thobed cast as a
+failure. The approved reference for the new direction puts the **entire main
+cast** in contemporary Saudi dress, and it works — because each garment is cut
+to that character's own silhouette and personality rather than being the same
+costume repeated six times. The old rule is retired; this is the rule now.
 
 ### Clothing, by character
 
+Every one of the six wears Saudi dress. What keeps it from reading as a costume
+theme is that the garment does characterisation work in each case:
+
 | Character | Treatment |
 |---|---|
-| Purple — المحقق | **Ghutra/shemagh with igal**, shaped to follow his tall narrow head |
-| Pink — البريء | **Hijab**, simple and cartoon, face and big eyes fully preserved |
-| Red — الفنان | Keeps the beret. It is his identity. |
-| Yellow, Teal, Blue | Base design unchanged. **Do not add Saudi clothing for balance.** |
+| Red — الفنان | White thobe **splattered with paint**, rust sash, plus the black beret he never takes off — the thobe is his studio smock |
+| Yellow — الناقد | Cream thobe under a heavy brown patterned **shemagh draped over the shoulders**, which reads as folded arms even before you see the arms |
+| Green — الملخبط | Cream thobe with blue collar embroidery and a white crocheted **taqiyah**, neat in a way that contrasts with how lost he looks |
+| Blue — المتحمس | White thobe under a **black gold-trimmed vest**, with sneakers — the only one dressed to move |
+| Pink — البريء | Soft pink **hijab** and long dress, face and oversized eyes fully preserved |
+| Purple — المحقق | Crisp white thobe with **ghutra and black igal**, formal and watchful |
 
-A costume variant may be added later if gameplay or story gives a reason. None
-is needed now.
+The four player-only characters (§12) also wear Saudi dress in the new
+direction, for the same reason: they sit in the same room as the main cast on
+the character picker, and a mixed-dress lineup there reads as two different
+games. Their **silhouettes** are what separate them, exactly as before.
 
 ### Identity beyond clothing
 
