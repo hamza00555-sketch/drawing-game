@@ -28,3 +28,7 @@ functions/lib
 
 # Python bytecode from the asset scripts
 __pycache__/
+
+# Raw Higgsfield prop generations before cutout — art-reference/props/ has the
+# cut, shipped versions; this is a regenerable intermediate, not a source.
+art-reference/props-raw/
