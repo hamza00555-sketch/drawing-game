@@ -87,7 +87,7 @@ export function MozawwerDrawScreen({
             إنهاء الدور
           </GameButton>
         ) : canOfferReady ? (
-          <GameButton tone="secondary" size="md" block onClick={onReadyToVote}>
+          <GameButton tone="accent" size="md" block onClick={onReadyToVote}>
             الرسمة جاهزة
           </GameButton>
         ) : (

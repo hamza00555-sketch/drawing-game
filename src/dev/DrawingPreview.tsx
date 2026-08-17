@@ -123,16 +123,16 @@ export function DrawingPreview() {
 
         <div className="flex gap-2">
           <GameButton
-            tone="quiet"
+            tone="secondary"
             size="sm"
             onClick={() => setPlayerId((id) => (id === 'p1' ? 'p2' : 'p1'))}
           >
             الراسم: {playerId}
           </GameButton>
-          <GameButton tone="secondary" size="sm" onClick={startReplay} disabled={replaying}>
+          <GameButton tone="accent" size="sm" onClick={startReplay} disabled={replaying}>
             إعادة
           </GameButton>
-          <GameButton tone="quiet" size="sm" onClick={clearAll}>
+          <GameButton tone="secondary" size="sm" onClick={clearAll}>
             مسح
           </GameButton>
         </div>

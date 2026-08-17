@@ -115,11 +115,16 @@ export function CharacterPicker({
                   onClick={() => onSelect(selected.id, option.id)}
                   aria-pressed={option.id === selectedVariant}
                   className={[
-                    'min-h-tap rounded-pill border-thin px-3 font-body text-sm',
+                    'min-h-tap rounded-pill px-3 font-body text-sm',
                     'transition-colors duration-fast',
+                    // wt-chip-ink supplies its own border-image; border-thin
+                    // must stay off that branch, or Tailwind's own width
+                    // utility (which Batch 12's generic sketch-border rule
+                    // also targets, at higher CSS specificity) silently wins
+                    // and overrides this chip's own asset.
                     option.id === selectedVariant
-                      ? 'border-ink bg-ink text-paper'
-                      : 'border-ink-hairline text-ink-soft',
+                      ? 'wt-chip-ink text-paper'
+                      : 'border-thin border-ink-hairline text-ink-soft',
                   ].join(' ')}
                 >
                   {option.label}

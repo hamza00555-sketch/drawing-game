@@ -19,6 +19,7 @@ import { MamnouPreview, MAMNOU_PREVIEWS } from './MamnouPreview';
 import { MushtarakPreview, MUSHTARAK_PREVIEWS } from './MushtarakPreview';
 import { KanatEshPreview, KANAT_ESH_PREVIEWS } from './KanatEshPreview';
 import { RoundScoresScreen } from '../screens/RoundScoresScreen';
+import { ButtonStyleSheet } from './ButtonStyleSheet';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 
 const players: Record<string, RoomPlayer> = {
@@ -137,6 +138,9 @@ export function PreviewGallery({ screen }: { screen: string }) {
         />
       );
 
+    case 'buttons':
+      return <ButtonStyleSheet />;
+
     default:
       if ((MOZAWWER_PREVIEWS as readonly string[]).includes(screen)) {
         return <MozawwerPreview phase={screen} />;
@@ -164,6 +168,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
               'lobby',
               'lobby-empty',
               'modes',
+              'buttons',
               'draw',
               'lobby-start-failed',
               'scores',

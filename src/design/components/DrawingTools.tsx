@@ -11,6 +11,10 @@ import type { Tool } from '../../engine/canvas/strokes';
  * temporary state from ART_BIBLE.md: until the وش ذا؟ icon assets are generated
  * with Higgsfield, text is the fallback — never an emoji, never a glyph from an
  * icon pack.
+ *
+ * Selected/unselected uses the same wt-btn-ink / wt-btn-secondary button
+ * assets as everywhere else a tool state toggles (ASSET_MANIFEST.md Batch 13)
+ * — a black scribble-filled ring for the active tool, a white one otherwise.
  */
 
 export interface DrawingToolsProps {
@@ -36,9 +40,12 @@ export function DrawingTools({
   onColorChange,
 }: DrawingToolsProps) {
   const buttonBase =
-    'min-h-tap flex-1 rounded-md border-bold px-3 font-display text-base ' +
-    'transition-[transform,box-shadow] duration-instant ease-bounce ' +
+    'min-h-tap flex-1 wt-btn-sm px-3 font-display text-base ' +
+    'transition-[transform,box-shadow,filter] duration-instant ease-bounce ' +
     'disabled:opacity-40 disabled:active:translate-y-0';
+  const unselected =
+    'wt-btn-secondary text-ink shadow-1 active:translate-y-[2px] active:shadow-pressed active:brightness-90';
+  const selected = 'wt-btn-ink text-paper shadow-1';
 
   return (
     <div className="flex flex-col gap-2">
@@ -48,12 +55,7 @@ export function DrawingTools({
           disabled={disabled}
           aria-pressed={tool === 'pen'}
           onClick={() => onToolChange('pen')}
-          className={[
-            buttonBase,
-            tool === 'pen'
-              ? 'border-ink bg-ink text-paper shadow-1'
-              : 'border-ink bg-paper-raised text-ink shadow-1 active:translate-y-[2px] active:shadow-pressed',
-          ].join(' ')}
+          className={[buttonBase, tool === 'pen' ? selected : unselected].join(' ')}
         >
           قلم
         </button>
@@ -63,12 +65,7 @@ export function DrawingTools({
           disabled={disabled}
           aria-pressed={tool === 'eraser'}
           onClick={() => onToolChange('eraser')}
-          className={[
-            buttonBase,
-            tool === 'eraser'
-              ? 'border-ink bg-ink text-paper shadow-1'
-              : 'border-ink bg-paper-raised text-ink shadow-1 active:translate-y-[2px] active:shadow-pressed',
-          ].join(' ')}
+          className={[buttonBase, tool === 'eraser' ? selected : unselected].join(' ')}
         >
           ممحاة
         </button>
@@ -77,11 +74,7 @@ export function DrawingTools({
           type="button"
           disabled={disabled || !canUndo}
           onClick={onUndo}
-          className={[
-            buttonBase,
-            'border-ink bg-paper-raised text-ink shadow-1',
-            'active:translate-y-[2px] active:shadow-pressed',
-          ].join(' ')}
+          className={[buttonBase, unselected].join(' ')}
         >
           تراجع
         </button>

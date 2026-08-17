@@ -27,7 +27,7 @@ export function HomeScreen({ onCreate, onJoin, onSettings }: HomeScreenProps) {
           <GameButton tone="primary" size="lg" block onClick={onCreate}>
             ابدأ اللعب
           </GameButton>
-          <GameButton tone="quiet" size="md" block onClick={onJoin}>
+          <GameButton tone="secondary" size="md" block onClick={onJoin}>
             انضم بكود
           </GameButton>
 

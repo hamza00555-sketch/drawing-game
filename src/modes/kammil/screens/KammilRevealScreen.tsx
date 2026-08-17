@@ -76,7 +76,7 @@ export function KammilRevealScreen({
       footer={
         replaying ? (
           <GameButton
-            tone="quiet"
+            tone="secondary"
             size="md"
             block
             onClick={() => playerRef.current?.finish()}

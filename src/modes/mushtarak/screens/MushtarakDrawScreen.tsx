@@ -93,7 +93,7 @@ export function MushtarakDrawScreen({
              * would dissolve the misunderstanding the mode runs on.
              */}
             <GameButton
-              tone="secondary"
+              tone="accent"
               size="md"
               block
               disabled={!canSendGotYou}

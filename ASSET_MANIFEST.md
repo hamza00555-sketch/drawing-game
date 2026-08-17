@@ -590,6 +590,103 @@ scribbled object.
   touch the same CSS property, so layer order between `@layer components` and
   Tailwind's `utilities` layer doesn't matter here.
 
+## Batch 13 — Dedicated button assets (current direction)
+
+Requested explicitly: review every button in the app and replace them with
+Higgsfield-generated button assets instead of the generic ring+texture system
+(Batch 12), which "imitated" the hand-drawn look with two effects layered by
+CSS. Buttons are the highest-visibility UI in the app, so they get a stronger
+treatment — the ring and the marker fill are ONE piece of art per tone,
+drawn together, not simulated as two separate layers. The generic Batch 12
+system stays exactly as it was for everything that is not a button (cards,
+mode tiles, the character picker frame) — that distinction is deliberate, not
+an oversight.
+
+Naming: this batch renamed `GameButton`'s tones to match the brief exactly.
+The old `secondary` (mustard/yellow) is now `accent`; the old `quiet`
+(white) is now `secondary`; `primary` and `danger` are unchanged. Six call
+sites across the app were updated to match.
+
+| id | tone | size | file |
+|---|---|---|---|
+| `btn_primary` | Primary — cobalt blue | 700×310 | `src/assets/generated/btn_primary.webp` |
+| `btn_secondary` | Secondary — white/paper, faint scribble | 700×341 | `src/assets/generated/btn_secondary.webp` |
+| `btn_accent` | Accent — mustard yellow | 700×301 | `src/assets/generated/btn_accent.webp` |
+| `btn_danger` | Danger — tomato red | 700×300 | `src/assets/generated/btn_danger.webp` |
+| `btn_ink` | Ink — near-black, used for the "selected" state (drawing tools, chips) | 700×383 | `src/assets/generated/btn_ink.webp` |
+| `btn_chip_ink` | Ink, pill/stadium shape — selected chip fill | 700×335 | `src/assets/generated/btn_chip_ink.webp` |
+
+Each source is a single rounded-rect (or, for the chip, a stadium) swatch:
+ring and marker-scribble fill drawn together in one Higgsfield generation,
+nothing else on the canvas. Applied app-wide as a 9-slice `border-image` in
+`src/index.css`, keyed to new `.wt-btn-*` / `.wt-chip-ink` classes rather than
+generic Tailwind utilities, so each tone gets its own artwork.
+
+**Getting the scaling right took a wrong turn.** The first read of the
+generated art measured a ring only ~2.4% of the canvas height (13px on a
+548px-tall source) and, reasoning from Batch 12's fix, that looked headed for
+the same crushing problem. It wasn't: Batch 12's asset was a RING ONLY, so
+its "slice" region was mostly empty transparency around a thin line, making
+the ring a small fraction of the slice and vulnerable to scaling. These
+assets bake the ring INSIDE a filled shape — the slice region is mostly
+correct-looking fill either way — so a modest `border-image-width`
+(12-18px, not the button's full height) is enough for the ring to survive:
+the corner slice, containing ring-plus-adjacent-fill, downscales into a small
+destination corner and still reads as ink, while `border-image`'s `fill`
+keyword stretches the same source's flat/scribbled middle to cover the rest
+of the button. Verified with a local 9-slice simulator
+(`scripts/` — not committed, one-off diagnostic) before touching the browser,
+since round-tripping every width value through Playwright would have been
+far slower than simulating it directly in PIL.
+
+**One regression caught before shipping, same shape as Batch 12's.** The
+selected chip (`.wt-chip-ink`) silently rendered as a plain square with no
+fill at all. Cause: the chip's JSX carried BOTH `wt-chip-ink` and Tailwind's
+`border-thin` utility class. Batch 12's generic rule
+(`.border-thin:not(.border-ink-hairline)`) still matches `border-thin`, and at
+two classes plus a `:not()` its selector specificity (0,2,0) beats
+`.wt-chip-ink` alone (0,1,0) — so Batch 12's ring-only asset silently won over
+this batch's filled pill, regardless of which rule appeared later in the
+file. Fixed by dropping `border-thin` from the selected branch entirely
+(`.wt-chip-ink` supplies its own `border-width`); a codebase-wide grep
+confirmed no other element pairs a `wt-btn-*`/`wt-chip-ink` class with a
+Tailwind border-width utility.
+
+**Reviewed before shipping app-wide**, per the brief: a `?preview=buttons`
+dev-only style sheet (`src/dev/ButtonStyleSheet.tsx`) renders all four tones
+across all three sizes, the disabled state, a block button, the drawing-tool
+selected/unselected pair, and the chip selected/unselected pair, in one page —
+checked visually before replacing the tone classes everywhere they're used.
+
+**States, and what did and didn't need new art.**
+
+- **Default** — the asset as generated, one per tone.
+- **Pressed** — no separate asset. The existing squash-and-shadow-swap tactile
+  effect stays (transform only, so it never costs a frame during live
+  drawing), plus `active:brightness-90` dims the SAME artwork. This is a
+  standard interactive affordance on an image, not an attempt to fake the art
+  itself with CSS.
+- **Disabled** — no separate asset; `opacity-50`, unchanged from before.
+- **Selected** — `btn_ink` / `btn_chip_ink`, a genuinely different fill, used
+  by the drawing-tool buttons and the character variant chip.
+
+**Scope decisions, stated rather than silent.**
+
+- **Pen-colour swatches are out of scope.** Each is one player's arbitrary
+  hex colour (`style={{ backgroundColor }}`), so a baked-in fill per colour
+  isn't meaningful — ten players, ten hexes, not a fixed tone. They keep
+  Batch 12's ring-only treatment (a hand-drawn outline, flat colour fill).
+- **"Icon buttons" have no current instance.** Grepped the app for an
+  icon-only button and found none — `DrawingTools.tsx`'s own docstring already
+  flags this as pending, text standing in until icon assets exist. Nothing to
+  replace, and nothing was invented to replace it with; ART_BIBLE.md's own
+  workflow rule is not to bulk-generate speculative assets ahead of a real
+  screen needing them.
+- **Card/tile surfaces (mode cards, character tiles, vote options) keep
+  Batch 12.** They're selectable content, not buttons in the sense the brief
+  used the word, and Batch 12's generic system already gives them a
+  consistent hand-drawn frame.
+
 ## Batch 5 — Functional icons
 
 Only generated once the tool UI is settled. Until then the drawing tools use

@@ -78,7 +78,7 @@ export function MushtarakRevealScreen({
     <Screen
       footer={
         replaying ? (
-          <GameButton tone="quiet" size="md" block onClick={() => playerRef.current?.finish()}>
+          <GameButton tone="secondary" size="md" block onClick={() => playerRef.current?.finish()}>
             تخطّي
           </GameButton>
         ) : isHost ? (

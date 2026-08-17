@@ -208,4 +208,90 @@
     background-size: 160px 160px;
     background-blend-mode: soft-light;
   }
+
+  /*
+   * Button assets. The generic ring+texture system above simulates a
+   * hand-drawn look for ANY bordered/coloured surface (cards, tiles, the
+   * character picker); real interactive buttons get something stronger —
+   * a dedicated piece of Higgsfield art per tone, ring and marker fill baked
+   * together as one drawing, rather than two effects layered by CSS. Same
+   * provenance rule as everywhere else in this file: the art is Higgsfield
+   * output (src/assets/generated/btn_*.webp), this is only the CSS that
+   * turns it into a 9-slice `border-image` so one drawing covers any button
+   * width a label needs.
+   *
+   * Each source is a wide rounded-rect swatch (ring + scribble fill, nothing
+   * else) at a corner geometry measured directly off that asset — see
+   * ASSET_MANIFEST.md Batch 13 for the numbers and how they were derived.
+   * `border-image-width` is deliberately modest (12-18px) rather than the
+   * button's full height: the source's corner slice already contains the
+   * whole ring-plus-some-fill for that corner, so a small destination width
+   * is enough for it to read as ink, while the `fill` keyword stretches the
+   * source's flat/scribbled middle to cover the rest of the button — the two
+   * regions are the same continuous artwork, so they meet invisibly.
+   *
+   * The real <button> keeps its OWN border-color/border-radius as a fallback
+   * rendering for the gap before the asset loads (or if it fails) — border-
+   * image silently falls back to those when its source isn't available.
+   */
+  .wt-btn-primary,
+  .wt-btn-secondary,
+  .wt-btn-accent,
+  .wt-btn-danger,
+  .wt-btn-ink {
+    border-style: solid;
+    border-width: var(--wt-stroke-bold);
+    border-image-outset: 2px;
+    border-image-repeat: stretch;
+    background-color: transparent;
+  }
+  .wt-btn-primary {
+    border-image-source: url('./assets/generated/btn_primary.webp');
+    border-image-slice: 45 49 fill;
+  }
+  .wt-btn-secondary {
+    border-image-source: url('./assets/generated/btn_secondary.webp');
+    border-image-slice: 81 49 fill;
+  }
+  .wt-btn-accent {
+    border-image-source: url('./assets/generated/btn_accent.webp');
+    border-image-slice: 43 132 fill;
+  }
+  .wt-btn-danger {
+    border-image-source: url('./assets/generated/btn_danger.webp');
+    border-image-slice: 34 45 fill;
+  }
+  .wt-btn-ink {
+    border-image-source: url('./assets/generated/btn_ink.webp');
+    border-image-slice: 103 111 fill;
+  }
+  /* Ring thickness scales down a little with button size, matching the
+     lg/md/sm tiers GameButton already defines. */
+  .wt-btn-lg {
+    border-image-width: 17px;
+  }
+  .wt-btn-md {
+    border-image-width: 14px;
+  }
+  .wt-btn-sm {
+    border-image-width: 12px;
+  }
+
+  /*
+   * The pill/chip "selected" fill — variant toggles, the drawing-tool active
+   * state. Unselected chips stay on the generic ring-only system above (see
+   * `.border-ink-hairline`'s exclusion there): a plain quiet line for "not
+   * chosen" and this confident inked pill for "chosen" is the same pairing
+   * used everywhere else selection state is shown in the app.
+   */
+  .wt-chip-ink {
+    border-style: solid;
+    border-width: var(--wt-stroke-thin);
+    border-image-source: url('./assets/generated/btn_chip_ink.webp');
+    border-image-slice: 156 203 fill;
+    border-image-width: 20px;
+    border-image-outset: 1px;
+    border-image-repeat: stretch;
+    background-color: transparent;
+  }
 }

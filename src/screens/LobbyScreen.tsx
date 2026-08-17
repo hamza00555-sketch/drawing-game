@@ -182,11 +182,11 @@ export function LobbyScreen({
             onClick={onChangeMode}
             disabled={!isHost}
             className={[
-              'mt-2 flex min-h-tap w-full items-center justify-between rounded-md border-bold p-3',
-              'font-body text-base transition-[transform,box-shadow] duration-instant',
+              'mt-2 flex min-h-tap w-full items-center justify-between rounded-md p-3',
+              'font-body text-base transition-[transform,box-shadow,filter] duration-instant',
               isHost
-                ? 'border-ink bg-paper-raised text-ink shadow-1 active:translate-y-[2px] active:shadow-pressed'
-                : 'border-ink-hairline bg-paper text-ink-soft',
+                ? 'wt-btn-secondary wt-btn-md text-ink shadow-1 active:translate-y-[2px] active:shadow-pressed active:brightness-90'
+                : 'border-thin border-ink-hairline bg-paper text-ink-soft',
             ].join(' ')}
           >
             <span className="font-display">
