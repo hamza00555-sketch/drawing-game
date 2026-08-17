@@ -395,6 +395,53 @@ field where no brightness threshold could):
 - **Batch 7 is now fully superseded** for character-bearing assets. Its
   `logo_wordmark` and `app_icon` still stand — neither shows a character.
 
+## Batch 10 — Hero regenerated as one Higgsfield illustration (current direction)
+
+Batch 9's `hero_home_confused_group` was a composite of six separate pose
+cutouts pasted onto one canvas. It read as pasted-together — each figure's own
+lighting and ground shadow, no shared light source, no natural overlap where
+one character leans into another. Requested explicitly: regenerate it with
+Higgsfield and make it better.
+
+Composing was the right call for the mode scenes (Batch 9's reasoning still
+holds: a generated scene would put the once-rejected characters back on
+screen). The hero is different — by now the OWNER'S OWN characters are the
+approved design, so a single Higgsfield illustration referencing all six as
+image inputs draws them interacting naturally in one pass, with one light
+source and one shadow, which no amount of compositing individual cutouts can
+produce.
+
+Two things mattered for a correct result with `gpt_image_2`:
+
+- **Reference images must be single-pose, not the full 3x3 sheet.** An early
+  attempt passed the raw character sheets (nine poses each, including a
+  costumed variant) as references, and the model read the sheet's own
+  costume pose as a second character — one generation dropped الفنان
+  entirely, another duplicated الناقد once with his scarf and once without.
+  Switching to the plain `_default_idle` cutout per character (already
+  produced by Batch 8) as the reference fixed it: six references in, exactly
+  six characters out, on both attempts.
+- **The prompt named each character's colour and one identifying feature**
+  (the beret, the antenna, the spikes) and said explicitly not to invent or
+  omit one. Belt-and-suspenders alongside the single-pose fix above, but it
+  is cheap insurance against exactly the failure mode above.
+
+Background removed with `remove_background`, trimmed to content with an
+8px margin.
+
+| id | size | file |
+|---|---|---|
+| `hero_home_confused_group` | 1262×698 | `src/assets/generated/hero_home_confused_group.webp` |
+
+**Batch 10 notes.**
+
+- Regenerating is a manual step, not something `build-scene.py` does — there
+  is no script here, just the prompt above and the six Batch 8 idle cutouts as
+  reference. Re-run by hand if the hero needs revisiting again.
+- The splash backdrop and the five mode scenes are still Batch 9 composites.
+  They were not requested to change, but the same one-shot-generation approach
+  would likely improve them the same way if that's ever wanted.
+
 ## Batch 5 — Functional icons
 
 Only generated once the tool UI is settled. Until then the drawing tools use

@@ -349,8 +349,8 @@ export const assetRegistry: Readonly<Record<AssetId, AssetEntry>> = {
   hero_home_confused_group: {
     src: heroHome,
     alt: 'الشخصيات مجتمعة حول رسمة غريبة تحاول فهمها',
-    width: 1400,
-    height: 644,
+    width: 1262,
+    height: 698,
   },
   mode_scene_mozawwer: {
     src: sceneMozawwer,
