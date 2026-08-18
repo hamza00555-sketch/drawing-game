@@ -700,6 +700,64 @@ and never an icon-pack glyph.
 | `icon_undo` | Undo | Drawing | queued |
 | `symbol_got_you` | The "فهمتك" signal | الرسم المشترك | queued |
 
+## Batch 14 — App icon replaced with the owner's own mockup (current direction)
+
+Requested explicitly: the owner supplied their own icon mockup (all seven
+splash characters plus the وش ذا؟ wordmark, on the grid-paper background,
+inside a rounded-square blue-outlined frame) and asked for it to be
+reproduced via Higgsfield with a bigger logo, or used directly if that
+failed. **This is the owner's own composited artwork, not a Higgsfield
+generation** — same status as the character sheets in Batch 8: it is canon
+because the owner made it, not because a model produced it.
+
+A direct Higgsfield edit was tried first (`gpt_image_2`, the owner's image as
+an `image` reference, prompt asking only to enlarge the logo). It came back
+close, but the bigger logo now overlapped المحقق's head — a defect the
+original didn't have. Per the owner's own fallback instruction, the fix was
+done by hand instead: cut the logo out of the owner's actual image (outline +
+saturated-fill mask, same technique as the character cutters, dilated to
+absorb the white sticker-outline ring), measured the real available space in
+the frame (only ~17px of clearance below the logo before touching المحقق's
+eyebrow, but a small decorative "swoosh" doodle immediately to the logo's
+left was the binding constraint on width), erased that doodle by tiling in a
+patch of genuinely clean paper-grain background found by brute-force scanning
+the image for the lowest-saturation, non-dark region of the right size, then
+pasted the logo back in at 1.27x — bound by the vertical eyebrow clearance,
+which was the tightest of the four margins.
+
+One thing broke during cleanup and was caught before shipping: naively erasing
+the doodle by pasting a rectangular patch also punched a rectangular notch out
+of the frame's own rounded blue border, since the erase box's corner
+overlapped the curve. Fixed by restoring the ORIGINAL pixels in that corner
+back from the source image, restricted to a small window and excluding the
+old logo's own footprint (so old logo ink didn't reappear alongside the
+restored border).
+
+A second, unrelated fix was needed for the exported icon files themselves:
+the owner's source image has pure black behind the rounded frame (not real
+transparency — the file has no alpha channel). Naively treating "near-black"
+as background and clearing it to white also cleared every character's black
+ink outline, since ink and background were the same colour. Fixed with a
+flood-fill from the four actual image corners: only the black region
+connected to a real corner is background, so this reliably separates it from
+the disconnected black ink scattered through the interior, no matter how
+close in colour the two are.
+
+| id | purpose | size | transparent | status | file |
+|---|---|---|---|---|---|
+| `app_icon` | All seven splash characters + the وش ذا؟ wordmark, on grid paper, in a rounded blue frame — the owner's own design | 1254×1254 source, exported at 512/192/180/32/16 | no (solid white corners — same reasoning as Batch 6: favicons render on inconsistent chrome) | shipped | `public/icon-512.png`, `icon-192.png`, `apple-touch-icon.png`, `favicon-32.png`, `favicon-16.png` |
+
+Master source kept at `art-reference/app_icon_source.webp` (the full square,
+logo enlarged, doodle removed, corners squared off) for any future re-export.
+
+**Batch 14 notes.**
+
+- At 32px the enlarged logo still reads as a distinct yellow-and-blue badge
+  in the corner — a real, visible improvement over the original at that size.
+  At 16px neither version is legible; that is an inherent limit of "seven
+  characters plus a wordmark" as an icon concept, not specific to this pass.
+- **Batch 6 and Batch 11's `app_icon` rows are now superseded.**
+
 ## Batch 6 — App icon
 
 The browser tab / home-screen icon. Referenced directly from `index.html` as
