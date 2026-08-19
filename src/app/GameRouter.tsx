@@ -3,6 +3,7 @@ import { KammilGame } from '../modes/kammil/KammilGame';
 import { MamnouGame } from '../modes/mamnou3at/MamnouGame';
 import { MushtarakGame } from '../modes/mushtarak/MushtarakGame';
 import { KanatEshGame } from '../modes/kanatEsh/KanatEshGame';
+import { KanatEshDuoGame } from '../modes/kanatEsh/KanatEshDuoGame';
 import type { LiveRoundProps } from '../modes/liveRound';
 
 /**
@@ -24,7 +25,7 @@ export function GameRouter(props: LiveRoundProps) {
     case 'mushtarak':
       return <MushtarakGame {...props} />;
     case 'kanatEsh':
-      return <KanatEshGame {...props} />;
+      return props.game.isDuo ? <KanatEshDuoGame {...props} /> : <KanatEshGame {...props} />;
 
     default:
       // A round started by a newer build than this device is running. Saying so

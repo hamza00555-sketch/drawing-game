@@ -132,6 +132,17 @@ export function PreviewGallery({ screen }: { screen: string }) {
       return (
         <ModeSelectScreen
           selected="mozawwer"
+          connectedPlayerCount={5}
+          onSelect={noop}
+          onConfirm={noop}
+          onBack={noop}
+        />
+      );
+
+    case 'modes-duo':
+      return (
+        <ModeSelectScreen
+          connectedPlayerCount={2}
           onSelect={noop}
           onConfirm={noop}
           onBack={noop}
@@ -168,6 +179,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
               'lobby',
               'lobby-empty',
               'modes',
+              'modes-duo',
               'buttons',
               'draw',
               'lobby-start-failed',

@@ -16,6 +16,13 @@
 export type ReadyToVoteRule = 'any_player' | 'host_only' | 'majority';
 
 export const MOZAWWER = {
+  /**
+   * Unlike every other mode, this one has no Duo ruleset — the impostor
+   * mechanic does not work with only two players (one of them would always
+   * know the other is the impostor by elimination). Locked in the UI below
+   * this floor instead of getting a rebalanced version.
+   */
+  minPlayers: 3,
   /** Passes around the shared canvas before "الرسمة جاهزة" is even offered. */
   minTurnsBeforeReady: 2,
   /** Hard ceiling so a room cannot stall forever. */

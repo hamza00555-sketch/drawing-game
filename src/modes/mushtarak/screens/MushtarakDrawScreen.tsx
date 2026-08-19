@@ -22,9 +22,16 @@ import type { RoomPlayer } from '../../../engine/presence';
  */
 
 export interface MushtarakDrawScreenProps {
-  /** This player's half of the prompt. Undefined for guessers. */
+  /** This player's half of the prompt. Undefined for guessers. In Duo, both
+   * artists get the whole prompt here — there is no split to protect. */
   myPart?: string;
   isArtist: boolean;
+  /** Duo ruleset: alternating short turns instead of simultaneous drawing. */
+  isDuo?: boolean;
+  /** Duo only: is it this player's turn right now? */
+  isMyTurn?: boolean;
+  turnIndex?: number;
+  totalSwaps?: number;
   selfId: string;
   players: Record<string, RoomPlayer>;
   artistIds: readonly string[];
@@ -52,6 +59,10 @@ export interface MushtarakDrawScreenProps {
 export function MushtarakDrawScreen({
   myPart,
   isArtist,
+  isDuo = false,
+  isMyTurn = false,
+  turnIndex = 0,
+  totalSwaps = 0,
   selfId,
   players,
   artistIds,
@@ -75,11 +86,26 @@ export function MushtarakDrawScreen({
   const [tool, setTool] = useState<Tool>('pen');
   const partner = artistIds.find((id) => id !== selfId);
   const partnerName = partner ? players[partner]?.name : undefined;
+  const canDrawNow = isDuo ? isMyTurn : isArtist;
 
   return (
     <Screen
       footer={
-        isArtist ? (
+        isDuo ? (
+          <>
+            <DrawingTools
+              tool={tool}
+              onToolChange={setTool}
+              onUndo={onUndo}
+              canUndo={canUndo}
+              disabled={!isMyTurn}
+              hideEraser
+            />
+            <p className="text-center font-body text-sm text-ink-soft">
+              {isMyTurn ? 'دورك الآن!' : `دور ${partnerName ?? 'شريكك'}`}
+            </p>
+          </>
+        ) : isArtist ? (
           <>
             <DrawingTools
               tool={tool}
@@ -113,9 +139,13 @@ export function MushtarakDrawScreen({
         <div className="flex items-baseline justify-between gap-3">
           <div className="min-w-0">
             <p className="font-body text-sm text-ink-soft">
-              {isArtist ? 'نصيبك من الفكرة' : 'اثنين يرسمون'}
+              {isDuo
+                ? `تبديلة ${turnIndex + 1} من ${totalSwaps}`
+                : isArtist
+                  ? 'نصيبك من الفكرة'
+                  : 'اثنين يرسمون'}
             </p>
-            {isArtist && (
+            {(isDuo || isArtist) && (
               <p className="truncate font-display text-xl text-ink">{myPart}</p>
             )}
           </div>
@@ -153,7 +183,7 @@ export function MushtarakDrawScreen({
         <div className="relative min-h-0 flex-1 rounded-md border-bold border-ink">
           <DrawingCanvas
             ref={canvasRef}
-            enabled={isArtist}
+            enabled={canDrawNow}
             tool={tool}
             color={penColors[selfId] ?? '#2a211c'}
             width={0.012}

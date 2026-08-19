@@ -27,6 +27,7 @@ export interface KammilRevealScreenProps {
   guesserName: string;
   players: Record<string, RoomPlayer>;
   strokes: readonly Stroke[];
+  isDuo?: boolean;
   onContinue: () => void;
   isHost: boolean;
 }
@@ -38,6 +39,7 @@ export function KammilRevealScreen({
   guesserName,
   players,
   strokes,
+  isDuo = false,
   onContinue,
   isHost,
 }: KammilRevealScreenProps) {
@@ -53,8 +55,10 @@ export function KammilRevealScreen({
       }
 
       const replay = new ReplayPlayer(renderer, strokes, {
-        msPerContribution: KAMMIL.replay.msPerContribution,
-        holdOnNameMs: KAMMIL.replay.holdOnNameMs,
+        msPerContribution: isDuo
+          ? KAMMIL.duo.replay.msPerContribution
+          : KAMMIL.replay.msPerContribution,
+        holdOnNameMs: isDuo ? KAMMIL.duo.replay.holdOnNameMs : KAMMIL.replay.holdOnNameMs,
         onPlayerChange: (playerId) =>
           setCaption(playerId ? players[playerId]?.name : undefined),
         onComplete: () => {
@@ -66,7 +70,7 @@ export function KammilRevealScreen({
       playerRef.current = replay;
       replay.start();
     },
-    [strokes, players],
+    [strokes, players, isDuo],
   );
 
   useEffect(() => () => playerRef.current?.stop(), []);

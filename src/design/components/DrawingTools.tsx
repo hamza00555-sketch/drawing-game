@@ -27,6 +27,14 @@ export interface DrawingToolsProps {
   colors?: readonly string[];
   color?: string;
   onColorChange?: (color: string) => void;
+  /**
+   * Drop the eraser button entirely. The eraser composites onto the shared
+   * canvas bitmap regardless of who drew what beneath it — fine when a turn
+   * belongs to one player at a time, but in الرسم المشترك's Duo ruleset a
+   * 2-3 second turn has no time for anyone to police that, so the tool is
+   * removed rather than trusted.
+   */
+  hideEraser?: boolean;
 }
 
 export function DrawingTools({
@@ -38,6 +46,7 @@ export function DrawingTools({
   colors,
   color,
   onColorChange,
+  hideEraser = false,
 }: DrawingToolsProps) {
   const buttonBase =
     'min-h-tap flex-1 wt-btn-sm px-3 font-display text-base ' +
@@ -60,15 +69,17 @@ export function DrawingTools({
           قلم
         </button>
 
-        <button
-          type="button"
-          disabled={disabled}
-          aria-pressed={tool === 'eraser'}
-          onClick={() => onToolChange('eraser')}
-          className={[buttonBase, tool === 'eraser' ? selected : unselected].join(' ')}
-        >
-          ممحاة
-        </button>
+        {!hideEraser && (
+          <button
+            type="button"
+            disabled={disabled}
+            aria-pressed={tool === 'eraser'}
+            onClick={() => onToolChange('eraser')}
+            className={[buttonBase, tool === 'eraser' ? selected : unselected].join(' ')}
+          >
+            ممحاة
+          </button>
+        )}
 
         <button
           type="button"

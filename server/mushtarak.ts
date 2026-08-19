@@ -11,7 +11,13 @@ import { db, ServerValue } from './admin.js';
 import { GameError } from './errors.js';
 import type { RequestData } from './types.js';
 
-import { MUSHTARAK, pickArtistPair, pickCombo, scoreMushtarakRound } from '../shared/mushtarak.js';
+import {
+  MUSHTARAK,
+  pickArtistPair,
+  pickCombo,
+  scoreMushtarakDuoRound,
+  scoreMushtarakRound,
+} from '../shared/mushtarak.js';
 import { isCorrectGuess } from '../shared/mozawwer.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
@@ -44,20 +50,63 @@ export async function startMushtarakRound(uid: string, data: RequestData): Promi
   if (hostId !== uid) throw new GameError('permission-denied', 'المضيف فقط.');
 
   const playerIds = await connectedIds(roomId);
-  if (playerIds.length < 3) {
-    throw new GameError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
+  if (playerIds.length < MUSHTARAK.minPlayers) {
+    throw new GameError('failed-precondition', `نحتاج ${MUSHTARAK.minPlayers} لاعبين على الأقل.`);
   }
 
-  const usedSnap = await db().ref(`rooms/${roomId}/usedWords`).get();
-  const prevSnap = await db().ref(`rooms/${roomId}/lastArtistPair`).get();
+  const isDuo = playerIds.length === 2;
 
+  const usedSnap = await db().ref(`rooms/${roomId}/usedWords`).get();
   const combo = pickCombo(Object.values(usedSnap.val() ?? {}) as string[]);
+  const gameId = db().ref().push().key as string;
+
+  if (isDuo) {
+    const [a, b] = playerIds as [string, string];
+
+    // No split, and no guesser: both players already know the whole prompt,
+    // so there is nothing left for either half to hide.
+    const secrets: Record<string, unknown> = {
+      [a]: { role: 'artist', part: combo.full },
+      [b]: { role: 'artist', part: combo.full },
+    };
+
+    await db()
+      .ref()
+      .update({
+        [`playerSecrets/${roomId}/${gameId}`]: secrets,
+        [gameSecretPath(roomId, gameId)]: {
+          partA: combo.full,
+          partB: combo.full,
+          full: combo.full,
+        },
+        [`rooms/${roomId}/status`]: 'playing',
+        [`rooms/${roomId}/usedWords/${gameId}`]: combo.full,
+        [`games/${roomId}/current`]: {
+          gameId,
+          mode: 'mushtarak',
+          phase: 'brief',
+          phaseEndsAt: Date.now() + MUSHTARAK.duo.briefMs,
+          artistIds: [a, b],
+          guesserIds: [],
+          isDuo: true,
+          turnIndex: 0,
+          totalSwaps: MUSHTARAK.duo.totalSwaps,
+          turnMs: MUSHTARAK.duo.turnMs,
+          currentPlayerId: a,
+          // No `activeDrawers`: the stroke rule falls back to matching
+          // `currentPlayerId`, which is exactly the one-at-a-time turn this
+          // ruleset needs — unlike the group version's simultaneous pair.
+        },
+      });
+
+    return { gameId };
+  }
+
+  const prevSnap = await db().ref(`rooms/${roomId}/lastArtistPair`).get();
   const { artistIds, guesserIds } = pickArtistPair(
     playerIds,
     (prevSnap.val() ?? []) as string[],
   );
-
-  const gameId = db().ref().push().key as string;
 
   // Each artist gets ONLY their own half.
   const secrets: Record<string, unknown> = {};
@@ -107,12 +156,13 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
   switch (action) {
     case 'beginDrawing': {
       if (game.phase !== 'brief') return { phase: game.phase };
-      await gameRef.update({ phase: 'draw', phaseEndsAt: Date.now() + MUSHTARAK.drawMs });
+      const duration = game.isDuo ? (game.turnMs ?? MUSHTARAK.duo.turnMs) : MUSHTARAK.drawMs;
+      await gameRef.update({ phase: 'draw', phaseEndsAt: Date.now() + duration });
       return { phase: 'draw' };
     }
 
     case 'gotYou': {
-      if (game.phase !== 'draw') return { phase: game.phase };
+      if (game.phase !== 'draw' || game.isDuo) return { phase: game.phase };
       if (!(game.artistIds ?? []).includes(uid)) {
         throw new GameError('permission-denied', 'للرسّامين فقط.');
       }
@@ -130,8 +180,59 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
       return { sent: true };
     }
 
+    // Duo only: one short turn ends and either the next player's turn begins,
+    // or — once every swap has happened — the round goes straight to reveal.
+    // There is no guessing phase to route through: both players already know
+    // the prompt.
+    case 'endTurn': {
+      if (game.phase !== 'draw' || !game.isDuo) return { phase: game.phase };
+
+      const expected = data.turnIndex;
+      if (typeof expected === 'number' && expected !== game.turnIndex) {
+        return { phase: game.phase };
+      }
+
+      const artistIds: string[] = game.artistIds ?? [];
+      const totalSwaps = game.totalSwaps ?? MUSHTARAK.duo.totalSwaps;
+      const turnMs = game.turnMs ?? MUSHTARAK.duo.turnMs;
+      const nextIndex = (game.turnIndex ?? 0) + 1;
+
+      if (nextIndex >= totalSwaps) {
+        const delta = scoreMushtarakDuoRound(artistIds as [string, string]);
+        const current = ((await db().ref(`playerScores/${roomId}`).get()).val() ?? {}) as Record<
+          string,
+          number
+        >;
+        const secret = await readGameSecret<MushtarakSecret>(roomId, game.gameId);
+
+        const updates: Record<string, unknown> = {
+          [`games/${roomId}/current/phase`]: 'reveal',
+          [`games/${roomId}/current/phaseEndsAt`]: null,
+          [`games/${roomId}/current/correctGuesserIds`]: [],
+          [`games/${roomId}/current/partA`]: secret.partA,
+          [`games/${roomId}/current/partB`]: secret.partB,
+          [`games/${roomId}/current/full`]: secret.full,
+          [`rooms/${roomId}/status`]: 'lobby',
+        };
+        updates[`games/${roomId}/current/scoreDelta`] = delta;
+        for (const [playerId, points] of Object.entries(delta)) {
+          updates[`playerScores/${roomId}/${playerId}`] = (current[playerId] ?? 0) + points;
+        }
+
+        await db().ref().update(updates);
+        return { phase: 'reveal' };
+      }
+
+      await gameRef.update({
+        turnIndex: nextIndex,
+        currentPlayerId: artistIds[nextIndex % 2],
+        phaseEndsAt: Date.now() + turnMs,
+      });
+      return { phase: 'draw' };
+    }
+
     case 'endDrawing': {
-      if (game.phase !== 'draw') return { phase: game.phase };
+      if (game.phase !== 'draw' || game.isDuo) return { phase: game.phase };
       await gameRef.update({
         phase: 'guess',
         phaseEndsAt: Date.now() + MUSHTARAK.guessMs,

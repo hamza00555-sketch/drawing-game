@@ -51,4 +51,5 @@ export const advanceMushtarak = wrap('advanceMushtarak');
 
 export const startKanatEshRound = wrap('startKanatEshRound');
 export const submitKanatEshLink = wrap('submitKanatEshLink');
+export const submitKanatEshLinkDuo = wrap('submitKanatEshLinkDuo');
 export const kanatEshToResult = wrap('kanatEshToResult');

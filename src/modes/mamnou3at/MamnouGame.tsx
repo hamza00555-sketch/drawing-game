@@ -63,7 +63,7 @@ export function MamnouGame({
           word={secret?.word ?? ''}
           forbidden={secret?.forbidden ?? []}
           endsAt={game.phaseEndsAt}
-          durationMs={MAMNOU3AT.briefMs}
+          durationMs={game.briefMs ?? MAMNOU3AT.briefMs}
           onReady={() => {
             // The artist has read the list and wants to start. The host's
             // deadline is the backstop if they never tap.
@@ -87,7 +87,7 @@ export function MamnouGame({
           strokes={session.strokes}
           penColor={penColorFor(players[selfId]?.characterId)}
           endsAt={game.phaseEndsAt}
-          durationMs={MAMNOU3AT.drawMs}
+          durationMs={game.drawMs ?? MAMNOU3AT.drawMs}
           // Newest first: the artist is reading the last thing said, not a log.
           guesses={[...guesses].reverse()}
           alreadyCorrect={guesses.some((g) => g.playerId === selfId && g.correct)}

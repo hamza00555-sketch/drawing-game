@@ -6,8 +6,10 @@ import {
   canDraw,
   canGuess,
   canSendGotYou,
+  isLastDuoTurn,
   pickArtistPair,
   pickCombo,
+  scoreMushtarakDuoRound,
   scoreMushtarakRound,
   visiblePromptPart,
   type MushtarakState,
@@ -51,6 +53,17 @@ describe('simultaneous drawing', () => {
     expect(canGuess(state({ phase: 'guess' }), 'a1')).toBe(false);
     expect(canGuess(state({ phase: 'guess' }), 'g1')).toBe(true);
   });
+
+  it('Duo: exactly one of the two may draw at a time, not both', () => {
+    const duoState = state({
+      artistIds: ['a1', 'a2'],
+      guesserIds: [],
+      isDuo: true,
+      currentPlayerId: 'a1',
+    });
+    expect(canDraw(duoState, 'a1')).toBe(true);
+    expect(canDraw(duoState, 'a2')).toBe(false);
+  });
 });
 
 describe('split prompt', () => {
@@ -68,6 +81,12 @@ describe('split prompt', () => {
     expect(visiblePromptPart(revealed, 'a1', parts)).toBe(parts.full);
     expect(visiblePromptPart(revealed, 'g1', parts)).toBe(parts.full);
   });
+
+  it('Duo: both players see the whole prompt from the start — there is no split', () => {
+    const duoState = state({ isDuo: true, artistIds: ['a1', 'a2'], guesserIds: [] });
+    expect(visiblePromptPart(duoState, 'a1', parts)).toBe(parts.full);
+    expect(visiblePromptPart(duoState, 'a2', parts)).toBe(parts.full);
+  });
 });
 
 describe('فهمتك signal', () => {
@@ -83,6 +102,11 @@ describe('فهمتك signal', () => {
   it('is unavailable to guessers and outside the drawing phase', () => {
     expect(canSendGotYou(state(), 'g1', [], 1)).toBe(false);
     expect(canSendGotYou(state({ phase: 'guess' }), 'a1', [], 1)).toBe(false);
+  });
+
+  it('Duo: off entirely — there is no misunderstanding to signal', () => {
+    const duoState = state({ isDuo: true, artistIds: ['a1', 'a2'], guesserIds: [] });
+    expect(canSendGotYou(duoState, 'a1', [], 1)).toBe(false);
   });
 });
 
@@ -129,6 +153,21 @@ describe('scoreMushtarakRound', () => {
     const delta = scoreMushtarakRound({ artistIds: ['a1', 'a2'], correctGuesserIds: [] });
     expect(delta.a1).toBeUndefined();
     expect(delta.a2).toBeUndefined();
+  });
+});
+
+describe('isLastDuoTurn', () => {
+  it('is true once every swap has happened, not before', () => {
+    expect(isLastDuoTurn(5, MUSHTARAK.duo.totalSwaps)).toBe(false);
+    expect(isLastDuoTurn(MUSHTARAK.duo.totalSwaps - 1, MUSHTARAK.duo.totalSwaps)).toBe(true);
+  });
+});
+
+describe('scoreMushtarakDuoRound', () => {
+  it('pays both players the same flat award — there is no guess to judge', () => {
+    const delta = scoreMushtarakDuoRound(['a1', 'a2']);
+    expect(delta.a1).toBe(MUSHTARAK.duo.scores.participation);
+    expect(delta.a2).toBe(MUSHTARAK.duo.scores.participation);
   });
 });
 

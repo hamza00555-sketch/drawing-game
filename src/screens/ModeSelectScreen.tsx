@@ -22,6 +22,8 @@ interface ModeEntry {
   line: string;
   asset: string;
   ready: boolean;
+  /** Fewest connected players this mode can start with. */
+  minPlayers: number;
 }
 
 const MODES: readonly ModeEntry[] = [
@@ -31,6 +33,9 @@ const MODES: readonly ModeEntry[] = [
     line: 'واحد بينكم ما يعرف الكلمة. لقّطوه.',
     asset: 'mode_scene_mozawwer',
     ready: true,
+    // No Duo ruleset — with one guesser and one impostor, the impostor is
+    // identified by elimination the instant the round starts.
+    minPlayers: 3,
   },
   {
     id: 'kammil',
@@ -38,6 +43,7 @@ const MODES: readonly ModeEntry[] = [
     line: 'ثواني معدودة لكل واحد، والأخير يخمّن.',
     asset: 'mode_scene_kammil',
     ready: true,
+    minPlayers: 2,
   },
   {
     id: 'mamnou3at',
@@ -45,6 +51,7 @@ const MODES: readonly ModeEntry[] = [
     line: 'ارسمها، بس بدون أهم أجزائها.',
     asset: 'mode_scene_mamnou3at',
     ready: true,
+    minPlayers: 2,
   },
   {
     id: 'mushtarak',
@@ -52,6 +59,7 @@ const MODES: readonly ModeEntry[] = [
     line: 'اثنين يرسمون، وكل واحد يعرف نص القصة.',
     asset: 'mode_scene_mushtarak',
     ready: true,
+    minPlayers: 2,
   },
   {
     id: 'kanatEsh',
@@ -59,14 +67,26 @@ const MODES: readonly ModeEntry[] = [
     line: 'جملة تتحول لرسمة، والرسمة تتحول لكارثة.',
     asset: 'mode_scene_kanat_esh',
     ready: true,
+    minPlayers: 2,
   },
 ];
+
+/**
+ * The single source both `ModeSelectScreen` and `LobbyScreen` read for "can
+ * this room start this mode right now" — one lookup, not two independently
+ * maintained copies of the same five numbers.
+ */
+export const MODE_MIN_PLAYERS: Record<GameMode, number> = Object.fromEntries(
+  MODES.map((mode) => [mode.id, mode.minPlayers]),
+) as Record<GameMode, number>;
 
 export interface ModeSelectScreenProps {
   selected?: GameMode;
   onSelect: (mode: GameMode) => void;
   onConfirm: () => void;
   onBack: () => void;
+  /** How many players are connected right now — decides which modes are locked. */
+  connectedPlayerCount: number;
 }
 
 export function ModeSelectScreen({
@@ -74,8 +94,14 @@ export function ModeSelectScreen({
   onSelect,
   onConfirm,
   onBack,
+  connectedPlayerCount,
 }: ModeSelectScreenProps) {
-  const playable = MODES.filter((mode) => mode.ready);
+  const playable = MODES.filter(
+    (mode) => mode.ready && connectedPlayerCount >= mode.minPlayers,
+  );
+  const locked = MODES.filter(
+    (mode) => mode.ready && connectedPlayerCount < mode.minPlayers,
+  );
   const upcoming = MODES.filter((mode) => !mode.ready);
 
   return (
@@ -144,6 +170,37 @@ export function ModeSelectScreen({
             );
           })}
         </ul>
+
+        {locked.length > 0 && (
+          <ul className="flex list-none flex-col gap-4 p-0">
+            {locked.map((mode) => (
+              <li key={mode.id}>
+                <div
+                  aria-disabled
+                  className={[
+                    'flex w-full flex-col overflow-hidden rounded-lg border-bold text-start',
+                    'border-ink-hairline bg-paper opacity-60',
+                  ].join(' ')}
+                >
+                  <span className="flex w-full items-center justify-center bg-paper px-3 pt-3">
+                    <AssetSlot
+                      id={mode.asset}
+                      alt={mode.name}
+                      className="h-28 w-full object-contain"
+                    />
+                  </span>
+
+                  <span className="flex flex-col gap-1 p-3">
+                    <span className="font-display text-xl text-ink">{mode.name}</span>
+                    <span className="font-body text-sm leading-snug text-tomato-deep">
+                      يحتاج {mode.minPlayers} لاعبين
+                    </span>
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {upcoming.length > 0 && (
           <section>

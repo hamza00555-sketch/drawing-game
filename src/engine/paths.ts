@@ -70,6 +70,20 @@ export const paths = {
   linkStrokes: (roomId: string, gameId: string, index: number) =>
     `linkStrokes/${roomId}/${gameId}/${index}`,
 
+  /**
+   * كانت إيش؟ Duo only: two independent chains instead of one, so both need a
+   * `track` segment ('0' | '1') the single-chain paths above don't have. Kept
+   * as entirely separate subtrees rather than reusing `chains`/`linkStrokes`
+   * with an optional track, so the group ruleset's paths and rules stay
+   * byte-for-byte what they were before Duo existed.
+   */
+  duoChain: (roomId: string, gameId: string, track: string) =>
+    `duoChains/${roomId}/${gameId}/${track}`,
+  duoChainLink: (roomId: string, gameId: string, track: string, index: number) =>
+    `duoChains/${roomId}/${gameId}/${track}/${index}`,
+  duoLinkStrokes: (roomId: string, gameId: string, track: string, index: number) =>
+    `duoLinkStrokes/${roomId}/${gameId}/${track}/${index}`,
+
   votes: (roomId: string, gameId: string) => `votes/${roomId}/${gameId}`,
   vote: (roomId: string, gameId: string, voterId: string) =>
     `votes/${roomId}/${gameId}/${voterId}`,

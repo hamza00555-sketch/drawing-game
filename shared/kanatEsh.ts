@@ -19,6 +19,7 @@
 import { shuffle } from './random.js';
 
 export const KANAT_ESH = {
+  minPlayers: 2,
   drawMs: 45_000,
   writeMs: 35_000,
   /** Chain length is derived from the room but clamped so a round stays short. */
@@ -30,7 +31,25 @@ export const KANAT_ESH = {
     /** Everyone gets something — surviving the chain is the participation. */
     completedChain: 1,
   },
+  /**
+   * Two players: one shared chain doesn't work (there is no third person to
+   * keep the drift honest — each of the two would just be reading their own
+   * earlier link back). Duo runs TWO chains side by side instead, one seeded
+   * by each player's own word, with the two players alternating author on
+   * each track — see `chainAssignmentsDuo`.
+   */
+  duo: {
+    drawMs: 25_000,
+    writeMs: 20_000,
+    /** Draw-then-guess round trips per track: "٢-٣ مرات" from the brief. */
+    repeats: 3,
+  },
 } as const;
+
+/** Total links in one Duo track: the seed, plus one drawing+text pair per repeat. */
+export function duoLinksPerTrack(): number {
+  return 1 + KANAT_ESH.duo.repeats * 2;
+}
 
 export type LinkType = 'text' | 'drawing';
 
@@ -71,6 +90,19 @@ export function pickSeed(
 
   const index = Math.floor(random() * source.length);
   return source[Math.min(index, source.length - 1)] as string;
+}
+
+/**
+ * Duo only: two distinct seeds, one per player's track. The second pick
+ * excludes the first so the two tracks never open on the same sentence.
+ */
+export function pickTwoDistinctSeeds(
+  used: readonly string[] = [],
+  random: () => number = Math.random,
+): [string, string] {
+  const first = pickSeed(used, random);
+  const second = pickSeed([...used, first], random);
+  return [first, second];
 }
 
 /**
@@ -115,6 +147,22 @@ export function chainAssignments(
   const out: string[] = [];
   for (let i = 1; i < links; i += 1) {
     out.push(order[(i - 1) % order.length] as string);
+  }
+  return out;
+}
+
+/**
+ * Duo only: author rotation for ONE track. The track's owner drew the seed
+ * (their own word), so they author link 1; from there the two players simply
+ * alternate — the owner draws, the other guesses, the owner draws the guess,
+ * and so on. Unlike `chainAssignments`, this never shuffles: "your word,
+ * your first move" is the point.
+ */
+export function chainAssignmentsDuo(owner: string, other: string, links: number): string[] {
+  const order = [owner, other];
+  const out: string[] = [];
+  for (let i = 1; i < links; i += 1) {
+    out.push(order[(i - 1) % 2] as string);
   }
   return out;
 }

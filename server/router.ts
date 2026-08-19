@@ -25,7 +25,12 @@ import {
   endMamnouRound,
 } from './mamnou3at.js';
 import { startMushtarakRound, advanceMushtarak } from './mushtarak.js';
-import { startKanatEshRound, submitKanatEshLink, kanatEshToResult } from './kanatEsh.js';
+import {
+  startKanatEshRound,
+  submitKanatEshLink,
+  submitKanatEshLinkDuo,
+  kanatEshToResult,
+} from './kanatEsh.js';
 
 export type Handler = (uid: string, data: RequestData) => Promise<unknown>;
 
@@ -47,6 +52,7 @@ export const HANDLERS = {
 
   startKanatEshRound,
   submitKanatEshLink,
+  submitKanatEshLinkDuo,
   kanatEshToResult,
 } as const satisfies Record<string, Handler>;
 

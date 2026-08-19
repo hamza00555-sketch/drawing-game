@@ -21,6 +21,7 @@
 import { shuffle } from './random.js';
 
 export const KAMMIL = {
+  minPlayers: 2,
   /** Pen locked while the artist sees the drawing so far and the word. */
   countdownMs: 3_000,
   /**
@@ -47,6 +48,32 @@ export const KAMMIL = {
   replay: {
     msPerContribution: 900,
     holdOnNameMs: 500,
+  },
+  /**
+   * Two players: one artist, one guesser, swapping roles round to round —
+   * assignKammilRoles's duo branch below handles that. Within a round, a
+   * wrong guess is not necessarily the end: the artist gets one short bonus
+   * window to add to the drawing before the guesser tries again, which is
+   * what the `extend` phase in machine.ts exists for.
+   */
+  duo: {
+    countdownMs: 3_000,
+    turnMs: 3_500,
+    guessMs: 12_000,
+    extendMs: 4_000,
+    /** How many times a wrong guess may trigger a bonus drawing window. */
+    maxExtensions: 1,
+    scores: {
+      guesserCorrectFirstTry: 4,
+      /** Less than a first-try correct: the extension gave a second look. */
+      guesserCorrectAfterExtend: 2,
+      artistOnSuccess: 2,
+      artistOnFailure: 1,
+    },
+    replay: {
+      msPerContribution: 500,
+      holdOnNameMs: 300,
+    },
   },
 } as const;
 
@@ -79,12 +106,27 @@ export function kammilDrawMs(artistCount: number): number {
  * silently fall back to join order, and whoever connected first would always
  * draw first, every round.
  */
+/**
+ * Split the room into artists and the one guesser.
+ *
+ * At two players there is no shuffle to do — the round is one artist and one
+ * guesser, and `previousGuesserId` (who guessed last round, if any) picks the
+ * other player deterministically so the two swap roles every round rather
+ * than risking the same split twice in a row.
+ */
 export function assignKammilRoles(
   playerIds: readonly string[],
   random: () => number = Math.random,
+  previousGuesserId?: string | null,
 ): { artistIds: string[]; guesserId: string } {
-  if (playerIds.length < 3) {
-    throw new Error('كمّل رسمتي يحتاج 3 لاعبين على الأقل.');
+  if (playerIds.length < KAMMIL.minPlayers) {
+    throw new Error(`كمّل رسمتي يحتاج ${KAMMIL.minPlayers} لاعبين على الأقل.`);
+  }
+
+  if (playerIds.length === 2 && previousGuesserId) {
+    const guesserId = (playerIds.find((id) => id !== previousGuesserId) ??
+      playerIds[0]) as string;
+    return { artistIds: playerIds.filter((id) => id !== guesserId), guesserId };
   }
 
   const index = Math.min(Math.floor(random() * playerIds.length), playerIds.length - 1);
@@ -104,6 +146,27 @@ export interface KammilRoundInput {
 }
 
 export type KammilScoreDelta = Record<string, number>;
+
+export interface KammilDuoRoundInput {
+  artistId: string;
+  guesserId: string;
+  correct: boolean;
+  /** Whether the correct guess came after the bonus extension was used. */
+  afterExtend: boolean;
+}
+
+export function scoreKammilDuoRound(input: KammilDuoRoundInput): KammilScoreDelta {
+  const { artistId, guesserId, correct, afterExtend } = input;
+  const { guesserCorrectFirstTry, guesserCorrectAfterExtend, artistOnSuccess, artistOnFailure } =
+    KAMMIL.duo.scores;
+
+  const delta: KammilScoreDelta = {};
+  if (correct) {
+    delta[guesserId] = afterExtend ? guesserCorrectAfterExtend : guesserCorrectFirstTry;
+  }
+  delta[artistId] = correct ? artistOnSuccess : artistOnFailure;
+  return delta;
+}
 
 export function scoreKammilRound(input: KammilRoundInput): KammilScoreDelta {
   const { artistIds, guesserId, correct } = input;

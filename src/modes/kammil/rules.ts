@@ -13,16 +13,25 @@ export {
   kammilDrawMs,
   assignKammilRoles,
   scoreKammilRound,
+  scoreKammilDuoRound,
 } from '../../../shared/kammil';
-export type { KammilRoundInput, KammilScoreDelta } from '../../../shared/kammil';
+export type {
+  KammilRoundInput,
+  KammilScoreDelta,
+  KammilDuoRoundInput,
+} from '../../../shared/kammil';
 
 export interface KammilState {
   phase: KammilPhase;
-  /** Draw order. Excludes the guesser, who never draws. */
+  /** Draw order. Excludes the guesser, who never draws. In Duo this is a
+   * single-artist array — the roster swaps round to round instead. */
   artistIds: string[];
   guesserId: string;
   /** Index into artistIds. Does NOT wrap — each artist draws exactly once. */
   turnIndex: number;
+  isDuo?: boolean;
+  /** Duo only: how many of the (currently: 1) bonus windows have been used. */
+  extensionsUsed?: number;
 }
 
 export function currentArtistId(state: KammilState): string | undefined {
@@ -35,10 +44,29 @@ export function currentArtistId(state: KammilState): string | undefined {
  * False during `countdown` by design: the artist can see the drawing and the
  * word, but cannot touch the canvas. Those three seconds are for reading the
  * situation, and letting anyone draw in them would hand the fastest reactions a
- * permanent advantage.
+ * permanent advantage. `extend` is Duo-only and lights the pen back up for the
+ * same artist for one short bonus window after a wrong guess.
  */
 export function canDraw(state: KammilState, playerId: string): boolean {
-  return state.phase === 'turn' && currentArtistId(state) === playerId;
+  const inDrawablePhase =
+    state.phase === 'turn' || (Boolean(state.isDuo) && state.phase === 'extend');
+  return inDrawablePhase && currentArtistId(state) === playerId;
+}
+
+/**
+ * Duo only: what should happen after a guess is judged.
+ *
+ * A wrong guess gets one bonus drawing window before the round is decided —
+ * capped by `maxExtensions` so it stays a bonus, not a second full turn. A
+ * correct guess, or a wrong one with no extensions left, ends the round.
+ */
+export function nextPhaseAfterGuess(
+  correct: boolean,
+  extensionsUsed: number,
+  maxExtensions: number,
+): KammilPhase {
+  if (!correct && extensionsUsed < maxExtensions) return 'extend';
+  return 'reveal';
 }
 
 /** The guesser must never see the word — not even in a phase that shows it. */

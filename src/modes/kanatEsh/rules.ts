@@ -11,9 +11,12 @@ export {
   KANAT_ESH,
   SEED_SENTENCES,
   pickSeed,
+  pickTwoDistinctSeeds,
   chainLength,
+  duoLinksPerTrack,
   linkTypeAt,
   chainAssignments,
+  chainAssignmentsDuo,
   readableLinkIndex,
   scoreKanatEshRound,
 } from '../../../shared/kanatEsh';

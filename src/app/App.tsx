@@ -222,6 +222,9 @@ export function App() {
       return (
         <ModeSelectScreen
           {...(room?.currentMode === undefined ? {} : { selected: room.currentMode })}
+          connectedPlayerCount={
+            Object.values(players).filter((p) => presence[p.id]?.connected).length
+          }
           onSelect={(mode: GameMode) => {
             if (roomId) void setRoomMode(roomId, mode);
           }}

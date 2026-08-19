@@ -3,6 +3,7 @@ import { GameButton } from '../design/components/GameButton';
 import { PlayerAvatar, type PlayerStatus } from '../design/components/PlayerAvatar';
 import { Screen } from '../design/components/Screen';
 import { ROOM } from '../config/balance';
+import { MODE_MIN_PLAYERS } from './ModeSelectScreen';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 import type { GameMode } from '../engine/room';
 
@@ -75,7 +76,10 @@ export function LobbyScreen({
   }
 
   const isHost = selfId === hostId;
-  const enoughPlayers = connectedCount >= ROOM.minPlayers;
+  // Below the room's own floor, no mode can start regardless of what is
+  // selected — above it, the gate is per-mode (مزوّر still needs 3).
+  const requiredMin = currentMode ? MODE_MIN_PLAYERS[currentMode] : ROOM.minPlayers;
+  const enoughPlayers = connectedCount >= requiredMin;
   const canStart = isHost && enoughPlayers && Boolean(currentMode);
 
   function statusOf(player: RoomPlayer): PlayerStatus {
@@ -169,7 +173,7 @@ export function LobbyScreen({
 
           {!enoughPlayers && (
             <p className="mt-3 font-body text-sm text-ink-soft">
-              نحتاج {ROOM.minPlayers} لاعبين على الأقل
+              نحتاج {requiredMin} لاعبين على الأقل
             </p>
           )}
         </section>

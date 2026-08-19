@@ -9,10 +9,17 @@ export {
   MAMNOU3AT,
   TABOO_WORDS,
   pickTaboo,
+  pickMamnouArtist,
   letterHint,
   scoreMamnouRound,
+  scoreMamnouDuoRound,
 } from '../../../shared/mamnou3at';
-export type { TabooEntry, MamnouRoundInput, MamnouScoreDelta } from '../../../shared/mamnou3at';
+export type {
+  TabooEntry,
+  MamnouRoundInput,
+  MamnouScoreDelta,
+  MamnouDuoRoundInput,
+} from '../../../shared/mamnou3at';
 
 export interface MamnouState {
   phase: MamnouPhase;

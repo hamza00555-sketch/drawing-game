@@ -14,7 +14,9 @@ import type { RequestData } from './types.js';
 import {
   MAMNOU3AT,
   letterHint,
+  pickMamnouArtist,
   pickTaboo,
+  scoreMamnouDuoRound,
   scoreMamnouRound,
 } from '../shared/mamnou3at.js';
 import { isCorrectGuess } from '../shared/mozawwer.js';
@@ -53,20 +55,25 @@ export async function startMamnouRound(uid: string, data: RequestData): Promise<
   if (hostId !== uid) throw new GameError('permission-denied', 'المضيف فقط.');
 
   const playerIds = await connectedIds(roomId);
-  if (playerIds.length < 3) {
-    throw new GameError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
+  if (playerIds.length < MAMNOU3AT.minPlayers) {
+    throw new GameError('failed-precondition', `نحتاج ${MAMNOU3AT.minPlayers} لاعبين على الأقل.`);
   }
+
+  const isDuo = playerIds.length === 2;
 
   const usedSnap = await db().ref(`rooms/${roomId}/usedWords`).get();
   const used = Object.values(usedSnap.val() ?? {}) as string[];
   const entry = pickTaboo(used);
 
-  // Rotate the artist rather than always picking the host or the first joiner.
+  // Rotate the artist rather than always picking the host or the first
+  // joiner. At two players this is a strict alternation — see
+  // pickMamnouArtist's doc comment.
   const previousSnap = await db().ref(`rooms/${roomId}/lastArtistId`).get();
   const previous = previousSnap.val() as string | null;
-  const candidates = playerIds.filter((id) => id !== previous);
-  const artistId = (candidates[Math.floor(Math.random() * candidates.length)] ??
-    playerIds[0]) as string;
+  const artistId = pickMamnouArtist(playerIds, previous);
+
+  const briefMs = isDuo ? MAMNOU3AT.duo.briefMs : MAMNOU3AT.briefMs;
+  const drawMs = isDuo ? MAMNOU3AT.duo.drawMs : MAMNOU3AT.drawMs;
 
   const gameId = db().ref().push().key as string;
 
@@ -97,10 +104,13 @@ export async function startMamnouRound(uid: string, data: RequestData): Promise<
         gameId,
         mode: 'mamnou3at',
         phase: 'brief',
-        phaseEndsAt: Date.now() + MAMNOU3AT.briefMs,
+        phaseEndsAt: Date.now() + briefMs,
         artistId,
         currentPlayerId: artistId,
         guesserIds: playerIds.filter((id) => id !== artistId),
+        isDuo,
+        briefMs,
+        drawMs,
       },
     });
 
@@ -170,7 +180,14 @@ export async function endMamnouRound(_uid: string, data: RequestData): Promise<u
 
 async function finishMamnou(
   roomId: string,
-  game: { gameId: string; artistId: string },
+  game: {
+    gameId: string;
+    artistId: string;
+    isDuo?: boolean;
+    guesserIds?: string[];
+    drawStartedAt?: number;
+    drawMs?: number;
+  },
 ): Promise<void> {
   const secret = await readGameSecret<MamnouSecret>(roomId, game.gameId);
   const raw = (await db().ref(`guesses/${roomId}/${game.gameId}`).get()).val() ?? {};
@@ -181,13 +198,27 @@ async function finishMamnou(
   // First correct guess per player, in time order — the rank they earned.
   const seen = new Set<string>();
   const ranked: string[] = [];
+  let firstCorrectAt: number | undefined;
   for (const g of guesses.filter((g) => g.correct).sort((a, b) => a.at - b.at)) {
+    if (firstCorrectAt === undefined) firstCorrectAt = g.at;
     if (seen.has(g.playerId)) continue;
     seen.add(g.playerId);
     ranked.push(g.playerId);
   }
 
-  const delta = scoreMamnouRound({ artistId: game.artistId, correctGuesserIds: ranked });
+  const delta =
+    game.isDuo && game.guesserIds?.[0]
+      ? scoreMamnouDuoRound({
+          artistId: game.artistId,
+          guesserId: game.guesserIds[0],
+          correct: ranked.length > 0,
+          guessedAtMs:
+            firstCorrectAt !== undefined && typeof game.drawStartedAt === 'number'
+              ? firstCorrectAt - game.drawStartedAt
+              : null,
+          drawMs: game.drawMs ?? MAMNOU3AT.drawMs,
+        })
+      : scoreMamnouRound({ artistId: game.artistId, correctGuesserIds: ranked });
   const current = ((await db().ref(`playerScores/${roomId}`).get()).val() ?? {}) as Record<
     string,
     number
@@ -219,9 +250,11 @@ export async function beginMamnouDrawing(_uid: string, data: RequestData): Promi
   const game = (await gameRef.get()).val();
   if (!game || game.phase !== 'brief') return { phase: game?.phase ?? null };
 
+  const drawMs = typeof game.drawMs === 'number' ? game.drawMs : MAMNOU3AT.drawMs;
   await gameRef.update({
     phase: 'draw',
-    phaseEndsAt: Date.now() + MAMNOU3AT.drawMs,
+    phaseEndsAt: Date.now() + drawMs,
+    drawStartedAt: Date.now(),
   });
   return { phase: 'draw' };
 }

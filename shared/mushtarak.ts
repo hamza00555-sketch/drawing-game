@@ -14,6 +14,7 @@
  */
 
 export const MUSHTARAK = {
+  minPlayers: 2,
   drawMs: 60_000,
   /** How long each artist gets to read their half before the pens open. */
   briefMs: 6_000,
@@ -27,6 +28,25 @@ export const MUSHTARAK = {
   },
   replay: {
     msPerContribution: 700,
+  },
+  /**
+   * Two players: no secret split (there is nobody left to guess), and no
+   * simultaneous drawing either — instead they alternate short turns on the
+   * same canvas, aiming for something fast and chaotic rather than a careful
+   * drawing session.
+   */
+  duo: {
+    briefMs: 4_000,
+    turnMs: 2_500,
+    /** "6-8 تبديلات تقريبًا" — the midpoint. */
+    totalSwaps: 7,
+    scores: {
+      /** Flat, to both players — there is no guess to judge, only participation. */
+      participation: 2,
+    },
+    replay: {
+      msPerContribution: 400,
+    },
   },
 } as const;
 
@@ -117,6 +137,16 @@ export interface MushtarakRoundInput {
 }
 
 export type MushtarakScoreDelta = Record<string, number>;
+
+/**
+ * Duo scoring: both players already knew the prompt, so there is no guess to
+ * reward — a flat award to each keeps the scoreboard moving without judging a
+ * round that was never a contest.
+ */
+export function scoreMushtarakDuoRound(artistIds: readonly [string, string]): MushtarakScoreDelta {
+  const { participation } = MUSHTARAK.duo.scores;
+  return { [artistIds[0]]: participation, [artistIds[1]]: participation };
+}
 
 export function scoreMushtarakRound(input: MushtarakRoundInput): MushtarakScoreDelta {
   const { artistIds, correctGuesserIds } = input;

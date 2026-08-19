@@ -15,6 +15,7 @@
  */
 
 export const MAMNOU3AT = {
+  minPlayers: 2,
   drawMs: 75_000,
   /** How long the artist gets to read the word and the forbidden list. */
   briefMs: 8_000,
@@ -25,6 +26,23 @@ export const MAMNOU3AT = {
     guessRank: [3, 2, 1],
     /** The artist earns this per player who got it — their drawing worked. */
     artistPerCorrectGuess: 1,
+  },
+  /**
+   * Two players: one artist, one guesser, then they swap next round. Shorter
+   * than the group version — there is only one guesser to wait on, so the
+   * group's 75-second ceiling is mostly dead air here.
+   */
+  duo: {
+    briefMs: 5_000,
+    drawMs: 35_000,
+    scores: {
+      /** Payout for a correct guess landing right at the buzzer. */
+      minGuesserPoints: 1,
+      /** Payout for a correct guess landing the instant drawing starts. */
+      maxGuesserPoints: 4,
+      artistPointsOnCorrect: 3,
+      artistPointsOnFail: 0,
+    },
   },
 } as const;
 
@@ -85,6 +103,61 @@ export function letterHint(word: string): string {
     .split(' ')
     .map((part) => Array.from(part).fill('_').join(' '))
     .join('   ');
+}
+
+/**
+ * Pick the next artist.
+ *
+ * At two players this is a strict alternation — there is only one other
+ * person, so "rotate away from whoever drew last" and "give both players
+ * equal turns" are the same rule. At three or more it stays a random pick
+ * among everyone except the previous artist, same as before.
+ */
+export function pickMamnouArtist(
+  playerIds: readonly string[],
+  previousArtistId: string | null,
+  random: () => number = Math.random,
+): string {
+  if (playerIds.length === 2) {
+    return (playerIds.find((id) => id !== previousArtistId) ?? playerIds[0]) as string;
+  }
+
+  const candidates = playerIds.filter((id) => id !== previousArtistId);
+  const pool = candidates.length > 0 ? candidates : playerIds;
+  return pool[Math.floor(random() * pool.length)] as string;
+}
+
+export interface MamnouDuoRoundInput {
+  artistId: string;
+  guesserId: string;
+  correct: boolean;
+  /** Elapsed ms from the start of the draw phase to the correct guess. */
+  guessedAtMs: number | null;
+  /** The draw phase's total length — the denominator for the speed bonus. */
+  drawMs: number;
+}
+
+/**
+ * Duo scoring: the ranked payout in `scoreMamnouRound` degenerates to a flat
+ * value with only one guesser, so speed has to be rewarded directly instead —
+ * linear between `minGuesserPoints` (guessed right at the buzzer) and
+ * `maxGuesserPoints` (guessed the instant drawing started).
+ */
+export function scoreMamnouDuoRound(input: MamnouDuoRoundInput): MamnouScoreDelta {
+  const { artistId, guesserId, correct, guessedAtMs, drawMs } = input;
+  const { minGuesserPoints, maxGuesserPoints, artistPointsOnCorrect, artistPointsOnFail } =
+    MAMNOU3AT.duo.scores;
+
+  if (!correct || guessedAtMs === null) {
+    return artistPointsOnFail > 0 ? { [artistId]: artistPointsOnFail } : {};
+  }
+
+  const remainingFraction = Math.max(0, Math.min(1, 1 - guessedAtMs / drawMs));
+  const points = Math.round(
+    minGuesserPoints + remainingFraction * (maxGuesserPoints - minGuesserPoints),
+  );
+
+  return { [guesserId]: points, [artistId]: artistPointsOnCorrect };
 }
 
 export interface MamnouRoundInput {

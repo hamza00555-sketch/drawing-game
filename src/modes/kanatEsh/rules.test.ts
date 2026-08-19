@@ -5,13 +5,16 @@ import {
   SEED_SENTENCES,
   canReadLink,
   chainAssignments,
+  chainAssignmentsDuo,
   chainLength,
   currentAuthorId,
   currentLinkType,
+  duoLinksPerTrack,
   isChainComplete,
   isMyTurn,
   linkTypeAt,
   pickSeed,
+  pickTwoDistinctSeeds,
   readableLinkIndex,
   scoreKanatEshRound,
   type KanatEshState,
@@ -66,6 +69,51 @@ describe('chain shape', () => {
 
   it('refuses a room too small to rotate', () => {
     expect(() => chainAssignments(['p1', 'p2'], 4)).toThrowError();
+  });
+});
+
+describe('Duo — two independent chains', () => {
+  it('pickTwoDistinctSeeds never gives both tracks the same sentence', () => {
+    // A fake random that would otherwise return the same seed both times.
+    const [a, b] = pickTwoDistinctSeeds([], () => 0);
+    expect(a).not.toBe(b);
+  });
+
+  it('duoLinksPerTrack is the seed plus one drawing+text pair per repeat', () => {
+    expect(duoLinksPerTrack()).toBe(1 + KANAT_ESH.duo.repeats * 2);
+  });
+
+  it('chainAssignmentsDuo: the owner draws their own word first', () => {
+    const links = duoLinksPerTrack();
+    const authors = chainAssignmentsDuo('owner', 'other', links);
+    expect(authors[0]).toBe('owner');
+    expect(authors[1]).toBe('other');
+  });
+
+  it('chainAssignmentsDuo: strictly alternates for the whole track', () => {
+    const links = duoLinksPerTrack();
+    const authors = chainAssignmentsDuo('p1', 'p2', links);
+    for (let i = 1; i < authors.length; i += 1) {
+      expect(authors[i]).not.toBe(authors[i - 1]);
+    }
+  });
+
+  it('chainAssignmentsDuo: never throws at two players, unlike the group version', () => {
+    expect(() => chainAssignmentsDuo('p1', 'p2', duoLinksPerTrack())).not.toThrow();
+  });
+
+  it('a player on one track cannot read the other track\'s current link', () => {
+    // Modelled directly on the blindness rule below, just doubled: each
+    // track's state is fully independent, so "my turn on track 0" carries no
+    // visibility into track 1 at all — canReadLink only ever sees one
+    // track's state at a time by construction.
+    const trackA = state({ authorByIndex: { 1: 'p1', 2: 'p2' }, currentIndex: 1 });
+    const trackB = state({ authorByIndex: { 1: 'p2', 2: 'p1' }, currentIndex: 1 });
+    // p1's turn on track A (index 2) does not grant them track B's index 1,
+    // because that check is against trackB's OWN state, where it is p2's turn.
+    expect(isMyTurn(trackA, 'p1')).toBe(true);
+    expect(isMyTurn(trackB, 'p1')).toBe(false);
+    expect(canReadLink(trackB, 'p1', 0)).toBe(false);
   });
 });
 

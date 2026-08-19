@@ -10,6 +10,8 @@ import {
   currentArtistId,
   isLastArtist,
   kammilDrawMs,
+  nextPhaseAfterGuess,
+  scoreKammilDuoRound,
   scoreKammilRound,
   turnDurationMs,
   type KammilState,
@@ -41,6 +43,17 @@ describe('kammil machine', () => {
     expect(kammilMachine.canTransition('setup', 'turn')).toBe(false);
     expect(kammilMachine.canTransition('countdown', 'guess')).toBe(false);
   });
+
+  it('Duo: a wrong guess may route through one bonus window, never more', () => {
+    expect(kammilMachine.canTransition('guess', 'extend')).toBe(true);
+    expect(kammilMachine.canTransition('extend', 'guess')).toBe(true);
+    // Extend must go back through a fresh guess, not straight to reveal —
+    // that is what keeps it a bonus window and not a second full turn.
+    expect(kammilMachine.canTransition('extend', 'reveal')).toBe(false);
+    // Only reachable from a guess that was actually wrong.
+    expect(kammilMachine.canTransition('turn', 'extend')).toBe(false);
+    expect(kammilMachine.canTransition('countdown', 'extend')).toBe(false);
+  });
 });
 
 describe('drawing permission', () => {
@@ -52,6 +65,23 @@ describe('drawing permission', () => {
 
   it('the guesser can never draw', () => {
     expect(canDraw(state(), 'p4')).toBe(false);
+  });
+
+  it('Duo: the pen lights back up for the same artist during extend', () => {
+    const duoState = state({
+      phase: 'extend',
+      artistIds: ['p1'],
+      guesserId: 'p2',
+      turnIndex: 0,
+      isDuo: true,
+    });
+    expect(canDraw(duoState, 'p1')).toBe(true);
+    expect(canDraw(duoState, 'p2')).toBe(false);
+  });
+
+  it('extend never lights the pen up outside Duo', () => {
+    const nonDuoExtend = state({ phase: 'extend', isDuo: false });
+    expect(canDraw(nonDuoExtend, 'p1')).toBe(false);
   });
 });
 
@@ -151,7 +181,23 @@ describe('assignKammilRoles', () => {
   });
 
   it('refuses a room too small to have both artists and a guesser', () => {
-    expect(() => assignKammilRoles(['p1', 'p2'])).toThrowError();
+    expect(() => assignKammilRoles(['p1'])).toThrowError();
+  });
+
+  it('accepts exactly two players — the Duo floor', () => {
+    expect(() => assignKammilRoles(['p1', 'p2'], () => 0)).not.toThrow();
+  });
+
+  it('Duo: swaps roles deterministically off the previous guesser', () => {
+    const { artistIds, guesserId } = assignKammilRoles(['p1', 'p2'], Math.random, 'p1');
+    expect(guesserId).toBe('p2');
+    expect(artistIds).toEqual(['p1']);
+  });
+
+  it('Duo: falls back to the random pick with no previous guesser', () => {
+    // First round of a session — nobody has guessed yet.
+    const { guesserId } = assignKammilRoles(['p1', 'p2'], () => 0, null);
+    expect(['p1', 'p2']).toContain(guesserId);
   });
 });
 
@@ -181,5 +227,51 @@ describe('scoreKammilRound', () => {
 
   it('rewards artists more when the drawing actually worked', () => {
     expect(KAMMIL.scores.artistsOnSuccess).toBeGreaterThan(KAMMIL.scores.artistsOnFailure);
+  });
+});
+
+describe('nextPhaseAfterGuess — Duo only', () => {
+  it('sends a wrong guess to extend while a bonus window remains', () => {
+    expect(nextPhaseAfterGuess(false, 0, KAMMIL.duo.maxExtensions)).toBe('extend');
+  });
+
+  it('ends the round once every extension is spent', () => {
+    expect(nextPhaseAfterGuess(false, KAMMIL.duo.maxExtensions, KAMMIL.duo.maxExtensions)).toBe(
+      'reveal',
+    );
+  });
+
+  it('a correct guess always ends the round, extensions or not', () => {
+    expect(nextPhaseAfterGuess(true, 0, KAMMIL.duo.maxExtensions)).toBe('reveal');
+  });
+});
+
+describe('scoreKammilDuoRound', () => {
+  it('pays a first-try correct guess more than one that needed the extension', () => {
+    const firstTry = scoreKammilDuoRound({
+      artistId: 'p1',
+      guesserId: 'p2',
+      correct: true,
+      afterExtend: false,
+    });
+    const afterExtend = scoreKammilDuoRound({
+      artistId: 'p1',
+      guesserId: 'p2',
+      correct: true,
+      afterExtend: true,
+    });
+
+    expect(firstTry.p2).toBeGreaterThan(afterExtend.p2 as number);
+  });
+
+  it('still pays the artist something on a total miss', () => {
+    const delta = scoreKammilDuoRound({
+      artistId: 'p1',
+      guesserId: 'p2',
+      correct: false,
+      afterExtend: true,
+    });
+    expect(delta.p2).toBeUndefined();
+    expect(delta.p1).toBe(KAMMIL.duo.scores.artistOnFailure);
   });
 });

@@ -41,11 +41,15 @@ export function MushtarakGame({
   const isHost = selfId === hostId;
   const artistIds = game.artistIds ?? [];
   const isArtist = artistIds.includes(selfId);
+  const isDuo = Boolean(game.isDuo);
+  const isMyTurn = game.currentPlayerId === selfId;
 
   const state: MushtarakState = {
     phase: game.phase as MushtarakState['phase'],
     artistIds: [...artistIds],
     guesserIds: [...(game.guesserIds ?? [])],
+    isDuo,
+    ...(game.currentPlayerId ? { currentPlayerId: game.currentPlayerId } : {}),
   };
 
   const penColors = useMemo(
@@ -74,7 +78,12 @@ export function MushtarakGame({
   useDeadline(game.phaseEndsAt, game.phase === 'brief' && isHost, () =>
     advance({ action: 'beginDrawing' }),
   );
-  useDeadline(game.phaseEndsAt, game.phase === 'draw' && isHost, () =>
+  // Duo: each short turn is closed by whoever's turn it is, shadowed by the
+  // host — same split-responsibility pattern كمّل رسمتي uses for its turns.
+  useDeadline(game.phaseEndsAt, game.phase === 'draw' && isDuo && (isMyTurn || isHost), () =>
+    advance({ action: 'endTurn', turnIndex: game.turnIndex ?? 0 }),
+  );
+  useDeadline(game.phaseEndsAt, game.phase === 'draw' && !isDuo && isHost, () =>
     advance({ action: 'endDrawing' }),
   );
   useDeadline(game.phaseEndsAt, game.phase === 'guess' && isHost, () =>
@@ -97,7 +106,7 @@ export function MushtarakGame({
           word={secret?.part ?? ''}
           forbidden={[]}
           endsAt={game.phaseEndsAt}
-          durationMs={MUSHTARAK.briefMs}
+          durationMs={isDuo ? MUSHTARAK.duo.briefMs : MUSHTARAK.briefMs}
           onReady={() => {
             if (isHost) advance({ action: 'beginDrawing' });
           }}
@@ -109,13 +118,17 @@ export function MushtarakGame({
         <MushtarakDrawScreen
           {...(secret?.part === undefined ? {} : { myPart: secret.part })}
           isArtist={isArtist}
+          isDuo={isDuo}
+          isMyTurn={isMyTurn}
+          turnIndex={game.turnIndex ?? 0}
+          totalSwaps={game.totalSwaps ?? MUSHTARAK.duo.totalSwaps}
           selfId={selfId}
           players={players}
           artistIds={artistIds}
           penColors={penColors}
           strokes={session.strokes}
           endsAt={game.phaseEndsAt}
-          durationMs={MUSHTARAK.drawMs}
+          durationMs={isDuo ? (game.turnMs ?? MUSHTARAK.duo.turnMs) : MUSHTARAK.drawMs}
           gotYouUsedBy={Object.keys(game.gotYouUsedBy ?? {})}
           gotYouFrom={game.gotYouFrom}
           canSendGotYou={canSendGotYou(
@@ -163,6 +176,7 @@ export function MushtarakGame({
           players={players}
           strokes={session.strokes}
           correctGuesserIds={game.correctGuesserIds ?? []}
+          isDuo={isDuo}
           isHost={isHost}
           onContinue={() => advance({ action: 'toResult' })}
         />
@@ -171,7 +185,13 @@ export function MushtarakGame({
     default:
       return (
         <RoundScoresScreen
-          headline={(game.correctGuesserIds ?? []).length > 0 ? 'وصلت الفكرة' : 'ما وصلت'}
+          headline={
+            isDuo
+              ? 'خلصتوها!'
+              : (game.correctGuesserIds ?? []).length > 0
+                ? 'وصلت الفكرة'
+                : 'ما وصلت'
+          }
           detail={game.full ?? ''}
           players={players}
           scores={scores}

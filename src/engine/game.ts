@@ -54,12 +54,21 @@ export interface GameState {
   turnMs?: number;
   guess?: string;
   correct?: boolean;
+  /** Duo only: countdown length actually used, and bonus windows spent. */
+  countdownMs?: number;
+  extensionsUsed?: number;
 
   // الممنوعات
   artistId?: string;
   guesserIds?: string[];
   ranked?: string[];
   revealedForbidden?: string[];
+
+  /** Two-player rooms run a shorter, rebalanced ruleset for this mode. */
+  isDuo?: boolean;
+  /** الممنوعات (duo): the round's brief/draw lengths, as actually used. */
+  briefMs?: number;
+  drawMs?: number;
 
   // الرسم المشترك
   activeDrawers?: Record<string, boolean>;
@@ -70,6 +79,8 @@ export interface GameState {
   partA?: string;
   partB?: string;
   full?: string;
+  /** Duo only: total short turns this round alternates through. */
+  totalSwaps?: number;
 
   // كانت إيش؟
   currentIndex?: number;
@@ -77,6 +88,23 @@ export interface GameState {
   authorByIndex?: Record<string, string>;
   visibleTo?: Record<string, Record<string, boolean>>;
   seed?: string;
+  /** Duo only: two independent chains instead of one, keyed '0' | '1'. */
+  linksPerTrack?: number;
+  tracks?: Record<
+    string,
+    {
+      ownerId: string;
+      currentIndex: number;
+      currentIndexKey: string;
+      currentPlayerId: string;
+      totalLinks: number;
+      authorByIndex: Record<string, string>;
+      phaseEndsAt: number | null;
+      done?: boolean;
+    }
+  >;
+  seedA?: string;
+  seedB?: string;
 
   /** Published at the reveal, never before. */
   revealedWord?: string;
@@ -218,6 +246,39 @@ export function watchChain(
 ): () => void {
   return watchAllowed<Record<string, Omit<ChainLinkRecord, 'index'>>>(
     paths.chain(roomId, gameId),
+    (value) => {
+      const links = Object.entries(value ?? {}).map(([key, link]) => ({
+        index: Number(key),
+        ...link,
+      }));
+      onChange(links.sort((a, b) => a.index - b.index));
+    },
+  );
+}
+
+/** كانت إيش؟ Duo only: one link of one track. Same narrowness as `watchChainLink`. */
+export function watchDuoChainLink(
+  roomId: string,
+  gameId: string,
+  track: string,
+  index: number,
+  onChange: (link: ChainLinkRecord | undefined) => void,
+): () => void {
+  return watchAllowed<Omit<ChainLinkRecord, 'index'>>(
+    paths.duoChainLink(roomId, gameId, track, index),
+    (value) => onChange(value ? { index, ...value } : undefined),
+  );
+}
+
+/** كانت إيش؟ Duo only: one whole track. Readable once the round reveals. */
+export function watchDuoChain(
+  roomId: string,
+  gameId: string,
+  track: string,
+  onChange: (links: ChainLinkRecord[]) => void,
+): () => void {
+  return watchAllowed<Record<string, Omit<ChainLinkRecord, 'index'>>>(
+    paths.duoChain(roomId, gameId, track),
     (value) => {
       const links = Object.entries(value ?? {}).map(([key, link]) => ({
         index: Number(key),

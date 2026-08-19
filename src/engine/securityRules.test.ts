@@ -118,7 +118,10 @@ describe('strokes', () => {
   });
 
   it('only allows drawing during a drawing phase, by whoever holds the pen', () => {
-    expect(write).toContain("child('phase').val().matches(/^draw/)");
+    // Covers every mode's own name for "pen is live": مزوّر/الممنوعات/الرسم
+    // المشترك use `draw`, كمّل رسمتي uses `turn`, and its Duo ruleset adds one
+    // short bonus window named `extend`.
+    expect(write).toContain("child('phase').val().matches(/^(draw|turn|extend)/)");
     expect(write).toContain("child('currentPlayerId').val() === auth.uid");
     // الرسم المشترك is the one mode where two pens are live at once.
     expect(write).toContain("child('activeDrawers').child(auth.uid).exists()");
@@ -151,6 +154,48 @@ describe('linkStrokes — كانت إيش؟', () => {
     expect(write).toContain("child('currentPlayerId').val() === auth.uid");
     expect(write).toContain("child('currentIndexKey').val() === $index");
     expect(write).toContain("child('phase').val() === 'turn'");
+  });
+});
+
+describe('duoChains — كانت إيش؟ Duo', () => {
+  const read = String(at('duoChains/$roomId/$gameId/$track/$index/.read'));
+  const write = String(at('duoChains/$roomId/$gameId/$track/$index/.write'));
+
+  it('is a fully separate subtree from the single-chain version', () => {
+    // Kept apart deliberately: one wildcard cannot tell "this is a track
+    // segment" from "this is a link index" from within the group ruleset's
+    // own `chains` rule, so merging the shapes risked loosening it by
+    // accident. See the comment above this block in the rules file.
+    expect(at('duoChains')).toBeDefined();
+    expect(at('chains')).toBeDefined();
+  });
+
+  it('gates reading a link on a per-track visibleTo grant', () => {
+    expect(read).toContain("child('visibleTo').child($track).child($index).child(auth.uid).exists()");
+  });
+
+  it('opens everything at the reveal, same as the group version', () => {
+    expect(read).toContain('matches(/^(reveal|result)/)');
+  });
+
+  it('confines writing to whoever is that TRACK\'s current author', () => {
+    expect(write).toContain("child('tracks').child($track).child('currentPlayerId').val() === auth.uid");
+    expect(write).toContain('!data.exists()');
+  });
+});
+
+describe('duoLinkStrokes — كانت إيش؟ Duo', () => {
+  const read = String(at('duoLinkStrokes/$roomId/$gameId/$track/$index/.read'));
+  const write = String(at('duoLinkStrokes/$roomId/$gameId/$track/$index/$strokeId/.write'));
+
+  it('confines writing to the current author of that track and that link', () => {
+    expect(write).toContain("child('tracks').child($track).child('currentPlayerId').val() === auth.uid");
+    expect(write).toContain("child('tracks').child($track).child('currentIndexKey').val() === $index");
+    expect(write).toContain("child('phase').val() === 'turn'");
+  });
+
+  it('lets the current author see the link they are drawing, per track', () => {
+    expect(read).toContain("child('tracks').child($track).child('currentIndexKey').val() === $index");
   });
 });
 

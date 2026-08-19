@@ -23,6 +23,8 @@ export interface KammilDrawScreenProps {
   word?: string;
   isGuesser: boolean;
   counting: boolean;
+  /** Duo only: this is the bonus window after a wrong first guess. */
+  extending?: boolean;
   selfId: string;
   currentArtistId: string | undefined;
   players: Record<string, RoomPlayer>;
@@ -47,6 +49,7 @@ export function KammilDrawScreen({
   word,
   isGuesser,
   counting,
+  extending = false,
   selfId,
   currentArtistId,
   players,
@@ -77,8 +80,12 @@ export function KammilDrawScreen({
           {myTurn
             ? counting
               ? 'استعد...'
-              : 'ارسم بسرعة'
-            : `دور ${artist?.name ?? '...'}`}
+              : extending
+                ? 'فرصة أخيرة — كمّلها!'
+                : 'ارسم بسرعة'
+            : extending
+              ? `${artist?.name ?? '...'} يكمّل الرسمة`
+              : `دور ${artist?.name ?? '...'}`}
         </p>
       }
     >

@@ -139,10 +139,13 @@ describe('per-player secrets', () => {
     expect(text).toContain("{ role: 'guesser', hint: letterHint(entry.word) }");
   });
 
-  it('gives each الرسم المشترك artist one half and never both', () => {
+  it('gives each الرسم المشترك artist one half and never both — group ruleset only', () => {
+    // In Duo (two players) there is no guesser to protect the split from, so
+    // both artists are deliberately sent `part: combo.full` — see the
+    // `isDuo` branch in `startMushtarakRound`. The secrecy guarantee this
+    // test checks applies only to the 3+ group ruleset's own two lines.
     const text = source('mushtarak.ts');
     expect(text).toContain("{ role: 'artist', part: combo.partA }");
     expect(text).toContain("{ role: 'artist', part: combo.partB }");
-    expect(text).not.toContain('part: combo.full');
   });
 });

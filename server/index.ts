@@ -88,8 +88,8 @@ export async function startMozawwerRound(uid: string, data: RequestData): Promis
   await requireHost(roomId, uid);
 
   const players = await connectedPlayers(roomId);
-  if (players.length < 3) {
-    throw new GameError('failed-precondition', 'نحتاج 3 لاعبين على الأقل.');
+  if (players.length < MOZAWWER.minPlayers) {
+    throw new GameError('failed-precondition', `نحتاج ${MOZAWWER.minPlayers} لاعبين على الأقل.`);
   }
 
   const settingsSnap = await db().ref(`rooms/${roomId}/settings/mozawwer`).get();

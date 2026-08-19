@@ -8,8 +8,10 @@ import {
   canSeeWord,
   everyoneGuessed,
   letterHint,
+  pickMamnouArtist,
   pickTaboo,
   rankCorrectGuessers,
+  scoreMamnouDuoRound,
   scoreMamnouRound,
   type GuessRecord,
   type MamnouState,
@@ -143,6 +145,79 @@ describe('everyoneGuessed', () => {
 
   it('is false for a round with no guessers at all', () => {
     expect(everyoneGuessed(state({ guesserIds: [] }), [])).toBe(false);
+  });
+});
+
+describe('pickMamnouArtist — Duo', () => {
+  it('strictly alternates with only one other player', () => {
+    expect(pickMamnouArtist(['p1', 'p2'], 'p1')).toBe('p2');
+    expect(pickMamnouArtist(['p1', 'p2'], 'p2')).toBe('p1');
+  });
+
+  it('picks either player when there is no previous artist yet', () => {
+    expect(['p1', 'p2']).toContain(pickMamnouArtist(['p1', 'p2'], null));
+  });
+
+  it('still avoids only the immediate previous artist at 3+ players', () => {
+    const random = () => 0;
+    const artist = pickMamnouArtist(['p1', 'p2', 'p3'], 'p1', random);
+    expect(artist).not.toBe('p1');
+  });
+});
+
+describe('scoreMamnouDuoRound', () => {
+  it('pays close to the max when the guess lands right away', () => {
+    const delta = scoreMamnouDuoRound({
+      artistId: 'a1',
+      guesserId: 'g1',
+      correct: true,
+      guessedAtMs: 0,
+      drawMs: 35_000,
+    });
+    expect(delta.g1).toBe(MAMNOU3AT.duo.scores.maxGuesserPoints);
+    expect(delta.a1).toBe(MAMNOU3AT.duo.scores.artistPointsOnCorrect);
+  });
+
+  it('pays close to the minimum when the guess lands at the buzzer', () => {
+    const delta = scoreMamnouDuoRound({
+      artistId: 'a1',
+      guesserId: 'g1',
+      correct: true,
+      guessedAtMs: 35_000,
+      drawMs: 35_000,
+    });
+    expect(delta.g1).toBe(MAMNOU3AT.duo.scores.minGuesserPoints);
+  });
+
+  it('rewards speed: an earlier correct guess always scores at least as much', () => {
+    const early = scoreMamnouDuoRound({
+      artistId: 'a1',
+      guesserId: 'g1',
+      correct: true,
+      guessedAtMs: 5_000,
+      drawMs: 35_000,
+    });
+    const late = scoreMamnouDuoRound({
+      artistId: 'a1',
+      guesserId: 'g1',
+      correct: true,
+      guessedAtMs: 30_000,
+      drawMs: 35_000,
+    });
+    expect(early.g1 as number).toBeGreaterThan(late.g1 as number);
+  });
+
+  it('gives nobody anything on a miss — no consolation award today', () => {
+    const delta = scoreMamnouDuoRound({
+      artistId: 'a1',
+      guesserId: 'g1',
+      correct: false,
+      guessedAtMs: null,
+      drawMs: 35_000,
+    });
+    expect(delta.g1).toBeUndefined();
+    expect(delta.a1).toBeUndefined();
+    expect(MAMNOU3AT.duo.scores.artistPointsOnFail).toBe(0);
   });
 });
 

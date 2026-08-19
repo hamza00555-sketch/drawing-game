@@ -16,7 +16,12 @@ import { MOZAWWER, type ReadyToVoteRule } from '../../shared/mozawwer';
 import { KAMMIL, kammilDrawMs } from '../../shared/kammil';
 
 export const ROOM = {
-  minPlayers: 3,
+  /**
+   * The room-level floor: a room can exist and sit in the lobby with as few as
+   * two people. Whether a given MODE can start at that size is a separate,
+   * per-mode question — see `MODE_MIN_PLAYERS` in `ModeSelectScreen.tsx`.
+   */
+  minPlayers: 2,
   /**
    * Ten, matching the cast size. Every player in a full room must be able to
    * pick a different character, so the two numbers are locked together and a

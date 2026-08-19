@@ -10,6 +10,7 @@ export {
   pickCombo,
   pickArtistPair,
   scoreMushtarakRound,
+  scoreMushtarakDuoRound,
 } from '../../../shared/mushtarak';
 export type {
   ComboPrompt,
@@ -21,26 +22,37 @@ export interface MushtarakState {
   phase: MushtarakPhase;
   artistIds: string[];
   guesserIds: string[];
+  isDuo?: boolean;
+  /** Duo only: whose turn it is right now. */
+  currentPlayerId?: string;
 }
 
 /**
- * Both artists draw at once — this is the only mode where `canDraw` is true for
- * more than one player simultaneously.
+ * Both artists draw at once in the group ruleset — the only mode where
+ * `canDraw` is true for more than one player simultaneously. Duo replaces
+ * that with strict alternation: exactly one of the two may draw at a time.
  */
 export function canDraw(state: MushtarakState, playerId: string): boolean {
-  return state.phase === 'draw' && state.artistIds.includes(playerId);
+  if (state.phase !== 'draw') return false;
+  if (state.isDuo) return state.currentPlayerId === playerId;
+  return state.artistIds.includes(playerId);
 }
 
 export function canGuess(state: MushtarakState, playerId: string): boolean {
   return state.phase === 'guess' && !state.artistIds.includes(playerId);
 }
 
-/** An artist only ever sees their OWN half, until the reveal. */
+/**
+ * An artist only ever sees their OWN half, until the reveal — except in Duo,
+ * where there is no split and no guesser to protect the split from, so both
+ * players see the whole prompt from the brief onward.
+ */
 export function visiblePromptPart(
   state: MushtarakState,
   playerId: string,
   parts: { partA?: string; partB?: string; full?: string },
 ): string | undefined {
+  if (state.isDuo) return parts.full;
   if (state.phase === 'reveal' || state.phase === 'result') return parts.full;
 
   const index = state.artistIds.indexOf(playerId);
@@ -54,7 +66,8 @@ export function visiblePromptPart(
  *
  * One use each, per round. It is the only communication channel the two artists
  * have, and making it unlimited would turn it into a chat — which would remove
- * the misunderstanding the mode runs on.
+ * the misunderstanding the mode runs on. In Duo there is no misunderstanding to
+ * signal (both players already know the prompt), so the signal is off entirely.
  */
 export function canSendGotYou(
   state: MushtarakState,
@@ -62,9 +75,15 @@ export function canSendGotYou(
   usedBy: readonly string[],
   usesAllowed: number,
 ): boolean {
+  if (state.isDuo) return false;
   if (state.phase !== 'draw') return false;
   if (!state.artistIds.includes(playerId)) return false;
 
   const used = usedBy.filter((id) => id === playerId).length;
   return used < usesAllowed;
+}
+
+/** Duo only: has the last of the fixed number of quick turns just finished? */
+export function isLastDuoTurn(turnIndex: number, totalSwaps: number): boolean {
+  return turnIndex + 1 >= totalSwaps;
 }

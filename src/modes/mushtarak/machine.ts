@@ -8,6 +8,10 @@
  * Guessing is its OWN phase rather than running alongside the drawing, unlike
  * الممنوعات. Here the picture only makes sense once both halves are finished —
  * guessing early would mostly produce guesses at half an idea.
+ *
+ * Duo (two players) is the one exception to both of those: there is nobody
+ * left to guess, so `draw` goes straight to `reveal`, skipping `guess`
+ * entirely rather than routing through a phase with nothing to do.
  */
 
 import { defineMachine } from '../../engine/fsm';
@@ -28,9 +32,10 @@ export const mushtarakMachine = defineMachine<MushtarakPhase>({
       describe: 'Each artist privately reads only their own half',
     },
     draw: {
-      next: ['guess'],
+      next: ['guess', 'reveal'],
       timed: true,
-      describe: 'Both artists draw the same canvas simultaneously',
+      describe:
+        'Both artists draw the same canvas simultaneously (duo: alternating short turns, then straight to reveal)',
     },
     guess: {
       next: ['reveal'],

@@ -29,6 +29,9 @@ export interface MushtarakRevealScreenProps {
   players: Record<string, RoomPlayer>;
   strokes: readonly Stroke[];
   correctGuesserIds: readonly string[];
+  /** Duo ruleset: no guessing happened, so the two-half comparison and the
+   * "who got it" caption below don't apply — both are skipped. */
+  isDuo?: boolean;
   isHost: boolean;
   onContinue: () => void;
 }
@@ -42,6 +45,7 @@ export function MushtarakRevealScreen({
   players,
   strokes,
   correctGuesserIds,
+  isDuo = false,
   isHost,
   onContinue,
 }: MushtarakRevealScreenProps) {
@@ -57,7 +61,9 @@ export function MushtarakRevealScreen({
       }
 
       const replay = new ReplayPlayer(renderer, strokes, {
-        msPerContribution: MUSHTARAK.replay.msPerContribution,
+        msPerContribution: isDuo
+          ? MUSHTARAK.duo.replay.msPerContribution
+          : MUSHTARAK.replay.msPerContribution,
         onPlayerChange: (playerId) =>
           setCaption(playerId ? players[playerId]?.name : undefined),
         onComplete: () => {
@@ -69,7 +75,7 @@ export function MushtarakRevealScreen({
       playerRef.current = replay;
       replay.start();
     },
-    [strokes, players],
+    [strokes, players, isDuo],
   );
 
   useEffect(() => () => playerRef.current?.stop(), []);
@@ -93,39 +99,48 @@ export function MushtarakRevealScreen({
       <div className="flex flex-1 flex-col gap-3 py-2">
         <div className="rounded-md border-bold border-ink bg-paper-raised p-3 text-center">
           <p className="font-display text-xl text-ink">{full}</p>
-          <p className="mt-1 font-body text-xs text-ink-soft">
-            {correctGuesserIds.length > 0
-              ? `${correctGuesserIds.length} عرفوها`
-              : 'ولا واحد عرفها'}
-          </p>
+          {!isDuo && (
+            <p className="mt-1 font-body text-xs text-ink-soft">
+              {correctGuesserIds.length > 0
+                ? `${correctGuesserIds.length} عرفوها`
+                : 'ولا واحد عرفها'}
+            </p>
+          )}
         </div>
 
-        {/* The two halves side by side — the gap between them is the joke. */}
-        <ul className="grid list-none grid-cols-2 gap-2 p-0">
-          {[partA, partB].map((part, index) => {
-            const artistId = artistIds[index];
-            const player = artistId ? players[artistId] : undefined;
+        {/*
+         * The two halves side by side — the gap between them is the joke.
+         * Skipped in Duo: partA/partB are the same phrase there (nothing was
+         * split), and up to seven alternating turns don't fit two columns —
+         * the replay below already attributes each turn by name.
+         */}
+        {!isDuo && (
+          <ul className="grid list-none grid-cols-2 gap-2 p-0">
+            {[partA, partB].map((part, index) => {
+              const artistId = artistIds[index];
+              const player = artistId ? players[artistId] : undefined;
 
-            return (
-              <li
-                key={part}
-                className="rounded-md border-thin border-ink-hairline bg-paper p-2"
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-3 w-3 shrink-0 rounded-pill border-thin border-ink"
-                    style={{ backgroundColor: artistId ? penColors[artistId] : undefined }}
-                    aria-hidden
-                  />
-                  <span className="truncate font-body text-xs text-ink-faint">
-                    {player?.name ?? ''}
-                  </span>
-                </div>
-                <p className="mt-1 font-display text-base text-ink">{part}</p>
-              </li>
-            );
-          })}
-        </ul>
+              return (
+                <li
+                  key={part}
+                  className="rounded-md border-thin border-ink-hairline bg-paper p-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-pill border-thin border-ink"
+                      style={{ backgroundColor: artistId ? penColors[artistId] : undefined }}
+                      aria-hidden
+                    />
+                    <span className="truncate font-body text-xs text-ink-faint">
+                      {player?.name ?? ''}
+                    </span>
+                  </div>
+                  <p className="mt-1 font-display text-base text-ink">{part}</p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
         <div className="relative min-h-0 flex-1 rounded-md border-bold border-ink">
           <StaticDrawing strokes={strokes} onReady={handleReady} />

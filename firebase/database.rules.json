@@ -208,7 +208,12 @@
             // to a node that already exists. What it must NOT permit is one
             // player appending to another player's line, or anyone drawing
             // outside their own turn, and both of those are still refused.
-            ".write": "auth != null && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid) && root.child('games').child($roomId).child('current').child('phase').val().matches(/^draw/) && (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid || root.child('games').child($roomId).child('current').child('activeDrawers').child(auth.uid).exists())",
+            //
+            // The phase whitelist covers every mode's own name for "pen is
+            // live": مزوّر/الممنوعات/الرسم المشترك use `draw`, كمّل رسمتي uses
+            // `turn`, and its Duo ruleset adds one short bonus window named
+            // `extend`.
+            ".write": "auth != null && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid) && root.child('games').child($roomId).child('current').child('phase').val().matches(/^(draw|turn|extend)/) && (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid || root.child('games').child($roomId).child('current').child('activeDrawers').child(auth.uid).exists())",
             // `points` is deliberately NOT required. A stroke is written in
             // stages — header on pointer-down, point chunks every ~50ms — so
             // demanding points up front rejects the header, which is the first
@@ -342,6 +347,66 @@
             "playerId": { ".validate": "newData.val() === auth.uid" },
             "content": { ".validate": "newData.isString() && newData.val().length <= 4000" },
             "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
+    // كانت إيش؟ Duo only: two independent chains ('0'/'1', one per player's
+    // own seed word) instead of one. A near-identical copy of `chains` above
+    // with one extra `$track` level, kept as a fully separate subtree rather
+    // than folded into `chains` — RTDB rules can't tell "this path segment is
+    // a track" from "this path segment is a link index" within one wildcard,
+    // so merging the two shapes risked loosening the group ruleset's own
+    // rule by accident. Read is granted per (track, index) via
+    // `current/visibleTo/$track/$index`; write requires being the track's
+    // current author, from `current/tracks/$track/currentPlayerId`.
+    "duoChains": {
+      "$roomId": {
+        "$gameId": {
+          "$track": {
+            "$index": {
+              ".read": "auth != null && (root.child('games').child($roomId).child('current').child('phase').val().matches(/^(reveal|result)/) || root.child('games').child($roomId).child('current').child('visibleTo').child($track).child($index).child(auth.uid).exists())",
+              ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentPlayerId').val() === auth.uid",
+              ".validate": "newData.hasChildren(['type', 'playerId', 'content'])",
+
+              "type": { ".validate": "newData.isString() && newData.val().matches(/^(text|drawing)$/)" },
+              "playerId": { ".validate": "newData.val() === auth.uid" },
+              "content": { ".validate": "newData.isString() && newData.val().length <= 4000" },
+              "$other": { ".validate": false }
+            }
+          }
+        }
+      }
+    },
+
+    // Duo's per-track counterpart to `linkStrokes` above — same isolation
+    // reasoning, doubled: a drawing on track 0 must stay unreadable to
+    // anyone without a current grant for (track 0, that index), independently
+    // of track 1's own progress.
+    "duoLinkStrokes": {
+      "$roomId": {
+        "$gameId": {
+          "$track": {
+            "$index": {
+              ".read": "auth != null && (root.child('games').child($roomId).child('current').child('phase').val().matches(/^(reveal|result)/) || root.child('games').child($roomId).child('current').child('visibleTo').child($track).child($index).child(auth.uid).exists() || (root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentPlayerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentIndexKey').val() === $index))",
+              ".indexOn": ["seq"],
+
+              "$strokeId": {
+                ".write": "auth != null && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid) && root.child('games').child($roomId).child('current').child('phase').val() === 'turn' && root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentPlayerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentIndexKey').val() === $index",
+                ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'startedAt'])",
+
+                "playerId": { ".validate": "newData.val() === auth.uid" },
+                "seq": { ".validate": "newData.isNumber()" },
+                "tool": { ".validate": "newData.isString() && newData.val().matches(/^(pen|eraser)$/)" },
+                "color": { ".validate": "newData.isString() && newData.val().length <= 24" },
+                "width": { ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 1" },
+                "points": { ".validate": "newData.hasChildren()" },
+                "startedAt": { ".validate": "newData.isNumber()" },
+                "done": { ".validate": "newData.isBoolean()" },
+                "$other": { ".validate": false }
+              }
+            }
           }
         }
       }
