@@ -57,13 +57,27 @@ export function startTurnCycle(
  * pretending otherwise would just hide a stale player in the order forever.
  */
 export function nextInTurnCycle(
-  state: TurnCycleState | undefined,
+  state: TurnCycleState | null | undefined,
   playerIds: readonly string[],
   random: () => number = Math.random,
 ): { playerId: string; state: TurnCycleState } {
   const roster = [...playerIds];
+
+  /*
+   * `state` comes straight off the database, so it is whatever is actually
+   * stored — including `null` for a room that has never played a round
+   * (Realtime Database answers a missing node with null, not undefined), and
+   * including a shape written by an older build. Every field is therefore
+   * checked before it is used; anything unrecognised falls back to a fresh
+   * shuffle rather than throwing. `order` is checked with `Array.isArray`
+   * because Realtime Database returns a sparse array as an object, which has
+   * no `.includes`.
+   */
   const sameRoster =
-    state !== undefined &&
+    state != null &&
+    Array.isArray(state.order) &&
+    typeof state.position === 'number' &&
+    state.position >= 0 &&
     state.position < state.order.length &&
     state.order.length === roster.length &&
     roster.every((id) => state.order.includes(id));

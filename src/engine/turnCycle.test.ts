@@ -70,6 +70,33 @@ describe('nextInTurnCycle', () => {
     expect(new Set(picks)).toEqual(new Set(['p1', 'p2']));
   });
 
+  it('accepts null — what the database returns for a room that never played', () => {
+    // Realtime Database answers a missing node with null, not undefined. A
+    // guard written as `state !== undefined` passes null straight through and
+    // then throws on `state.position`, which crashed the first round of every
+    // fresh room.
+    expect(() => nextInTurnCycle(null, ['p1', 'p2'])).not.toThrow();
+    expect(['p1', 'p2']).toContain(nextInTurnCycle(null, ['p1', 'p2']).playerId);
+  });
+
+  it('falls back to a fresh shuffle on a malformed stored cycle', () => {
+    // Whatever is actually in the database, including a shape written by an
+    // older build. RTDB also returns a sparse array as an object, which has
+    // no `.includes` — that must not throw either.
+    const malformed = [
+      { order: undefined, position: 0 },
+      { order: { 1: 'p2' }, position: 0 },
+      { order: ['p1', 'p2'], position: undefined },
+      { order: ['p1', 'p2'], position: -1 },
+      {},
+    ] as unknown as TurnCycleState[];
+
+    for (const state of malformed) {
+      expect(() => nextInTurnCycle(state, ['p1', 'p2'])).not.toThrow();
+      expect(['p1', 'p2']).toContain(nextInTurnCycle(state, ['p1', 'p2']).playerId);
+    }
+  });
+
   it('does not always start the same player first', () => {
     const a = nextInTurnCycle(undefined, ['p1', 'p2', 'p3'], () => 0).playerId;
     const b = nextInTurnCycle(undefined, ['p1', 'p2', 'p3'], () => 0.99).playerId;

@@ -62,7 +62,7 @@ export async function startKammilRound(uid: string, data: RequestData): Promise<
   // strict alternation Duo needs — one mechanism, not a special case.
   const cycleSnap = await db().ref(`rooms/${roomId}/kammilGuesserCycle`).get();
   const { playerId: guesserId, state: guesserCycle } = nextInTurnCycle(
-    cycleSnap.val() as TurnCycleState | undefined,
+    cycleSnap.val() as TurnCycleState | null,
     playerIds,
   );
   const { artistIds } = assignKammilRoles(playerIds, guesserId);

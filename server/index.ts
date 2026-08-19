@@ -114,7 +114,7 @@ export async function startMozawwerRound(uid: string, data: RequestData): Promis
   // player in that order, and only reshuffle once everyone has had it.
   const impostorCycleSnap = await db().ref(`rooms/${roomId}/impostorCycle`).get();
   const { playerId: impostorId, state: impostorCycle } = nextInTurnCycle(
-    impostorCycleSnap.val() as TurnCycleState | undefined,
+    impostorCycleSnap.val() as TurnCycleState | null,
     players.map((p) => p.id),
   );
   const gameId = db().ref().push().key as string;

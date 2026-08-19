@@ -71,7 +71,7 @@ export async function startMamnouRound(uid: string, data: RequestData): Promise<
   // strict alternation Duo needs — one mechanism, not a special case.
   const cycleSnap = await db().ref(`rooms/${roomId}/artistCycle`).get();
   const { playerId: artistId, state: artistCycle } = nextInTurnCycle(
-    cycleSnap.val() as TurnCycleState | undefined,
+    cycleSnap.val() as TurnCycleState | null,
     playerIds,
   );
 
