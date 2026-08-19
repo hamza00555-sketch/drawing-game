@@ -15,7 +15,7 @@ import { onValue, ref } from 'firebase/database';
 import { getDb } from '../firebase';
 import { paths } from '../paths';
 import { serverNow } from '../clock';
-import { StrokePublisher, watchStrokes, wireToStroke } from './strokeSync';
+import { StrokePublisher, deleteStroke, watchStrokes, wireToStroke } from './strokeSync';
 import { sortStrokes, type Point, type Stroke } from './strokes';
 import type { DrawingCanvasHandle } from '../../design/components/DrawingCanvas';
 
@@ -117,6 +117,16 @@ export function useDrawingSession({
             : sortStrokes([...current, stroke]),
         );
       },
+      // Someone else's undo. Our own goes through `undo()` below directly —
+      // this is what makes it visible to every OTHER viewer.
+      onRemoved: (strokeId) => {
+        setStrokes((current) => {
+          if (!current.some((s) => s.id === strokeId)) return current;
+          const next = current.filter((s) => s.id !== strokeId);
+          canvas.current?.rebuild(next);
+          return next;
+        });
+      },
     });
 
     return subscription.stop;
@@ -167,9 +177,12 @@ export function useDrawingSession({
 
       const next = current.filter((stroke) => stroke.id !== last.id);
       canvas.current?.rebuild(next);
+      // Delete on the wire too — otherwise this device is the only one that
+      // ever finds out the stroke is gone. See strokeSync's onChildRemoved.
+      if (!offline) deleteStroke(bucket, last.id);
       return next;
     });
-  }, [playerId, canvas]);
+  }, [playerId, canvas, bucket, offline]);
 
   return {
     strokes,

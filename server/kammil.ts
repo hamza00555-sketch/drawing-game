@@ -20,6 +20,7 @@ import {
   scoreKammilRound,
 } from '../shared/kammil.js';
 import { MOZAWWER_WORDS, isCorrectGuess } from '../shared/mozawwer.js';
+import { nextInTurnCycle, type TurnCycleState } from '../shared/turnCycle.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
 interface RoomPlayer {
@@ -54,14 +55,17 @@ export async function startKammilRound(uid: string, data: RequestData): Promise<
   }
 
   const isDuo = playerIds.length === 2;
-  const previousGuesserSnap = isDuo
-    ? await db().ref(`rooms/${roomId}/lastKammilGuesserId`).get()
-    : undefined;
-  const { artistIds, guesserId } = assignKammilRoles(
+
+  // Who guesses is a fair rotation, not a fresh coin flip each round: shuffle
+  // the room once, hand the role to the next player in that order, and only
+  // reshuffle once everyone has had it. At two players this is exactly the
+  // strict alternation Duo needs — one mechanism, not a special case.
+  const cycleSnap = await db().ref(`rooms/${roomId}/kammilGuesserCycle`).get();
+  const { playerId: guesserId, state: guesserCycle } = nextInTurnCycle(
+    cycleSnap.val() as TurnCycleState | undefined,
     playerIds,
-    Math.random,
-    (previousGuesserSnap?.val() as string | null) ?? null,
   );
+  const { artistIds } = assignKammilRoles(playerIds, guesserId);
   const word = MOZAWWER_WORDS[Math.floor(Math.random() * MOZAWWER_WORDS.length)];
   if (!word) throw new GameError('internal', 'تعذّر اختيار كلمة.');
 
@@ -88,6 +92,7 @@ export async function startKammilRound(uid: string, data: RequestData): Promise<
       // carry the word. It lives here until the reveal.
       [gameSecretPath(roomId, gameId)]: { word: word.word },
       [`rooms/${roomId}/status`]: 'playing',
+      [`rooms/${roomId}/kammilGuesserCycle`]: guesserCycle,
       [`games/${roomId}/current`]: {
         gameId,
         mode: 'kammil',
@@ -223,8 +228,6 @@ export async function advanceKammil(uid: string, data: RequestData): Promise<unk
         [`games/${roomId}/current/revealedWord`]: word,
         [`rooms/${roomId}/status`]: 'lobby',
       };
-      // Duo only: next round's role assignment swaps off of this.
-      if (game.isDuo) updates[`rooms/${roomId}/lastKammilGuesserId`] = game.guesserId;
       // What each player gained THIS round. Totals alone cannot tell a player
       // whether they just earned three points or none.
       updates[`games/${roomId}/current/scoreDelta`] = delta;

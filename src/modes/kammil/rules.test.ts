@@ -148,56 +148,45 @@ describe('countdownBeat', () => {
 });
 
 describe('assignKammilRoles', () => {
+  // Who guesses is now decided by the caller (nextInTurnCycle, tested in
+  // src/engine/turnCycle.test.ts) — this function's job is just turning that
+  // choice into the rest of the round.
   it('excludes the guesser from the artists', () => {
-    const { artistIds, guesserId } = assignKammilRoles(['p1', 'p2', 'p3', 'p4'], () => 0);
+    const { artistIds, guesserId } = assignKammilRoles(
+      ['p1', 'p2', 'p3', 'p4'],
+      'p1',
+      () => 0,
+    );
     expect(guesserId).toBe('p1');
     expect(artistIds.sort()).toEqual(['p2', 'p3', 'p4']);
     expect(artistIds).not.toContain(guesserId);
   });
 
-  it('does not always pick the same seat', () => {
-    // Random rather than "last to join", so one player is not the guesser for
-    // every round of a long session.
-    const first = assignKammilRoles(['p1', 'p2', 'p3'], () => 0).guesserId;
-    const last = assignKammilRoles(['p1', 'p2', 'p3'], () => 0.99).guesserId;
-    expect(first).not.toBe(last);
-  });
-
   it('does not always draw in join order', () => {
     // Filtering the guesser out of the join-ordered list would silently
     // leave the remaining artists in join order — whoever connects first
-    // would always draw first, every round. Same guesser both times (first
-    // draw picks 'p1' either way) so only the shuffle differs.
+    // would always draw first, every round.
     function sequence(...values: number[]): () => number {
       let i = 0;
       return () => values[Math.min(i++, values.length - 1)] as number;
     }
 
     const joinOrder = ['p1', 'p2', 'p3', 'p4', 'p5'];
-    const a = assignKammilRoles(joinOrder, sequence(0, 0, 0, 0));
-    const b = assignKammilRoles(joinOrder, sequence(0, 0.9, 0.9, 0.9));
+    const a = assignKammilRoles(joinOrder, 'p1', sequence(0, 0, 0, 0));
+    const b = assignKammilRoles(joinOrder, 'p1', sequence(0, 0.9, 0.9, 0.9));
     expect(a.guesserId).toBe(b.guesserId);
     expect(a.artistIds).not.toEqual(b.artistIds);
   });
 
   it('refuses a room too small to have both artists and a guesser', () => {
-    expect(() => assignKammilRoles(['p1'])).toThrowError();
+    expect(() => assignKammilRoles(['p1'], 'p1')).toThrowError();
   });
 
   it('accepts exactly two players — the Duo floor', () => {
-    expect(() => assignKammilRoles(['p1', 'p2'], () => 0)).not.toThrow();
-  });
-
-  it('Duo: swaps roles deterministically off the previous guesser', () => {
-    const { artistIds, guesserId } = assignKammilRoles(['p1', 'p2'], Math.random, 'p1');
+    expect(() => assignKammilRoles(['p1', 'p2'], 'p1', () => 0)).not.toThrow();
+    const { artistIds, guesserId } = assignKammilRoles(['p1', 'p2'], 'p2', () => 0);
     expect(guesserId).toBe('p2');
     expect(artistIds).toEqual(['p1']);
-  });
-
-  it('Duo: falls back to the random pick with no previous guesser', () => {
-    // First round of a session — nobody has guessed yet.
-    const { guesserId } = assignKammilRoles(['p1', 'p2'], () => 0, null);
-    expect(['p1', 'p2']).toContain(guesserId);
   });
 });
 

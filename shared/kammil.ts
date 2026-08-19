@@ -100,37 +100,21 @@ export function kammilDrawMs(artistCount: number): number {
 /**
  * Split the room into artists and the one guesser.
  *
- * The guesser is picked at random rather than always being last to join, so the
- * same person does not end up guessing every round of a long session. The
- * draw order among the remaining artists is shuffled too — otherwise it would
- * silently fall back to join order, and whoever connected first would always
- * draw first, every round.
- */
-/**
- * Split the room into artists and the one guesser.
- *
- * At two players there is no shuffle to do — the round is one artist and one
- * guesser, and `previousGuesserId` (who guessed last round, if any) picks the
- * other player deterministically so the two swap roles every round rather
- * than risking the same split twice in a row.
+ * `guesserId` is decided by the caller — see `nextInTurnCycle` in
+ * `shared/turnCycle.ts` — so this function's only job is turning "who
+ * guesses" into the rest of the round: everyone else, shuffled into a draw
+ * order. The shuffle matters on its own: falling back to join order would
+ * mean whoever connected first always draws first, every round.
  */
 export function assignKammilRoles(
   playerIds: readonly string[],
+  guesserId: string,
   random: () => number = Math.random,
-  previousGuesserId?: string | null,
 ): { artistIds: string[]; guesserId: string } {
   if (playerIds.length < KAMMIL.minPlayers) {
     throw new Error(`كمّل رسمتي يحتاج ${KAMMIL.minPlayers} لاعبين على الأقل.`);
   }
 
-  if (playerIds.length === 2 && previousGuesserId) {
-    const guesserId = (playerIds.find((id) => id !== previousGuesserId) ??
-      playerIds[0]) as string;
-    return { artistIds: playerIds.filter((id) => id !== guesserId), guesserId };
-  }
-
-  const index = Math.min(Math.floor(random() * playerIds.length), playerIds.length - 1);
-  const guesserId = playerIds[index] as string;
   const remaining = playerIds.filter((id) => id !== guesserId);
 
   return {

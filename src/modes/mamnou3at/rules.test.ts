@@ -8,7 +8,6 @@ import {
   canSeeWord,
   everyoneGuessed,
   letterHint,
-  pickMamnouArtist,
   pickTaboo,
   rankCorrectGuessers,
   scoreMamnouDuoRound,
@@ -148,22 +147,8 @@ describe('everyoneGuessed', () => {
   });
 });
 
-describe('pickMamnouArtist — Duo', () => {
-  it('strictly alternates with only one other player', () => {
-    expect(pickMamnouArtist(['p1', 'p2'], 'p1')).toBe('p2');
-    expect(pickMamnouArtist(['p1', 'p2'], 'p2')).toBe('p1');
-  });
-
-  it('picks either player when there is no previous artist yet', () => {
-    expect(['p1', 'p2']).toContain(pickMamnouArtist(['p1', 'p2'], null));
-  });
-
-  it('still avoids only the immediate previous artist at 3+ players', () => {
-    const random = () => 0;
-    const artist = pickMamnouArtist(['p1', 'p2', 'p3'], 'p1', random);
-    expect(artist).not.toBe('p1');
-  });
-});
+// Who draws is now decided by the caller (nextInTurnCycle, tested in
+// src/engine/turnCycle.test.ts) — mamnou3at no longer picks its own artist.
 
 describe('scoreMamnouDuoRound', () => {
   it('pays close to the max when the guess lands right away', () => {

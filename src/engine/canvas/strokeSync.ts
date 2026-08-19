@@ -24,7 +24,7 @@
  * Chunks are numbered, so a late-arriving chunk cannot reorder a line.
  */
 
-import { get, onChildAdded, onChildChanged, ref, set, update } from 'firebase/database';
+import { get, onChildAdded, onChildChanged, onChildRemoved, ref, remove, set, update } from 'firebase/database';
 import { getDb } from '../firebase';
 import { sortStrokes, type Point, type Stroke, type Tool } from './strokes';
 
@@ -129,6 +129,18 @@ export class StrokePublisher {
   }
 }
 
+/**
+ * Remove a stroke — what "تراجع" actually does on the wire.
+ *
+ * Undo used to only touch this device's own React state: the artist's canvas
+ * cleared the line, but nothing told Firebase, so every OTHER viewer kept
+ * showing it forever. Deleting the node here is what `onChildRemoved` below
+ * exists to notice, on every other subscribed client.
+ */
+export function deleteStroke(bucketPath: string, strokeId: string): void {
+  void remove(ref(getDb(), `${bucketPath}/${strokeId}`));
+}
+
 export interface StrokeSubscription {
   stop: () => void;
 }
@@ -160,17 +172,21 @@ export async function readStrokesOnce(bucketPath: string): Promise<Stroke[]> {
  *
  * `onProgress` fires as a stroke grows (including for strokes that already
  * existed when this client attached — which is what makes rejoining mid-round
- * rebuild the drawing), and `onDone` fires when it is complete.
+ * rebuild the drawing), `onDone` fires when it is complete, and `onRemoved`
+ * fires when its author undoes it.
  *
- * Strokes authored by `ignorePlayerId` are skipped: the local artist has
- * already rendered them, and echoing them back would draw the same line twice
- * and fight the local buffer.
+ * Strokes authored by `ignorePlayerId` are skipped in `onProgress`/`onDone`:
+ * the local artist has already rendered them, and echoing them back would draw
+ * the same line twice and fight the local buffer. `onRemoved` is NOT filtered
+ * this way — the artist's own undo already updates their local state directly;
+ * every OTHER viewer only learns about it through this event.
  */
 export function watchStrokes(
   bucketPath: string,
   handlers: {
     onProgress: (stroke: Stroke) => void;
     onDone: (stroke: Stroke) => void;
+    onRemoved?: (strokeId: string) => void;
     ignorePlayerId?: string;
   },
 ): StrokeSubscription {
@@ -193,11 +209,15 @@ export function watchStrokes(
   const stopChanged = onChildChanged(strokesRef, (snapshot) =>
     handle(snapshot.key, snapshot.val()),
   );
+  const stopRemoved = onChildRemoved(strokesRef, (snapshot) => {
+    if (snapshot.key) handlers.onRemoved?.(snapshot.key);
+  });
 
   return {
     stop: () => {
       stopAdded();
       stopChanged();
+      stopRemoved();
     },
   };
 }

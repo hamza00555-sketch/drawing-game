@@ -14,12 +14,12 @@ import type { RequestData } from './types.js';
 import {
   MAMNOU3AT,
   letterHint,
-  pickMamnouArtist,
   pickTaboo,
   scoreMamnouDuoRound,
   scoreMamnouRound,
 } from '../shared/mamnou3at.js';
 import { isCorrectGuess } from '../shared/mozawwer.js';
+import { nextInTurnCycle, type TurnCycleState } from '../shared/turnCycle.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
 /** Artist-only knowledge. The guessers hold a letter count and nothing else. */
@@ -65,12 +65,15 @@ export async function startMamnouRound(uid: string, data: RequestData): Promise<
   const used = Object.values(usedSnap.val() ?? {}) as string[];
   const entry = pickTaboo(used);
 
-  // Rotate the artist rather than always picking the host or the first
-  // joiner. At two players this is a strict alternation — see
-  // pickMamnouArtist's doc comment.
-  const previousSnap = await db().ref(`rooms/${roomId}/lastArtistId`).get();
-  const previous = previousSnap.val() as string | null;
-  const artistId = pickMamnouArtist(playerIds, previous);
+  // Who draws is a fair rotation, not a fresh coin flip each round: shuffle
+  // the room once, hand the role to the next player in that order, and only
+  // reshuffle once everyone has had it. At two players this is exactly the
+  // strict alternation Duo needs — one mechanism, not a special case.
+  const cycleSnap = await db().ref(`rooms/${roomId}/artistCycle`).get();
+  const { playerId: artistId, state: artistCycle } = nextInTurnCycle(
+    cycleSnap.val() as TurnCycleState | undefined,
+    playerIds,
+  );
 
   const briefMs = isDuo ? MAMNOU3AT.duo.briefMs : MAMNOU3AT.briefMs;
   const drawMs = isDuo ? MAMNOU3AT.duo.drawMs : MAMNOU3AT.drawMs;
@@ -99,7 +102,7 @@ export async function startMamnouRound(uid: string, data: RequestData): Promise<
       [gameSecretPath(roomId, gameId)]: { word: entry.word, forbidden: entry.forbidden },
       [`rooms/${roomId}/status`]: 'playing',
       [`rooms/${roomId}/usedWords/${gameId}`]: entry.word,
-      [`rooms/${roomId}/lastArtistId`]: artistId,
+      [`rooms/${roomId}/artistCycle`]: artistCycle,
       [`games/${roomId}/current`]: {
         gameId,
         mode: 'mamnou3at',

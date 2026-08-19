@@ -9,7 +9,6 @@ export {
   MAMNOU3AT,
   TABOO_WORDS,
   pickTaboo,
-  pickMamnouArtist,
   letterHint,
   scoreMamnouRound,
   scoreMamnouDuoRound,

@@ -24,6 +24,7 @@ import type { RequestData } from './types.js';
  */
 import { MOZAWWER, MOZAWWER_WORDS, scoreMozawwerRound, tallyVotes, isCorrectGuess } from '../shared/mozawwer.js';
 import { shuffle } from '../shared/random.js';
+import { nextInTurnCycle, type TurnCycleState } from '../shared/turnCycle.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
 // Each mode lives in its own module; re-exported so they deploy together.
@@ -102,8 +103,20 @@ export async function startMozawwerRound(uid: string, data: RequestData): Promis
   const chosen = source[Math.floor(Math.random() * source.length)];
   if (!chosen) throw new GameError('internal', 'تعذّر اختيار كلمة.');
 
+  // Drawing turn order within the round: a fresh shuffle every round, cycled
+  // round-robin by turnIndex below — that already guarantees no one repeats
+  // before everyone else has drawn.
   const turnOrder = shuffle(players.map((p) => p.id));
-  const impostorId = turnOrder[Math.floor(Math.random() * turnOrder.length)] as string;
+
+  // Who the impostor IS, across rounds, needs the same guarantee: a coin flip
+  // every round can hand it to the same player twice in a row and skip
+  // someone else all night. Shuffle the room once, hand the role to the next
+  // player in that order, and only reshuffle once everyone has had it.
+  const impostorCycleSnap = await db().ref(`rooms/${roomId}/impostorCycle`).get();
+  const { playerId: impostorId, state: impostorCycle } = nextInTurnCycle(
+    impostorCycleSnap.val() as TurnCycleState | undefined,
+    players.map((p) => p.id),
+  );
   const gameId = db().ref().push().key as string;
 
   // Per-player secrets. The impostor's object deliberately omits `word`.
@@ -120,6 +133,7 @@ export async function startMozawwerRound(uid: string, data: RequestData): Promis
     [gameSecretPath(roomId, gameId)]: { word: chosen.word, impostorId },
     [`rooms/${roomId}/status`]: 'playing',
     [`rooms/${roomId}/usedWords/${gameId}`]: chosen.word,
+    [`rooms/${roomId}/impostorCycle`]: impostorCycle,
     [`games/${roomId}/current`]: {
       gameId,
       mode: 'mozawwer',

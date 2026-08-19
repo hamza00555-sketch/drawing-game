@@ -126,6 +126,13 @@ describe('strokes', () => {
     // الرسم المشترك is the one mode where two pens are live at once.
     expect(write).toContain("child('activeDrawers').child(auth.uid).exists()");
   });
+
+  it('lets the stroke\'s own author delete it — what "تراجع" needs to sync', () => {
+    // Without this branch, undo only ever cleared the local canvas: the wire
+    // still had the stroke, so every other viewer kept seeing it.
+    expect(write).toContain('!newData.exists() && data.exists()');
+    expect(write).toContain("data.child('playerId').val() === auth.uid");
+  });
 });
 
 describe('linkStrokes — كانت إيش؟', () => {
@@ -154,6 +161,18 @@ describe('linkStrokes — كانت إيش؟', () => {
     expect(write).toContain("child('currentPlayerId').val() === auth.uid");
     expect(write).toContain("child('currentIndexKey').val() === $index");
     expect(write).toContain("child('phase').val() === 'turn'");
+  });
+
+  it('lets the author keep writing to a stroke that already exists', () => {
+    // A bare `!data.exists()` guard — as this rule used to read — accepts the
+    // header and then rejects every point chunk and the `done` flag after it,
+    // since those are later writes to the same, now-existing node. Every
+    // كانت إيش؟ drawing link would render as an empty canvas.
+    expect(write).toContain("(!data.exists() || data.child('playerId').val() === auth.uid)");
+  });
+
+  it('lets the stroke\'s own author delete it, same as the shared canvas', () => {
+    expect(write).toContain('!newData.exists() && data.exists()');
   });
 });
 
@@ -196,6 +215,14 @@ describe('duoLinkStrokes — كانت إيش؟ Duo', () => {
 
   it('lets the current author see the link they are drawing, per track', () => {
     expect(read).toContain("child('tracks').child($track).child('currentIndexKey').val() === $index");
+  });
+
+  it('lets the author keep writing to a stroke that already exists', () => {
+    expect(write).toContain("(!data.exists() || data.child('playerId').val() === auth.uid)");
+  });
+
+  it('lets the stroke\'s own author delete it, same as the shared canvas', () => {
+    expect(write).toContain('!newData.exists() && data.exists()');
   });
 });
 

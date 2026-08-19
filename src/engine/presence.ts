@@ -1,22 +1,15 @@
 /**
- * Presence and host migration.
+ * Presence and host hand-off.
  *
  * Two jobs:
  *   1. Keep `presence/{roomId}/{playerId}` truthful even when a phone dies
  *      mid-turn — handled by `onDisconnect`, which the Firebase servers run on
  *      our behalf once the socket drops.
- *   2. Make sure losing the host never ends the party.
+ *   2. Let the room recover a missing host — on request, never automatically.
+ *      See `takeHost` below.
  */
 
-import {
-  onDisconnect,
-  onValue,
-  ref,
-  serverTimestamp,
-  set,
-  update,
-  get,
-} from 'firebase/database';
+import { onDisconnect, onValue, ref, serverTimestamp, set, update } from 'firebase/database';
 import { getDb } from './firebase';
 import { paths } from './paths';
 
@@ -81,58 +74,29 @@ export function watchPresence(
 }
 
 /**
- * The player who should hold the host role: the earliest joiner who is still
- * connected. Every client computes this independently from the same data, so
- * they agree without needing to coordinate.
- */
-export function pickHostSuccessor(
-  players: Record<string, RoomPlayer>,
-  presence: Record<string, PresenceRecord>,
-): string | undefined {
-  const connected = Object.values(players)
-    .filter((player) => presence[player.id]?.connected === true)
-    .sort((a, b) => a.joinedAt - b.joinedAt);
-
-  return connected[0]?.id;
-}
-
-/**
- * Attempt to take over as host.
+ * Take over as host, on request.
  *
- * Deliberately does NOT require a Cloud Function. The security rule permits
+ * Deliberately manual — there is no background effect that does this on its
+ * own. A host who steps away is still the host when they come back; the room
+ * waits, and whoever is left sees a "خذ الاستضافة" button instead of waking up
+ * to find someone else silently in charge. Any connected player may press it,
+ * not just whoever joined first — the security rule is the same either way,
+ * since every connected member is a legitimate host.
+ *
+ * Deliberately does NOT require a Cloud Function: the security rule permits
  * this write only while the current host is recorded as disconnected, so a
- * malicious client cannot steal the role from a live host. If several clients
- * race, they all nominate the same successor anyway; last-write-wins is safe
- * because every candidate was legitimate.
+ * malicious client cannot steal the role from a live host.
  *
  * Returns true when this client believes it is now the host.
  */
-export async function claimHostIfVacant(
-  roomId: string,
-  selfId: string,
-  players: Record<string, RoomPlayer>,
-  presence: Record<string, PresenceRecord>,
-): Promise<boolean> {
-  const db = getDb();
-  const hostRef = ref(db, paths.roomHostId(roomId));
-  const snapshot = await get(hostRef);
-  const currentHostId = snapshot.val() as string | null;
-
-  if (!currentHostId) return false;
-  if (currentHostId === selfId) return true;
-
-  // Still alive — nothing to claim.
-  if (presence[currentHostId]?.connected === true) return false;
-
-  // Only the agreed successor attempts the write, to keep the race narrow.
-  if (pickHostSuccessor(players, presence) !== selfId) return false;
-
+export async function takeHost(roomId: string, selfId: string): Promise<boolean> {
   try {
-    await set(hostRef, selfId);
+    await set(ref(getDb(), paths.roomHostId(roomId)), selfId);
     return true;
   } catch {
-    // The rule rejected it — the host reconnected between our check and the
-    // write. That is the rule doing its job, not an error worth surfacing.
+    // The rule rejected it — the host reconnected between the tap and the
+    // write, or this device is not actually a connected member. Either way,
+    // nothing here is worth surfacing as an error.
     return false;
   }
 }

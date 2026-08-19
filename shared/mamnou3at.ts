@@ -77,6 +77,36 @@ export const TABOO_WORDS: readonly TabooEntry[] = [
   { word: 'كرة قدم', forbidden: ['المسدسات', 'الدائرة', 'المرمى'] },
   { word: 'عصفور', forbidden: ['المنقار', 'الأجنحة', 'الريش'] },
   { word: 'فيل', forbidden: ['الخرطوم', 'الأذنين الكبيرتين', 'الأنياب'] },
+  { word: 'أسد', forbidden: ['اللبدة', 'الأنياب', 'الذيل بخصلة'] },
+  { word: 'حمار', forbidden: ['الأذنين الطويلتين', 'الذيل', 'الحوافر'] },
+  { word: 'بطة', forbidden: ['المنقار المسطح', 'الأقدام المكففة', 'الريش'] },
+  { word: 'ضفدع', forbidden: ['العينين البارزتين', 'الأرجل الخلفية القوية', 'الجلد الأخضر'] },
+  { word: 'نحلة', forbidden: ['الخطوط الصفراء والسوداء', 'الجناحين', 'الإبرة'] },
+  { word: 'فراشة', forbidden: ['الأجنحة الملونة', 'قرون الاستشعار', 'الأنماط المتماثلة'] },
+  { word: 'حصان', forbidden: ['العرف', 'الحوافر', 'الذيل الطويل'] },
+  { word: 'دجاجة', forbidden: ['العرف الأحمر', 'المنقار', 'الريش'] },
+  { word: 'تمساح', forbidden: ['الفك الطويل', 'الأسنان الحادة', 'الذيل'] },
+  { word: 'سلحفاة', forbidden: ['الصدفة', 'الرأس الصغيرة', 'الأرجل القصيرة'] },
+  { word: 'قوس قزح', forbidden: ['الألوان السبعة', 'الشكل المقوس', 'السحاب'] },
+  { word: 'ثلاجة', forbidden: ['الباب المستطيل', 'المقبض', 'الرفوف'] },
+  { word: 'غسالة', forbidden: ['الباب الدائري', 'الأزرار', 'الفقاعات'] },
+  { word: 'تلفزيون', forbidden: ['الشاشة المستطيلة', 'الريموت', 'القاعدة'] },
+  { word: 'دراجة هوائية', forbidden: ['العجلتين', 'المقود', 'البدالات'] },
+  { word: 'مروحة', forbidden: ['الريش الدوارة', 'القاعدة', 'الشبكة'] },
+  { word: 'شمعة', forbidden: ['اللهب', 'الفتيلة', 'الشكل الأسطواني'] },
+  { word: 'جرس', forbidden: ['الشكل المخروطي', 'اللسان الداخلي', 'الحلقة العلوية'] },
+  { word: 'سلم', forbidden: ['الدرجات', 'القائمين الجانبيين', 'الشكل الطويل'] },
+  { word: 'حقيبة مدرسية', forbidden: ['الحمالات', 'السحاب', 'الجيوب'] },
+  { word: 'نظارة شمسية', forbidden: ['العدسات الداكنة', 'الإطار', 'الذراعين'] },
+  { word: 'غيتار', forbidden: ['الأوتار', 'الشكل المنحني', 'المقبض الطويل'] },
+  { word: 'طبل', forbidden: ['الشكل الدائري', 'العصي', 'الجلد المشدود'] },
+  { word: 'مكنسة', forbidden: ['الشعيرات', 'العصا الطويلة', 'شكلها المثلث بالأسفل'] },
+  { word: 'مطرقة', forbidden: ['الرأس المعدني', 'المقبض', 'الشكل T'] },
+  { word: 'منشار', forbidden: ['الأسنان الحادة', 'المقبض', 'الشفرة المستقيمة'] },
+  { word: 'زهرة', forbidden: ['البتلات', 'الساق الخضراء', 'الأوراق'] },
+  { word: 'فطر', forbidden: ['القبعة الدائرية', 'الساق', 'البقع'] },
+  { word: 'حذاء رياضي', forbidden: ['الرباط', 'النعل', 'الفتحات الجانبية'] },
+  { word: 'ساندويتش', forbidden: ['الخبز', 'الحشوة الظاهرة', 'الشكل المثلث أو المربع'] },
 ] as const;
 
 export function pickTaboo(
@@ -103,28 +133,6 @@ export function letterHint(word: string): string {
     .split(' ')
     .map((part) => Array.from(part).fill('_').join(' '))
     .join('   ');
-}
-
-/**
- * Pick the next artist.
- *
- * At two players this is a strict alternation — there is only one other
- * person, so "rotate away from whoever drew last" and "give both players
- * equal turns" are the same rule. At three or more it stays a random pick
- * among everyone except the previous artist, same as before.
- */
-export function pickMamnouArtist(
-  playerIds: readonly string[],
-  previousArtistId: string | null,
-  random: () => number = Math.random,
-): string {
-  if (playerIds.length === 2) {
-    return (playerIds.find((id) => id !== previousArtistId) ?? playerIds[0]) as string;
-  }
-
-  const candidates = playerIds.filter((id) => id !== previousArtistId);
-  const pool = candidates.length > 0 ? candidates : playerIds;
-  return pool[Math.floor(random() * pool.length)] as string;
 }
 
 export interface MamnouDuoRoundInput {

@@ -17,7 +17,7 @@ import {
   type GameMode,
   type Room,
 } from '../engine/room';
-import { startPresence, watchPresence, claimHostIfVacant } from '../engine/presence';
+import { startPresence, watchPresence, takeHost } from '../engine/presence';
 import { CharacterTakenError, takenByOthers, watchCharacters } from '../engine/characters';
 import {
   callGame,
@@ -108,15 +108,9 @@ export function App() {
     return startPresence(roomId, selfId);
   }, [roomId, selfId]);
 
-  // Host migration. Every client evaluates the same rule from the same data, so
-  // they agree on the successor without coordinating; the security rule rejects
-  // the write unless the current host really is offline.
-  useEffect(() => {
-    if (!roomId || !selfId || !room?.hostId) return;
-    if (presence[room.hostId]?.connected !== false) return;
-
-    void claimHostIfVacant(roomId, selfId, players, presence);
-  }, [roomId, selfId, room?.hostId, players, presence]);
+  const handleTakeHost = useCallback(() => {
+    if (roomId && selfId) void takeHost(roomId, selfId);
+  }, [roomId, selfId]);
 
   const handleJoin = useCallback(
     async (input: { name: string; characterId: string; variant: string; code: string }) => {
@@ -251,6 +245,7 @@ export function App() {
           selfId={selfId}
           {...(room.currentMode === undefined ? {} : { currentMode: room.currentMode })}
           onChangeMode={() => setRoute({ name: 'modeSelect' })}
+          onTakeHost={handleTakeHost}
           {...(busy ? { starting: true } : {})}
           {...(error === undefined ? {} : { error })}
           onStart={() => {

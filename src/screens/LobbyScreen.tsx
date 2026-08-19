@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GameButton } from '../design/components/GameButton';
+import { HostOfflineBanner } from '../design/components/HostOfflineBanner';
 import { PlayerAvatar, type PlayerStatus } from '../design/components/PlayerAvatar';
 import { Screen } from '../design/components/Screen';
 import { ROOM } from '../config/balance';
@@ -40,6 +41,8 @@ export interface LobbyScreenProps {
   onChangeMode: () => void;
   onStart: () => void;
   onLeave: () => void;
+  /** Only called while the host is disconnected — see `HostOfflineBanner`. */
+  onTakeHost?: () => void;
   /**
    * Tries the native share sheet first and falls back to the clipboard,
    * reporting which one actually happened so the lobby only shows "تم النسخ"
@@ -61,11 +64,13 @@ export function LobbyScreen({
   onChangeMode,
   onStart,
   onLeave,
+  onTakeHost,
   onShareCode,
 }: LobbyScreenProps) {
   const [justCopied, setJustCopied] = useState(false);
   const roster = Object.values(players).sort((a, b) => a.joinedAt - b.joinedAt);
   const connectedCount = roster.filter((p) => presence[p.id]?.connected).length;
+  const hostOnline = presence[hostId]?.connected !== false;
 
   async function handleShare() {
     const result = await onShareCode?.();
@@ -128,6 +133,8 @@ export function LobbyScreen({
       }
     >
       <div className="flex flex-1 flex-col gap-5 py-4">
+        {!hostOnline && !isHost && onTakeHost && <HostOfflineBanner onTakeHost={onTakeHost} />}
+
         <section className="text-center">
           <p className="font-body text-sm text-ink-soft">كود الغرفة</p>
           <p dir="ltr" className="mt-1 font-display text-3xl tracking-[0.3em] text-ink">
