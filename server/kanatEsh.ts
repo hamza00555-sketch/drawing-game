@@ -18,13 +18,13 @@ import {
   chainAssignments,
   chainAssignmentsDuo,
   chainLength,
-  duoLinksPerTrack,
   linkTypeAt,
   pickSeed,
   pickTwoDistinctSeeds,
   readableLinkIndex,
   scoreKanatEshRound,
 } from '../shared/kanatEsh.js';
+import { MODE_TUNABLES, resolveSettings } from '../shared/tunables.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
 async function connectedIds(roomId: string): Promise<string[]> {
@@ -64,13 +64,16 @@ export async function startKanatEshRound(uid: string, data: RequestData): Promis
 
   const isDuo = playerIds.length === 2;
 
+  const settingsSnap = await db().ref(`rooms/${roomId}/settings/kanatEsh`).get();
+  const tuned = resolveSettings(KANAT_ESH, settingsSnap.val(), MODE_TUNABLES.kanatEsh);
+
   const usedSnap = await db().ref(`rooms/${roomId}/usedSeeds`).get();
   const used = Object.values(usedSnap.val() ?? {}) as string[];
 
   if (isDuo) {
     const [p1, p2] = playerIds as [string, string];
     const [seedA, seedB] = pickTwoDistinctSeeds(used);
-    const linksPerTrack = duoLinksPerTrack();
+    const linksPerTrack = 1 + tuned.duo.repeats * 2;
 
     const authorsByTrack: Record<'0' | '1', string[]> = {
       '0': chainAssignmentsDuo(p1, p2, linksPerTrack),
@@ -79,7 +82,7 @@ export async function startKanatEshRound(uid: string, data: RequestData): Promis
 
     const gameId = db().ref().push().key as string;
     const firstDuration =
-      linkTypeAt(1) === 'drawing' ? KANAT_ESH.duo.drawMs : KANAT_ESH.duo.writeMs;
+      linkTypeAt(1) === 'drawing' ? tuned.duo.drawMs : tuned.duo.writeMs;
 
     /*
      * The two tracks run in LOCKSTEP: one shared index, one shared deadline.
@@ -123,6 +126,8 @@ export async function startKanatEshRound(uid: string, data: RequestData): Promis
           currentIndex: 1,
           currentIndexKey: '1',
           phaseEndsAt: Date.now() + firstDuration,
+          drawMs: tuned.duo.drawMs,
+          writeMs: tuned.duo.writeMs,
           tracks,
           visibleTo,
         },
@@ -164,7 +169,7 @@ export async function startKanatEshRound(uid: string, data: RequestData): Promis
         gameId,
         mode: 'kanatEsh',
         phase: 'turn',
-        phaseEndsAt: Date.now() + KANAT_ESH.drawMs,
+        phaseEndsAt: Date.now() + tuned.drawMs,
         currentIndex: 1,
         // String mirror of currentIndex. The linkStrokes rule matches it against
         // the $index wildcard, which is always a string — comparing it to the
@@ -174,6 +179,8 @@ export async function startKanatEshRound(uid: string, data: RequestData): Promis
         currentPlayerId: firstAuthor,
         totalLinks,
         authorByIndex,
+        drawMs: tuned.drawMs,
+        writeMs: tuned.writeMs,
         visibleTo: visibilityFor(0, firstAuthor),
       },
     });
@@ -276,7 +283,11 @@ export async function submitKanatEshLink(uid: string, data: RequestData): Promis
     currentIndex: nextIndex,
     currentIndexKey: String(nextIndex),
     currentPlayerId: nextAuthor,
-    phaseEndsAt: Date.now() + (nextType === 'drawing' ? KANAT_ESH.drawMs : KANAT_ESH.writeMs),
+    phaseEndsAt:
+      Date.now() +
+      (nextType === 'drawing'
+        ? (game.drawMs ?? KANAT_ESH.drawMs)
+        : (game.writeMs ?? KANAT_ESH.writeMs)),
     // Replaced wholesale, so the previous player's grant is revoked.
     visibleTo: visibilityFor(readableLinkIndex(nextIndex), nextAuthor),
   });
@@ -397,7 +408,10 @@ export async function submitKanatEshLinkDuo(uid: string, data: RequestData): Pro
   }
 
   const nextType = linkTypeAt(nextIndex);
-  const duration = nextType === 'drawing' ? KANAT_ESH.duo.drawMs : KANAT_ESH.duo.writeMs;
+  const duration =
+    nextType === 'drawing'
+      ? (game.drawMs ?? KANAT_ESH.duo.drawMs)
+      : (game.writeMs ?? KANAT_ESH.duo.writeMs);
 
   // Both grants replaced wholesale, so the previous index's grants are
   // revoked on both tracks at once.

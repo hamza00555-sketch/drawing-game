@@ -25,6 +25,7 @@ import type { RequestData } from './types.js';
 import { MOZAWWER, MOZAWWER_WORDS, scoreMozawwerRound, tallyVotes, isCorrectGuess } from '../shared/mozawwer.js';
 import { shuffle } from '../shared/random.js';
 import { nextInTurnCycle, type TurnCycleState } from '../shared/turnCycle.js';
+import { MODE_TUNABLES, resolveSettings } from '../shared/tunables.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
 // Each mode lives in its own module; re-exported so they deploy together.
@@ -94,7 +95,7 @@ export async function startMozawwerRound(uid: string, data: RequestData): Promis
   }
 
   const settingsSnap = await db().ref(`rooms/${roomId}/settings/mozawwer`).get();
-  const settings = { ...MOZAWWER, ...(settingsSnap.val() ?? {}) };
+  const settings = resolveSettings(MOZAWWER, settingsSnap.val(), MODE_TUNABLES.mozawwer);
 
   const usedSnap = await db().ref(`rooms/${roomId}/usedWords`).get();
   const used = new Set<string>(Object.values(usedSnap.val() ?? {}) as string[]);

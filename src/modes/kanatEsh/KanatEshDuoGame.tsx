@@ -13,6 +13,7 @@ import {
   watchDuoChainLink,
   type ChainLinkRecord,
 } from '../../engine/game';
+import { useDrawingWidths } from '../../engine/useDrawingWidths';
 import { useDeadline, usePlayerSecret, type LiveRoundProps } from '../liveRound';
 import { KANAT_ESH, linkTypeAt, readableLinkIndex } from './rules';
 import { KanatEshTurnScreen } from './screens/KanatEshTurnScreen';
@@ -46,6 +47,7 @@ export function KanatEshDuoGame({
   onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
+  const widths = useDrawingWidths(roomId);
 
   const isHost = selfId === hostId;
   const currentIndex = game.currentIndex ?? 1;
@@ -165,6 +167,8 @@ export function KanatEshDuoGame({
   if (game.phase === 'turn') {
     return (
       <KanatEshTurnScreen
+          penWidth={widths.penWidth}
+          eraserWidth={widths.eraserWidth}
         linkType={linkType}
         {...(previousLink?.type === 'text' ? { previousText: previousLink.content } : {})}
         {...(previousStrokes.length > 0 ? { previousStrokes } : {})}
@@ -178,7 +182,11 @@ export function KanatEshDuoGame({
         strokes={session.strokes}
         penColor={penColorFor(players[selfId]?.characterId)}
         endsAt={game.phaseEndsAt}
-        durationMs={linkType === 'drawing' ? KANAT_ESH.duo.drawMs : KANAT_ESH.duo.writeMs}
+        durationMs={
+          linkType === 'drawing'
+            ? (game.drawMs ?? KANAT_ESH.duo.drawMs)
+            : (game.writeMs ?? KANAT_ESH.duo.writeMs)
+        }
         onSubmitText={(text) => submit(text)}
         onSubmitDrawing={() => submit()}
         onStrokeStart={session.onStrokeStart}

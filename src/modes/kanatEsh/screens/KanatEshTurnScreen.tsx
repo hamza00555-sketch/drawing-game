@@ -33,6 +33,9 @@ export interface KanatEshTurnScreenProps {
   selfId: string;
   strokes: readonly Stroke[];
   penColor: string;
+  /** Room-tuned stroke widths. */
+  penWidth?: number;
+  eraserWidth?: number;
   endsAt: number | null | undefined;
   durationMs: number;
   onSubmitText: (text: string) => void;
@@ -58,6 +61,8 @@ export function KanatEshTurnScreen({
   selfId,
   strokes,
   penColor,
+  penWidth,
+  eraserWidth,
   endsAt,
   durationMs,
   onSubmitText,
@@ -131,7 +136,8 @@ export function KanatEshTurnScreen({
               enabled
               tool={tool}
               color={penColor}
-              width={0.012}
+              width={penWidth ?? 0.012}
+            {...(eraserWidth === undefined ? {} : { eraserWidth })}
               playerId={selfId}
               strokes={strokes}
               nextSeq={nextSeq}

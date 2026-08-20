@@ -30,6 +30,9 @@ export interface MozawwerDrawScreenProps {
   turnOrder: readonly string[];
   strokes: readonly Stroke[];
   penColor: string;
+  /** Room-tuned stroke widths. */
+  penWidth?: number;
+  eraserWidth?: number;
   turnEndsAt: number | null | undefined;
   turnDurationMs: number;
   /** False until enough turns have passed — see rules.canOfferReady. */
@@ -61,6 +64,8 @@ export function MozawwerDrawScreen({
   turnOrder,
   strokes,
   penColor,
+  penWidth,
+  eraserWidth,
   turnEndsAt,
   turnDurationMs,
   canOfferReady,
@@ -144,7 +149,8 @@ export function MozawwerDrawScreen({
             enabled={myTurn}
             tool={tool}
             color={penColor}
-            width={0.012}
+            width={penWidth ?? 0.012}
+            {...(eraserWidth === undefined ? {} : { eraserWidth })}
             playerId={selfId}
             strokes={strokes}
             nextSeq={nextSeq}

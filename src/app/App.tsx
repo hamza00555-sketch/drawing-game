@@ -11,8 +11,10 @@ import {
   joinRoomByCode,
   leaveRoom,
   setRoomMode,
+  setRoomSettings,
   watchPlayers,
   watchRoom,
+  watchRoomSettings,
   RoomError,
   type GameMode,
   type Room,
@@ -36,6 +38,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { JoinScreen } from '../screens/JoinScreen';
 import { LobbyScreen } from '../screens/LobbyScreen';
 import { ModeSelectScreen } from '../screens/ModeSelectScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 
 /**
  * App shell and routing.
@@ -52,7 +55,8 @@ type Route =
   | { name: 'create' }
   | { name: 'join' }
   | { name: 'lobby' }
-  | { name: 'modeSelect' };
+  | { name: 'modeSelect' }
+  | { name: 'settings' };
 
 export function App() {
   const [route, setRoute] = useState<Route>({ name: 'splash' });
@@ -66,6 +70,7 @@ export function App() {
   const [selfId, setSelfId] = useState<string | undefined>(undefined);
   const [game, setGame] = useState<GameState | undefined>(undefined);
   const [scores, setScores] = useState<Record<string, number>>({});
+  const [roomSettings, setRoomSettingsState] = useState<Record<string, unknown>>({});
 
   const roomId = useSession((state) => state.roomId);
   const setRoomId = useSession((state) => state.setRoomId);
@@ -90,6 +95,7 @@ export function App() {
     const stopCharacters = watchCharacters(roomId, setCharactersTaken);
     const stopGame = watchGame(roomId, setGame);
     const stopScores = watchScores(roomId, setScores);
+    const stopSettings = watchRoomSettings(roomId, setRoomSettingsState);
 
     return () => {
       stopRoom();
@@ -98,6 +104,7 @@ export function App() {
       stopCharacters();
       stopGame();
       stopScores();
+      stopSettings();
     };
   }, [roomId]);
 
@@ -227,6 +234,19 @@ export function App() {
         />
       );
 
+    case 'settings':
+      return (
+        <SettingsScreen
+          value={roomSettings}
+          locked={Boolean(game)}
+          onChange={(next) => {
+            setRoomSettingsState(next);
+            if (roomId) void setRoomSettings(roomId, next).catch(() => undefined);
+          }}
+          onBack={() => setRoute({ name: 'lobby' })}
+        />
+      );
+
     case 'lobby':
       if (!room || !selfId) {
         return (
@@ -246,6 +266,7 @@ export function App() {
           {...(room.currentMode === undefined ? {} : { currentMode: room.currentMode })}
           onChangeMode={() => setRoute({ name: 'modeSelect' })}
           onTakeHost={handleTakeHost}
+          {...(selfId === room.hostId ? { onSettings: () => setRoute({ name: 'settings' }) } : {})}
           {...(busy ? { starting: true } : {})}
           {...(error === undefined ? {} : { error })}
           onStart={() => {

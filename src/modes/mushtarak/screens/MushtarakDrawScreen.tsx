@@ -37,6 +37,9 @@ export interface MushtarakDrawScreenProps {
   artistIds: readonly string[];
   /** Pen colour per artist id. */
   penColors: Record<string, string>;
+  /** Room-tuned stroke widths. */
+  penWidth?: number;
+  eraserWidth?: number;
   strokes: readonly Stroke[];
   endsAt: number | null | undefined;
   durationMs: number;
@@ -67,6 +70,8 @@ export function MushtarakDrawScreen({
   players,
   artistIds,
   penColors,
+  penWidth,
+  eraserWidth,
   strokes,
   endsAt,
   durationMs,
@@ -186,7 +191,8 @@ export function MushtarakDrawScreen({
             enabled={canDrawNow}
             tool={tool}
             color={penColors[selfId] ?? '#2a211c'}
-            width={0.012}
+            width={penWidth ?? 0.012}
+            {...(eraserWidth === undefined ? {} : { eraserWidth })}
             playerId={selfId}
             strokes={strokes}
             nextSeq={nextSeq}

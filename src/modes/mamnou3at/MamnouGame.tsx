@@ -3,6 +3,7 @@ import { penColorFor } from '../../design/penColors';
 import { useDrawingSession } from '../../engine/canvas/useDrawingSession';
 import type { DrawingCanvasHandle } from '../../design/components/DrawingCanvas';
 import { callGame, watchGuesses, type GuessRecord } from '../../engine/game';
+import { useDrawingWidths } from '../../engine/useDrawingWidths';
 import { useDeadline, usePlayerSecret, type LiveRoundProps } from '../liveRound';
 import { MAMNOU3AT } from '../../../shared/mamnou3at';
 import { MamnouBriefScreen } from './screens/MamnouBriefScreen';
@@ -32,6 +33,7 @@ export function MamnouGame({
   onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
+  const widths = useDrawingWidths(roomId);
   const secret = usePlayerSecret(roomId, game.gameId, selfId);
   const [guesses, setGuesses] = useState<GuessRecord[]>([]);
 
@@ -77,6 +79,8 @@ export function MamnouGame({
     case 'draw':
       return (
         <MamnouDrawScreen
+          penWidth={widths.penWidth}
+          eraserWidth={widths.eraserWidth}
           isArtist={isArtist}
           {...(secret?.word === undefined ? {} : { word: secret.word })}
           {...(secret?.forbidden === undefined ? {} : { forbidden: secret.forbidden })}

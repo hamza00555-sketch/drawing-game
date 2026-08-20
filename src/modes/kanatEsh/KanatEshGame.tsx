@@ -8,6 +8,7 @@ import { readStrokesOnce } from '../../engine/canvas/strokeSync';
 import type { Stroke } from '../../engine/canvas/strokes';
 import { paths } from '../../engine/paths';
 import { callGame, watchChain, watchChainLink, type ChainLinkRecord } from '../../engine/game';
+import { useDrawingWidths } from '../../engine/useDrawingWidths';
 import { useDeadline, usePlayerSecret, type LiveRoundProps } from '../liveRound';
 import { KANAT_ESH, linkTypeAt, readableLinkIndex } from './rules';
 import { KanatEshTurnScreen } from './screens/KanatEshTurnScreen';
@@ -40,6 +41,7 @@ export function KanatEshGame({
   onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
+  const widths = useDrawingWidths(roomId);
 
   const currentIndex = game.currentIndex ?? 1;
   const totalLinks = game.totalLinks ?? 0;
@@ -139,6 +141,8 @@ export function KanatEshGame({
   if (game.phase === 'turn') {
     return (
       <KanatEshTurnScreen
+          penWidth={widths.penWidth}
+          eraserWidth={widths.eraserWidth}
         linkType={linkType}
         {...(previousLink?.type === 'text' ? { previousText: previousLink.content } : {})}
         {...(previousStrokes.length > 0 ? { previousStrokes } : {})}
@@ -150,7 +154,11 @@ export function KanatEshGame({
         strokes={session.strokes}
         penColor={penColorFor(players[selfId]?.characterId)}
         endsAt={game.phaseEndsAt}
-        durationMs={linkType === 'drawing' ? KANAT_ESH.drawMs : KANAT_ESH.writeMs}
+        durationMs={
+          linkType === 'drawing'
+            ? (game.drawMs ?? KANAT_ESH.drawMs)
+            : (game.writeMs ?? KANAT_ESH.writeMs)
+        }
         onSubmitText={(text) => submit(text)}
         onSubmitDrawing={() => submit()}
         onStrokeStart={session.onStrokeStart}

@@ -3,6 +3,7 @@ import { DrawingCanvas, type DrawingCanvasHandle } from '../../design/components
 import { penColorFor } from '../../design/penColors';
 import { useDrawingSession } from '../../engine/canvas/useDrawingSession';
 import { callGame, castVote, watchVoteMarks } from '../../engine/game';
+import { useDrawingWidths } from '../../engine/useDrawingWidths';
 import { useDeadline, usePlayerSecret, type LiveRoundProps } from '../liveRound';
 import { canOfferReady, type MozawwerState } from './rules';
 import { MOZAWWER } from '../../../shared/mozawwer';
@@ -38,6 +39,7 @@ export function MozawwerGame({
   onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
+  const widths = useDrawingWidths(roomId);
   const secret = usePlayerSecret(roomId, game.gameId, selfId);
 
   const [confirmedRole, setConfirmedRole] = useState(false);
@@ -123,6 +125,8 @@ export function MozawwerGame({
     case 'draw':
       return (
         <MozawwerDrawScreen
+          penWidth={widths.penWidth}
+          eraserWidth={widths.eraserWidth}
           {...(secret?.word === undefined ? {} : { word: secret.word })}
           isImpostor={isImpostor}
           selfId={selfId}

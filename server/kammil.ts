@@ -21,6 +21,7 @@ import {
 } from '../shared/kammil.js';
 import { MOZAWWER_WORDS, isCorrectGuess } from '../shared/mozawwer.js';
 import { nextInTurnCycle, type TurnCycleState } from '../shared/turnCycle.js';
+import { MODE_TUNABLES, resolveSettings } from '../shared/tunables.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
 interface RoomPlayer {
@@ -56,6 +57,9 @@ export async function startKammilRound(uid: string, data: RequestData): Promise<
 
   const isDuo = playerIds.length === 2;
 
+  const settingsSnap = await db().ref(`rooms/${roomId}/settings/kammil`).get();
+  const tuned = resolveSettings(KAMMIL, settingsSnap.val(), MODE_TUNABLES.kammil);
+
   // Who guesses is a fair rotation, not a fresh coin flip each round: shuffle
   // the room once, hand the role to the next player in that order, and only
   // reshuffle once everyone has had it. At two players this is exactly the
@@ -69,8 +73,8 @@ export async function startKammilRound(uid: string, data: RequestData): Promise<
   const word = MOZAWWER_WORDS[Math.floor(Math.random() * MOZAWWER_WORDS.length)];
   if (!word) throw new GameError('internal', 'تعذّر اختيار كلمة.');
 
-  const countdownMs = isDuo ? KAMMIL.duo.countdownMs : KAMMIL.countdownMs;
-  const turnMs = isDuo ? KAMMIL.duo.turnMs : kammilDrawMs(artistIds.length);
+  const countdownMs = isDuo ? tuned.duo.countdownMs : tuned.countdownMs;
+  const turnMs = isDuo ? tuned.duo.turnMs : kammilDrawMs(artistIds.length);
 
   const gameId = db().ref().push().key as string;
 
@@ -106,7 +110,8 @@ export async function startKammilRound(uid: string, data: RequestData): Promise<
         countdownMs,
         isDuo,
         stage: 0,
-        totalStages: isDuo ? KAMMIL.duo.stages : 1,
+        totalStages: isDuo ? tuned.duo.stages : 1,
+        guessMs: isDuo ? tuned.duo.guessMs : tuned.guessMs,
       },
     });
 
@@ -154,8 +159,8 @@ export async function advanceKammil(uid: string, data: RequestData): Promise<unk
       }
 
       const nextIndex = game.turnIndex + 1;
-      const guessMs = game.isDuo ? KAMMIL.duo.guessMs : KAMMIL.guessMs;
-      const countdownMs = game.isDuo ? KAMMIL.duo.countdownMs : KAMMIL.countdownMs;
+      const guessMs = game.guessMs ?? (game.isDuo ? KAMMIL.duo.guessMs : KAMMIL.guessMs);
+      const countdownMs = game.countdownMs ?? (game.isDuo ? KAMMIL.duo.countdownMs : KAMMIL.countdownMs);
 
       if (nextIndex >= artistIds.length) {
         await gameRef.update({
@@ -207,7 +212,7 @@ export async function advanceKammil(uid: string, data: RequestData): Promise<unk
       if (game.isDuo && !correct && stage + 1 < totalStages) {
         await gameRef.update({
           phase: 'countdown',
-          phaseEndsAt: Date.now() + KAMMIL.duo.countdownMs,
+          phaseEndsAt: Date.now() + (game.countdownMs ?? KAMMIL.duo.countdownMs),
           currentPlayerId: artistIds[0],
           stage: stage + 1,
           lastGuess: guess,

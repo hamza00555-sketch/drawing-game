@@ -20,6 +20,7 @@ import { MushtarakPreview, MUSHTARAK_PREVIEWS } from './MushtarakPreview';
 import { KanatEshPreview, KANAT_ESH_PREVIEWS } from './KanatEshPreview';
 import { RoundScoresScreen } from '../screens/RoundScoresScreen';
 import { ButtonStyleSheet } from './ButtonStyleSheet';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 
 const players: Record<string, RoomPlayer> = {
@@ -152,6 +153,9 @@ export function PreviewGallery({ screen }: { screen: string }) {
     case 'buttons':
       return <ButtonStyleSheet />;
 
+    case 'settings':
+      return <SettingsScreen value={{}} onChange={noop} onBack={noop} />;
+
     default:
       if ((MOZAWWER_PREVIEWS as readonly string[]).includes(screen)) {
         return <MozawwerPreview phase={screen} />;
@@ -181,6 +185,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
               'modes',
               'modes-duo',
               'buttons',
+              'settings',
               'draw',
               'lobby-start-failed',
               'scores',

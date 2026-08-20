@@ -36,6 +36,9 @@ export interface MamnouDrawScreenProps {
   players: Record<string, RoomPlayer>;
   strokes: readonly Stroke[];
   penColor: string;
+  /** Room-tuned stroke widths. */
+  penWidth?: number;
+  eraserWidth?: number;
   endsAt: number | null | undefined;
   durationMs: number;
   /** Recent guesses, newest first. Correctness is decided server-side. */
@@ -62,6 +65,8 @@ export function MamnouDrawScreen({
   players,
   strokes,
   penColor,
+  penWidth,
+  eraserWidth,
   endsAt,
   durationMs,
   guesses,
@@ -159,7 +164,8 @@ export function MamnouDrawScreen({
               enabled={isArtist}
               tool={tool}
               color={penColor}
-              width={0.012}
+              width={penWidth ?? 0.012}
+            {...(eraserWidth === undefined ? {} : { eraserWidth })}
               playerId={selfId}
               strokes={strokes}
               nextSeq={nextSeq}

@@ -20,7 +20,7 @@ import { ensureSignedIn, getDb } from './firebase';
 import { serverNow } from './clock';
 import { releaseAllForPlayer, switchCharacter } from './characters';
 import { paths } from './paths';
-import { DEFAULT_BALANCE, ROOM } from '../config/balance';
+import { ROOM } from '../config/balance';
 import type { RoomPlayer } from './presence';
 
 export type RoomStatus = 'lobby' | 'playing' | 'closed';
@@ -117,9 +117,13 @@ export async function createRoom(options: CreateRoomOptions): Promise<Room> {
   const code = await claimUnusedCode(roomId);
   await update(ref(db, paths.room(roomId)), { code });
 
-  // Each room snapshots the balance at creation, so a live playtest can be
-  // retuned from the host device without a redeploy.
-  await set(ref(db, paths.roomSettings(roomId)), DEFAULT_BALANCE);
+  /*
+   * No balance snapshot is written here. The room stores ONLY the values its
+   * host actually changed, and everything else resolves from the defaults in
+   * code at round start (`resolveSettings`). Snapshotting the whole balance
+   * instead would freeze each room at whatever the defaults were on the day it
+   * was created, so a later tuning fix would never reach rooms already made.
+   */
 
   await joinRoomById(roomId, options);
 
@@ -211,6 +215,27 @@ export async function setReady(
 
 export async function setRoomMode(roomId: string, mode: GameMode): Promise<void> {
   await set(ref(getDb(), paths.roomMode(roomId)), mode);
+}
+
+/**
+ * Host-only room settings. The security rule refuses this from anyone else,
+ * and refuses it entirely while a round is live, so a value cannot be changed
+ * mid-round to swing an outcome.
+ */
+export async function setRoomSettings(
+  roomId: string,
+  settings: Record<string, unknown>,
+): Promise<void> {
+  await set(ref(getDb(), paths.roomSettings(roomId)), settings);
+}
+
+export function watchRoomSettings(
+  roomId: string,
+  onChange: (settings: Record<string, unknown>) => void,
+): () => void {
+  return onValue(ref(getDb(), paths.roomSettings(roomId)), (snapshot) => {
+    onChange((snapshot.val() as Record<string, unknown> | null) ?? {});
+  });
 }
 
 /**

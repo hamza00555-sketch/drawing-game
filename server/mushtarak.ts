@@ -19,6 +19,7 @@ import {
   scoreMushtarakRound,
 } from '../shared/mushtarak.js';
 import { isCorrectGuess } from '../shared/mozawwer.js';
+import { MODE_TUNABLES, resolveSettings } from '../shared/tunables.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
 /** The split prompt. Each artist gets one half via playerSecrets; nobody gets both. */
@@ -56,6 +57,9 @@ export async function startMushtarakRound(uid: string, data: RequestData): Promi
 
   const isDuo = playerIds.length === 2;
 
+  const settingsSnap = await db().ref(`rooms/${roomId}/settings/mushtarak`).get();
+  const tuned = resolveSettings(MUSHTARAK, settingsSnap.val(), MODE_TUNABLES.mushtarak);
+
   const usedSnap = await db().ref(`rooms/${roomId}/usedWords`).get();
   const combo = pickCombo(Object.values(usedSnap.val() ?? {}) as string[]);
   const gameId = db().ref().push().key as string;
@@ -86,15 +90,17 @@ export async function startMushtarakRound(uid: string, data: RequestData): Promi
           gameId,
           mode: 'mushtarak',
           phase: 'brief',
-          phaseEndsAt: Date.now() + MUSHTARAK.duo.briefMs,
+          phaseEndsAt: Date.now() + tuned.duo.briefMs,
           artistIds: [a, b],
           // Both players are artists AND, at the end, each other's guessers.
           guesserIds: [],
           isDuo: true,
           turnIndex: 0,
-          totalSwaps: MUSHTARAK.duo.totalSwaps,
-          turnMs: MUSHTARAK.duo.turnMs,
+          totalSwaps: tuned.duo.totalSwaps,
+          turnMs: tuned.duo.turnMs,
           currentPlayerId: a,
+          guessMs: tuned.duo.guessMs,
+          briefMs: tuned.duo.briefMs,
           // No `activeDrawers`: the stroke rule falls back to matching
           // `currentPlayerId`, which is exactly the one-at-a-time turn this
           // ruleset needs — unlike the group version's simultaneous pair.
@@ -134,12 +140,15 @@ export async function startMushtarakRound(uid: string, data: RequestData): Promi
         gameId,
         mode: 'mushtarak',
         phase: 'brief',
-        phaseEndsAt: Date.now() + MUSHTARAK.briefMs,
+        phaseEndsAt: Date.now() + tuned.briefMs,
         artistIds,
         guesserIds,
         // activeDrawers is what the stroke security rule checks — this is the
         // one mode where more than one player may write strokes at once.
         activeDrawers: Object.fromEntries(artistIds.map((id) => [id, true])),
+        drawMs: tuned.drawMs,
+        guessMs: tuned.guessMs,
+        briefMs: tuned.briefMs,
       },
     });
 
@@ -158,7 +167,9 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
   switch (action) {
     case 'beginDrawing': {
       if (game.phase !== 'brief') return { phase: game.phase };
-      const duration = game.isDuo ? (game.turnMs ?? MUSHTARAK.duo.turnMs) : MUSHTARAK.drawMs;
+      const duration = game.isDuo
+        ? (game.turnMs ?? MUSHTARAK.duo.turnMs)
+        : (game.drawMs ?? MUSHTARAK.drawMs);
       await gameRef.update({ phase: 'draw', phaseEndsAt: Date.now() + duration });
       return { phase: 'draw' };
     }
@@ -201,7 +212,7 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
       if (nextIndex >= totalSwaps) {
         await gameRef.update({
           phase: 'guess',
-          phaseEndsAt: Date.now() + MUSHTARAK.duo.guessMs,
+          phaseEndsAt: Date.now() + (game.guessMs ?? MUSHTARAK.duo.guessMs),
           currentPlayerId: null,
           // Nobody may draw once guessing starts.
           activeDrawers: null,
@@ -221,7 +232,7 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
       if (game.phase !== 'draw' || game.isDuo) return { phase: game.phase };
       await gameRef.update({
         phase: 'guess',
-        phaseEndsAt: Date.now() + MUSHTARAK.guessMs,
+        phaseEndsAt: Date.now() + (game.guessMs ?? MUSHTARAK.guessMs),
         // Nobody may draw once guessing starts.
         activeDrawers: null,
       });

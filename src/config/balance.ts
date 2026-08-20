@@ -4,16 +4,19 @@
  * Every tunable number in the game lives here. No component, no mode machine
  * and no Cloud Function may hardcode a duration, a score value or a rule.
  *
- * These values are copied into `rooms/{roomId}/settings` when a room is created,
- * so a live playtest can be re-balanced from the host device without a redeploy.
- * Read balance from the room, not from this file, at runtime — this is only the
- * default seed. See `resolveBalance()` at the bottom.
+ * These are the DEFAULTS. A room stores only the values its host actually
+ * changed from the settings screen, and the two are merged at round start by
+ * `resolveSettings` in shared/tunables.ts — which also decides which of these
+ * may be overridden at all, and clamps each one to a sane range.
  *
  * Everything here is expected to change after the first real playtest.
  */
 
 import { MOZAWWER, type ReadyToVoteRule } from '../../shared/mozawwer';
 import { KAMMIL, kammilDrawMs } from '../../shared/kammil';
+import { MAMNOU3AT } from '../../shared/mamnou3at';
+import { MUSHTARAK } from '../../shared/mushtarak';
+import { KANAT_ESH } from '../../shared/kanatEsh';
 
 export const ROOM = {
   /**
@@ -49,45 +52,14 @@ export type { ReadyToVoteRule };
  */
 export { KAMMIL, kammilDrawMs };
 
-export const MAMNOU3AT = {
-  drawMs: 75_000,
-  /** How many forbidden elements are shown to the artist. */
-  forbiddenCount: 3,
-  /** Guessers see letter count only; unlimited attempts while time runs. */
-  unlimitedGuesses: true,
-  scores: {
-    /** Ordered payout for the first correct guessers. */
-    guessRank: [3, 2, 1],
-    /** Artist earns this per player who guessed correctly. */
-    artistPerCorrectGuess: 1,
-  },
-} as const;
-
-export const MUSHTARAK = {
-  drawMs: 60_000,
-  guessMs: 30_000,
-  /** "فهمتك" — the single limited signal each artist may send per round. */
-  gotYouUsesPerArtist: 1,
-  scores: {
-    guesserCorrect: 3,
-    artistsOnSuccess: 2,
-  },
-  replay: {
-    msPerContribution: 700,
-  },
-} as const;
-
-export const KANAT_ESH = {
-  drawMs: 45_000,
-  writeMs: 35_000,
-  /** Chain length is derived from player count, but clamped for pacing. */
-  minLinks: 4,
-  maxLinks: 10,
-  scores: {
-    /** Awarded per link that the next player interpreted faithfully. */
-    faithfulLink: 2,
-  },
-} as const;
+/*
+ * The remaining three modes live in shared/ for the same reason: the trusted
+ * server logic reads the very same objects. These used to be re-declared here
+ * instead, and had already drifted — this file's الممنوعات was missing
+ * `briefMs` and every Duo value, so anything reading a default from here got a
+ * different answer than the server did.
+ */
+export { MAMNOU3AT, MUSHTARAK, KANAT_ESH };
 
 /** Wiring only — no audio files are produced yet. See ARCHITECTURE.md. */
 export const AUDIO_CUES = [

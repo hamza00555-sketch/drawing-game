@@ -43,6 +43,8 @@ export interface LobbyScreenProps {
   onLeave: () => void;
   /** Only called while the host is disconnected — see `HostOfflineBanner`. */
   onTakeHost?: () => void;
+  /** Host only: open the room's settings. Absent for everyone else. */
+  onSettings?: () => void;
   /**
    * Tries the native share sheet first and falls back to the clipboard,
    * reporting which one actually happened so the lobby only shows "تم النسخ"
@@ -65,6 +67,7 @@ export function LobbyScreen({
   onStart,
   onLeave,
   onTakeHost,
+  onSettings,
   onShareCode,
 }: LobbyScreenProps) {
   const [justCopied, setJustCopied] = useState(false);
@@ -205,6 +208,16 @@ export function LobbyScreen({
             </span>
             {isHost && <span className="text-sm text-ink-faint">تغيير</span>}
           </button>
+
+          {onSettings && (
+            <button
+              type="button"
+              onClick={onSettings}
+              className="mt-2 min-h-tap w-full rounded-md border-thin border-ink-hairline px-3 font-body text-sm text-ink-soft active:translate-y-[1px]"
+            >
+              إعدادات الغرفة
+            </button>
+          )}
         </section>
       </div>
     </Screen>

@@ -3,6 +3,7 @@ import { penColorFor } from '../../design/penColors';
 import { useDrawingSession } from '../../engine/canvas/useDrawingSession';
 import type { DrawingCanvasHandle } from '../../design/components/DrawingCanvas';
 import { callGame, watchGuesses, type GuessRecord } from '../../engine/game';
+import { useDrawingWidths } from '../../engine/useDrawingWidths';
 import { useDeadline, usePlayerSecret, type LiveRoundProps } from '../liveRound';
 import { MUSHTARAK, canSendGotYou, type MushtarakState } from './rules';
 import { MamnouBriefScreen } from '../mamnou3at/screens/MamnouBriefScreen';
@@ -34,6 +35,7 @@ export function MushtarakGame({
   onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
+  const widths = useDrawingWidths(roomId);
   const secret = usePlayerSecret(roomId, game.gameId, selfId);
   const [guesses, setGuesses] = useState<GuessRecord[]>([]);
   const [guessSubmitted, setGuessSubmitted] = useState(false);
@@ -106,7 +108,7 @@ export function MushtarakGame({
           word={secret?.part ?? ''}
           forbidden={[]}
           endsAt={game.phaseEndsAt}
-          durationMs={isDuo ? MUSHTARAK.duo.briefMs : MUSHTARAK.briefMs}
+          durationMs={game.briefMs ?? (isDuo ? MUSHTARAK.duo.briefMs : MUSHTARAK.briefMs)}
           onReady={() => {
             if (isHost) advance({ action: 'beginDrawing' });
           }}
@@ -116,6 +118,8 @@ export function MushtarakGame({
     case 'draw':
       return (
         <MushtarakDrawScreen
+          penWidth={widths.penWidth}
+          eraserWidth={widths.eraserWidth}
           {...(secret?.part === undefined ? {} : { myPart: secret.part })}
           isArtist={isArtist}
           isDuo={isDuo}
@@ -128,7 +132,7 @@ export function MushtarakGame({
           penColors={penColors}
           strokes={session.strokes}
           endsAt={game.phaseEndsAt}
-          durationMs={isDuo ? (game.turnMs ?? MUSHTARAK.duo.turnMs) : MUSHTARAK.drawMs}
+          durationMs={isDuo ? (game.turnMs ?? MUSHTARAK.duo.turnMs) : (game.drawMs ?? MUSHTARAK.drawMs)}
           gotYouUsedBy={Object.keys(game.gotYouUsedBy ?? {})}
           gotYouFrom={game.gotYouFrom}
           canSendGotYou={canSendGotYou(
@@ -165,7 +169,7 @@ export function MushtarakGame({
           }
           strokes={session.strokes}
           endsAt={game.phaseEndsAt}
-          durationMs={isDuo ? MUSHTARAK.duo.guessMs : MUSHTARAK.guessMs}
+          durationMs={game.guessMs ?? (isDuo ? MUSHTARAK.duo.guessMs : MUSHTARAK.guessMs)}
           submitted={guessSubmitted || guesses.some((g) => g.playerId === selfId)}
           onGuess={(guess) => {
             setGuessSubmitted(true);

@@ -3,6 +3,7 @@ import { penColorFor } from '../../design/penColors';
 import { useDrawingSession } from '../../engine/canvas/useDrawingSession';
 import type { DrawingCanvasHandle } from '../../design/components/DrawingCanvas';
 import { callGame } from '../../engine/game';
+import { useDrawingWidths } from '../../engine/useDrawingWidths';
 import { useDeadline, usePlayerSecret, type LiveRoundProps } from '../liveRound';
 import { KAMMIL, kammilDrawMs } from '../../../shared/kammil';
 import { KammilDrawScreen } from './screens/KammilDrawScreen';
@@ -35,6 +36,7 @@ export function KammilGame({
   onChangeMode,
 }: LiveRoundProps) {
   const canvasRef = useRef<DrawingCanvasHandle | null>(null);
+  const widths = useDrawingWidths(roomId);
   const secret = usePlayerSecret(roomId, game.gameId, selfId);
   const [guessSubmitted, setGuessSubmitted] = useState(false);
 
@@ -85,6 +87,8 @@ export function KammilGame({
     case 'turn':
       return (
         <KammilDrawScreen
+          penWidth={widths.penWidth}
+          eraserWidth={widths.eraserWidth}
           {...(secret?.word === undefined ? {} : { word: secret.word })}
           isGuesser={isGuesser}
           counting={game.phase === 'countdown'}
@@ -123,7 +127,7 @@ export function KammilGame({
           guesserName={players[game.guesserId ?? '']?.name ?? ''}
           strokes={session.strokes}
           endsAt={game.phaseEndsAt}
-          durationMs={isDuo ? KAMMIL.duo.guessMs : KAMMIL.guessMs}
+          durationMs={game.guessMs ?? (isDuo ? KAMMIL.duo.guessMs : KAMMIL.guessMs)}
           isDuo={isDuo}
           stage={game.stage ?? 0}
           totalStages={game.totalStages ?? 1}

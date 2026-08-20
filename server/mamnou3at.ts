@@ -20,6 +20,7 @@ import {
 } from '../shared/mamnou3at.js';
 import { isCorrectGuess } from '../shared/mozawwer.js';
 import { nextInTurnCycle, type TurnCycleState } from '../shared/turnCycle.js';
+import { MODE_TUNABLES, resolveSettings } from '../shared/tunables.js';
 import { gameSecretPath, readGameSecret } from './secrets.js';
 
 /** Artist-only knowledge. The guessers hold a letter count and nothing else. */
@@ -61,6 +62,10 @@ export async function startMamnouRound(uid: string, data: RequestData): Promise<
 
   const isDuo = playerIds.length === 2;
 
+  // Host-tuned durations for this room, clamped to sane bounds.
+  const settingsSnap = await db().ref(`rooms/${roomId}/settings/mamnou3at`).get();
+  const tuned = resolveSettings(MAMNOU3AT, settingsSnap.val(), MODE_TUNABLES.mamnou3at);
+
   const usedSnap = await db().ref(`rooms/${roomId}/usedWords`).get();
   const used = Object.values(usedSnap.val() ?? {}) as string[];
   const entry = pickTaboo(used);
@@ -75,8 +80,8 @@ export async function startMamnouRound(uid: string, data: RequestData): Promise<
     playerIds,
   );
 
-  const briefMs = isDuo ? MAMNOU3AT.duo.briefMs : MAMNOU3AT.briefMs;
-  const drawMs = isDuo ? MAMNOU3AT.duo.drawMs : MAMNOU3AT.drawMs;
+  const briefMs = isDuo ? tuned.duo.briefMs : tuned.briefMs;
+  const drawMs = isDuo ? tuned.duo.drawMs : tuned.drawMs;
 
   const gameId = db().ref().push().key as string;
 

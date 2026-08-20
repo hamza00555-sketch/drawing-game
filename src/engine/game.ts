@@ -61,6 +61,9 @@ export interface GameState {
   totalStages?: number;
   /** Duo only: what the guesser said last stage, shown back to the artist. */
   lastGuess?: string;
+  /** Room-tuned phase lengths, stamped at round start. */
+  writeMs?: number;
+  guessMs?: number;
 
   // الممنوعات
   artistId?: string;

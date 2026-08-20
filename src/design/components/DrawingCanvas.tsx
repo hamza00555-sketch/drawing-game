@@ -48,8 +48,15 @@ export interface DrawingCanvasProps {
   enabled: boolean;
   tool: Tool;
   color: string;
-  /** Relative to the smaller canvas edge. */
+  /** Pen thickness, relative to the smaller canvas edge. */
   width: number;
+  /**
+   * Eraser thickness, same units. Separate from `width` because a rubber the
+   * exact thickness of the pen is miserable to use on a phone — you end up
+   * scrubbing a hairline back and forth over a mistake. Falls back to the pen
+   * width so existing callers keep their current behaviour.
+   */
+  eraserWidth?: number;
   playerId: string;
   /**
    * The authoritative stroke list.
@@ -77,6 +84,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
       tool,
       color,
       width,
+      eraserWidth,
       playerId,
       strokes,
       nextSeq,
@@ -171,7 +179,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
           seq: nextSeq(),
           tool,
           color,
-          width,
+          width: tool === 'eraser' ? (eraserWidth ?? width) : width,
           startedAt,
         };
         bufferRef.current = new StrokeBuffer(meta);
@@ -192,6 +200,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>
         tool,
         color,
         width,
+        eraserWidth,
         nextSeq,
         now,
         onStrokeStart,

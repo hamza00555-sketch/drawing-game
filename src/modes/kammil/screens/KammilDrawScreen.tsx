@@ -36,6 +36,9 @@ export interface KammilDrawScreenProps {
   artistIds: readonly string[];
   strokes: readonly Stroke[];
   penColor: string;
+  /** Room-tuned stroke widths. */
+  penWidth?: number;
+  eraserWidth?: number;
   /** End of the countdown, or of the turn — whichever phase is live. */
   phaseEndsAt: number | null | undefined;
   turnDurationMs: number;
@@ -64,6 +67,8 @@ export function KammilDrawScreen({
   artistIds,
   strokes,
   penColor,
+  penWidth,
+  eraserWidth,
   phaseEndsAt,
   turnDurationMs,
   countdownDurationMs,
@@ -155,7 +160,8 @@ export function KammilDrawScreen({
             // their entire contribution.
             tool="pen"
             color={penColor}
-            width={0.014}
+            width={penWidth ?? 0.014}
+            {...(eraserWidth === undefined ? {} : { eraserWidth })}
             playerId={selfId}
             strokes={strokes}
             nextSeq={nextSeq}
