@@ -54,9 +54,13 @@ export interface GameState {
   turnMs?: number;
   guess?: string;
   correct?: boolean;
-  /** Duo only: countdown length actually used, and bonus windows spent. */
+  /** Duo only: countdown length actually used. */
   countdownMs?: number;
-  extensionsUsed?: number;
+  /** Duo only: which draw-then-guess stage the round is on, and how many. */
+  stage?: number;
+  totalStages?: number;
+  /** Duo only: what the guesser said last stage, shown back to the artist. */
+  lastGuess?: string;
 
   // الممنوعات
   artistId?: string;
@@ -94,15 +98,11 @@ export interface GameState {
     string,
     {
       ownerId: string;
-      currentIndex: number;
-      currentIndexKey: string;
-      currentPlayerId: string;
-      totalLinks: number;
       authorByIndex: Record<string, string>;
-      phaseEndsAt: number | null;
-      done?: boolean;
     }
   >;
+  /** Duo only: which tracks have filed their link for the current index. */
+  submitted?: Record<string, Record<string, boolean>>;
   seedA?: string;
   seedB?: string;
 

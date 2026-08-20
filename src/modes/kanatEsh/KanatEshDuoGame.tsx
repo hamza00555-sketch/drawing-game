@@ -20,95 +20,19 @@ import { DuoJourneyPoster } from './screens/DuoJourneyPoster';
 import { RoundScoresScreen } from '../../screens/RoundScoresScreen';
 
 type Track = '0' | '1';
-
-/**
- * One track's worth of live state: the single readable previous link, its
- * strokes if it's a drawing, and — once the round reveals — the whole chain
- * with every drawing link's strokes resolved for the poster.
- *
- * Pulled out as its own hook (rather than looping `useEffect` calls by track
- * inside the container) so both tracks get an identical, independently
- * testable slice of logic without ever varying how many hooks render calls —
- * this hook itself is called exactly twice, unconditionally, in the
- * container below.
- */
-function useKanatEshDuoTrack(
-  roomId: string,
-  gameId: string,
-  track: Track,
-  phase: string,
-  isMyTurn: boolean,
-  currentIndex: number,
-) {
-  const [previousLink, setPreviousLink] = useState<ChainLinkRecord | undefined>(undefined);
-  const [previousStrokes, setPreviousStrokes] = useState<Stroke[]>([]);
-  const [chain, setChain] = useState<ChainLinkRecord[]>([]);
-  const [posterStrokes, setPosterStrokes] = useState<Record<number, Stroke[]>>({});
-
-  const previousIndex = readableLinkIndex(currentIndex);
-
-  useEffect(() => {
-    if (phase !== 'turn' || !isMyTurn) {
-      setPreviousLink(undefined);
-      return;
-    }
-    return watchDuoChainLink(roomId, gameId, track, previousIndex, setPreviousLink);
-  }, [roomId, gameId, track, phase, isMyTurn, previousIndex]);
-
-  useEffect(() => {
-    if (!previousLink || previousLink.type !== 'drawing') {
-      setPreviousStrokes([]);
-      return;
-    }
-    let cancelled = false;
-    void readStrokesOnce(paths.duoLinkStrokes(roomId, gameId, track, previousLink.index)).then(
-      (strokes) => {
-        if (!cancelled) setPreviousStrokes(strokes);
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [roomId, gameId, track, previousLink]);
-
-  useEffect(() => {
-    if (phase !== 'reveal' && phase !== 'result') return;
-    return watchDuoChain(roomId, gameId, track, setChain);
-  }, [roomId, gameId, track, phase]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.all(
-      chain
-        .filter((link) => link.type === 'drawing')
-        .map(async (link) => {
-          const strokes = await readStrokesOnce(
-            paths.duoLinkStrokes(roomId, gameId, track, link.index),
-          );
-          return [link.index, strokes] as const;
-        }),
-    ).then((entries) => {
-      if (!cancelled) setPosterStrokes(Object.fromEntries(entries));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [roomId, gameId, track, chain]);
-
-  return { previousLink, previousStrokes, chain, posterStrokes };
-}
+const TRACKS: readonly Track[] = ['0', '1'];
 
 /**
  * كانت إيش؟ Duo, live.
  *
- * Two independent chains instead of one, each seeded by one player's own
- * word. Because the two tracks advance on their own schedules — nothing
- * forces them to stay in lockstep — a player can in principle owe a move on
- * BOTH at once. Rather than build a two-canvas split screen for a case that
- * is rare in practice, this shows ONE track's turn screen at a time,
- * preferring whichever one is actually waiting on this player; the other
- * track's deadline keeps running underneath regardless of what's on screen —
- * `useDeadline` is armed for both tracks unconditionally, every render.
+ * Two chains, one seeded from each player's own word, run in LOCKSTEP: they
+ * share an index and a deadline, and because the author alternates on each
+ * track, at any index the two tracks have different authors. So each player
+ * is always working on exactly one chain — their own this turn, their
+ * partner's the next — and never owes two moves at once.
+ *
+ * That is the whole reason this container can look like the single-chain one:
+ * find the track where it is my turn, show that turn, done.
  */
 export function KanatEshDuoGame({
   roomId,
@@ -121,127 +45,157 @@ export function KanatEshDuoGame({
   onNextRound,
   onChangeMode,
 }: LiveRoundProps) {
-  const canvasRefA = useRef<DrawingCanvasHandle | null>(null);
-  const canvasRefB = useRef<DrawingCanvasHandle | null>(null);
+  const canvasRef = useRef<DrawingCanvasHandle | null>(null);
 
   const isHost = selfId === hostId;
-  const trackA = game.tracks?.['0'];
-  const trackB = game.tracks?.['1'];
+  const currentIndex = game.currentIndex ?? 1;
+  const totalLinks = game.linksPerTrack ?? 0;
+  const linkType = linkTypeAt(currentIndex);
 
   usePlayerSecret(roomId, game.gameId, selfId);
 
-  const isMyTurnA = Boolean(trackA) && !trackA?.done && trackA?.currentPlayerId === selfId;
-  const isMyTurnB = Boolean(trackB) && !trackB?.done && trackB?.currentPlayerId === selfId;
-
-  const stateA = useKanatEshDuoTrack(
-    roomId,
-    game.gameId,
-    '0',
-    game.phase,
-    isMyTurnA,
-    trackA?.currentIndex ?? 1,
+  /** The track this player authors at the current index, if any. */
+  const myTrack = TRACKS.find(
+    (track) => game.tracks?.[track]?.authorByIndex?.[String(currentIndex)] === selfId,
   );
-  const stateB = useKanatEshDuoTrack(
-    roomId,
-    game.gameId,
-    '1',
-    game.phase,
-    isMyTurnB,
-    trackB?.currentIndex ?? 1,
-  );
+  const alreadyFiled = myTrack
+    ? Boolean(game.submitted?.[String(currentIndex)]?.[myTrack])
+    : false;
+  const isMyTurn = Boolean(myTrack) && !alreadyFiled;
 
-  const sessionA = useDrawingSession({
+  const [previousLink, setPreviousLink] = useState<ChainLinkRecord | undefined>(undefined);
+  const [previousStrokes, setPreviousStrokes] = useState<Stroke[]>([]);
+  const [chains, setChains] = useState<Record<Track, ChainLinkRecord[]>>({ '0': [], '1': [] });
+  const [posterStrokes, setPosterStrokes] = useState<Record<Track, Record<number, Stroke[]>>>({
+    '0': {},
+    '1': {},
+  });
+
+  const session = useDrawingSession({
     roomId,
     gameId: game.gameId,
     playerId: selfId,
-    canvas: canvasRefA,
-    bucketPath: paths.duoLinkStrokes(roomId, game.gameId, '0', trackA?.currentIndex ?? 1),
-  });
-  const sessionB = useDrawingSession({
-    roomId,
-    gameId: game.gameId,
-    playerId: selfId,
-    canvas: canvasRefB,
-    bucketPath: paths.duoLinkStrokes(roomId, game.gameId, '1', trackB?.currentIndex ?? 1),
+    canvas: canvasRef,
+    bucketPath: paths.duoLinkStrokes(roomId, game.gameId, myTrack ?? '0', currentIndex),
   });
 
-  const submit = (track: Track, text?: string) =>
+  const previousIndex = readableLinkIndex(currentIndex);
+
+  // The single link this player is entitled to, on their own track only.
+  useEffect(() => {
+    if (game.phase !== 'turn' || !isMyTurn || !myTrack) {
+      setPreviousLink(undefined);
+      return;
+    }
+    return watchDuoChainLink(roomId, game.gameId, myTrack, previousIndex, setPreviousLink);
+  }, [roomId, game.gameId, game.phase, isMyTurn, myTrack, previousIndex]);
+
+  useEffect(() => {
+    if (!previousLink || previousLink.type !== 'drawing' || !myTrack) {
+      setPreviousStrokes([]);
+      return;
+    }
+    let cancelled = false;
+    void readStrokesOnce(
+      paths.duoLinkStrokes(roomId, game.gameId, myTrack, previousLink.index),
+    ).then((strokes) => {
+      if (!cancelled) setPreviousStrokes(strokes);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, game.gameId, myTrack, previousLink]);
+
+  // At the reveal both chains open at once, and only then.
+  useEffect(() => {
+    if (game.phase !== 'reveal' && game.phase !== 'result') return;
+    const stops = TRACKS.map((track) =>
+      watchDuoChain(roomId, game.gameId, track, (links) =>
+        setChains((prev) => ({ ...prev, [track]: links })),
+      ),
+    );
+    return () => stops.forEach((stop) => stop());
+  }, [roomId, game.gameId, game.phase]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all(
+      TRACKS.map(async (track) => {
+        const entries = await Promise.all(
+          chains[track]
+            .filter((link) => link.type === 'drawing')
+            .map(async (link) => {
+              const strokes = await readStrokesOnce(
+                paths.duoLinkStrokes(roomId, game.gameId, track, link.index),
+              );
+              return [link.index, strokes] as const;
+            }),
+        );
+        return [track, Object.fromEntries(entries)] as const;
+      }),
+    ).then((pairs) => {
+      if (!cancelled) {
+        setPosterStrokes(
+          Object.fromEntries(pairs) as Record<Track, Record<number, Stroke[]>>,
+        );
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, game.gameId, chains]);
+
+  const submit = (text?: string) =>
     void callGame('submitKanatEshLinkDuo', {
       roomId,
-      track,
+      track: myTrack ?? '0',
       ...(text === undefined ? {} : { text }),
     }).catch(() => undefined);
 
-  // Both tracks' deadlines are armed unconditionally — a track not currently
-  // on screen still has to close out on time.
-  useDeadline(
-    trackA?.phaseEndsAt,
-    game.phase === 'turn' && !trackA?.done && (isMyTurnA || isHost),
-    () => submit('0', isMyTurnA && linkTypeAt(trackA?.currentIndex ?? 1) === 'text' ? '' : undefined),
-  );
-  useDeadline(
-    trackB?.phaseEndsAt,
-    game.phase === 'turn' && !trackB?.done && (isMyTurnB || isHost),
-    () => submit('1', isMyTurnB && linkTypeAt(trackB?.currentIndex ?? 1) === 'text' ? '' : undefined),
+  /*
+   * The author closes their own turn on time; the host shadows the shared
+   * deadline so a chain does not stall behind someone who put their phone
+   * down. The server only accepts that second caller once the deadline has
+   * actually passed.
+   */
+  useDeadline(game.phaseEndsAt, game.phase === 'turn' && (isMyTurn || isHost), () =>
+    submit(isMyTurn && linkType === 'text' ? '' : undefined),
   );
 
   if (game.phase === 'turn') {
-    // Prefer a track that's actually waiting on this player; otherwise show
-    // whichever track is still active, so there is always something on
-    // screen instead of a blank state between the two chains' own paces.
-    const showA = isMyTurnA || (!isMyTurnB && !trackA?.done);
-    const displayTrack: Track = showA ? '0' : '1';
-    const trackState = showA ? trackA : trackB;
-    const trackData = showA ? stateA : stateB;
-    const canvasRef = showA ? canvasRefA : canvasRefB;
-    const session = showA ? sessionA : sessionB;
-    const isMyTurn = showA ? isMyTurnA : isMyTurnB;
-    const bothPending = isMyTurnA && isMyTurnB;
-
-    const currentIndex = trackState?.currentIndex ?? 1;
-    const linkType = linkTypeAt(currentIndex);
-    const link = trackData.previousLink;
-
     return (
-      <div className="flex flex-1 flex-col">
-        {bothPending && (
-          <p className="bg-mustard px-3 py-1 text-center font-body text-xs text-ink">
-            عندك دور في المسارين — هذا الأول، والثاني بعده
-          </p>
-        )}
-        <KanatEshTurnScreen
-          linkType={linkType}
-          {...(link?.type === 'text' ? { previousText: link.content } : {})}
-          {...(trackData.previousStrokes.length > 0
-            ? { previousStrokes: trackData.previousStrokes }
-            : {})}
-          isMyTurn={isMyTurn}
-          currentAuthorName={players[trackState?.currentPlayerId ?? '']?.name ?? ''}
-          position={currentIndex}
-          totalLinks={trackState?.totalLinks ?? game.linksPerTrack ?? 0}
-          selfId={selfId}
-          strokes={session.strokes}
-          penColor={penColorFor(players[selfId]?.characterId)}
-          endsAt={trackState?.phaseEndsAt}
-          durationMs={linkType === 'drawing' ? KANAT_ESH.duo.drawMs : KANAT_ESH.duo.writeMs}
-          onSubmitText={(text) => submit(displayTrack, text)}
-          onSubmitDrawing={() => submit(displayTrack)}
-          onStrokeStart={session.onStrokeStart}
-          onStrokePoint={session.onStrokePoint}
-          onStrokeEnd={session.onStrokeEnd}
-          onUndo={session.undo}
-          canUndo={session.canUndo}
-          nextSeq={session.nextSeq}
-          now={session.now}
-          canvasRef={canvasRef}
-        />
-      </div>
+      <KanatEshTurnScreen
+        linkType={linkType}
+        {...(previousLink?.type === 'text' ? { previousText: previousLink.content } : {})}
+        {...(previousStrokes.length > 0 ? { previousStrokes } : {})}
+        isMyTurn={isMyTurn}
+        // Waiting on the partner, not on a named "current author" — both
+        // players move at once here.
+        currentAuthorName={alreadyFiled ? 'صاحبك' : ''}
+        position={currentIndex}
+        totalLinks={totalLinks}
+        selfId={selfId}
+        strokes={session.strokes}
+        penColor={penColorFor(players[selfId]?.characterId)}
+        endsAt={game.phaseEndsAt}
+        durationMs={linkType === 'drawing' ? KANAT_ESH.duo.drawMs : KANAT_ESH.duo.writeMs}
+        onSubmitText={(text) => submit(text)}
+        onSubmitDrawing={() => submit()}
+        onStrokeStart={session.onStrokeStart}
+        onStrokePoint={session.onStrokePoint}
+        onStrokeEnd={session.onStrokeEnd}
+        onUndo={session.undo}
+        canUndo={session.canUndo}
+        nextSeq={session.nextSeq}
+        now={session.now}
+        canvasRef={canvasRef}
+      />
     );
   }
 
   if (game.phase === 'reveal') {
-    const buildLinks = (state: typeof stateA) =>
-      state.chain
+    const buildLinks = (track: Track) =>
+      chains[track]
         .filter((link) => link.index > 0)
         .map((link) => ({
           index: link.index,
@@ -249,7 +203,7 @@ export function KanatEshDuoGame({
           playerId: link.playerId,
           ...(link.type === 'text'
             ? { text: link.content }
-            : { strokes: state.posterStrokes[link.index] ?? [] }),
+            : { strokes: posterStrokes[track][link.index] ?? [] }),
         }));
 
     return (
@@ -273,8 +227,8 @@ export function KanatEshDuoGame({
           <DuoJourneyPoster
             seedA={game.seedA ?? ''}
             seedB={game.seedB ?? ''}
-            linksA={buildLinks(stateA)}
-            linksB={buildLinks(stateB)}
+            linksA={buildLinks('0')}
+            linksB={buildLinks('1')}
             players={players}
           />
         </div>

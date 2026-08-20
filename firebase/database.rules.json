@@ -210,16 +210,15 @@
             // outside their own turn, and both of those are still refused.
             //
             // The phase whitelist covers every mode's own name for "pen is
-            // live": مزوّر/الممنوعات/الرسم المشترك use `draw`, كمّل رسمتي uses
-            // `turn`, and its Duo ruleset adds one short bonus window named
-            // `extend`.
+            // live": مزوّر/الممنوعات/الرسم المشترك use `draw`, and كمّل رسمتي
+            // uses `turn` — including on every stage of its Duo ruleset.
             //
             // Two shapes are allowed: a create-or-append by the stroke's own
             // author (newData exists), or a DELETE by that same author
             // (newData does not exist) — that second branch is what makes
             // "تراجع" actually remove the line for every other viewer instead
             // of only hiding it on the artist's own screen.
-            ".write": "auth != null && ((newData.exists() && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid)) || (!newData.exists() && data.exists() && data.child('playerId').val() === auth.uid)) && root.child('games').child($roomId).child('current').child('phase').val().matches(/^(draw|turn|extend)/) && (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid || root.child('games').child($roomId).child('current').child('activeDrawers').child(auth.uid).exists())",
+            ".write": "auth != null && ((newData.exists() && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid)) || (!newData.exists() && data.exists() && data.child('playerId').val() === auth.uid)) && root.child('games').child($roomId).child('current').child('phase').val().matches(/^(draw|turn)/) && (root.child('games').child($roomId).child('current').child('currentPlayerId').val() === auth.uid || root.child('games').child($roomId).child('current').child('activeDrawers').child(auth.uid).exists())",
             // `points` is deliberately NOT required. A stroke is written in
             // stages — header on pointer-down, point chunks every ~50ms — so
             // demanding points up front rejects the header, which is the first
@@ -376,7 +375,7 @@
           "$track": {
             "$index": {
               ".read": "auth != null && (root.child('games').child($roomId).child('current').child('phase').val().matches(/^(reveal|result)/) || root.child('games').child($roomId).child('current').child('visibleTo').child($track).child($index).child(auth.uid).exists())",
-              ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentPlayerId').val() === auth.uid",
+              ".write": "auth != null && !data.exists() && newData.child('playerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('currentIndexKey').val() === $index && root.child('games').child($roomId).child('current').child('tracks').child($track).child('authorByIndex').child($index).val() === auth.uid",
               ".validate": "newData.hasChildren(['type', 'playerId', 'content'])",
 
               "type": { ".validate": "newData.isString() && newData.val().matches(/^(text|drawing)$/)" },
@@ -398,13 +397,13 @@
         "$gameId": {
           "$track": {
             "$index": {
-              ".read": "auth != null && (root.child('games').child($roomId).child('current').child('phase').val().matches(/^(reveal|result)/) || root.child('games').child($roomId).child('current').child('visibleTo').child($track).child($index).child(auth.uid).exists() || (root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentPlayerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentIndexKey').val() === $index))",
+              ".read": "auth != null && (root.child('games').child($roomId).child('current').child('phase').val().matches(/^(reveal|result)/) || root.child('games').child($roomId).child('current').child('visibleTo').child($track).child($index).child(auth.uid).exists() || (root.child('games').child($roomId).child('current').child('tracks').child($track).child('authorByIndex').child($index).val() === auth.uid && root.child('games').child($roomId).child('current').child('currentIndexKey').val() === $index))",
               ".indexOn": ["seq"],
 
               "$strokeId": {
                 // Same create/append/delete shape as `strokes` and
                 // `linkStrokes` above, scoped to this track's own author.
-                ".write": "auth != null && ((newData.exists() && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid)) || (!newData.exists() && data.exists() && data.child('playerId').val() === auth.uid)) && root.child('games').child($roomId).child('current').child('phase').val() === 'turn' && root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentPlayerId').val() === auth.uid && root.child('games').child($roomId).child('current').child('tracks').child($track).child('currentIndexKey').val() === $index",
+                ".write": "auth != null && ((newData.exists() && newData.child('playerId').val() === auth.uid && (!data.exists() || data.child('playerId').val() === auth.uid)) || (!newData.exists() && data.exists() && data.child('playerId').val() === auth.uid)) && root.child('games').child($roomId).child('current').child('phase').val() === 'turn' && root.child('games').child($roomId).child('current').child('tracks').child($track).child('authorByIndex').child($index).val() === auth.uid && root.child('games').child($roomId).child('current').child('currentIndexKey').val() === $index",
                 ".validate": "newData.hasChildren(['playerId', 'seq', 'tool', 'color', 'width', 'startedAt'])",
 
                 "playerId": { ".validate": "newData.val() === auth.uid" },

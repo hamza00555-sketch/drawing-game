@@ -105,7 +105,8 @@ export async function startKammilRound(uid: string, data: RequestData): Promise<
         turnMs,
         countdownMs,
         isDuo,
-        extensionsUsed: 0,
+        stage: 0,
+        totalStages: isDuo ? KAMMIL.duo.stages : 1,
       },
     });
 
@@ -193,18 +194,25 @@ export async function advanceKammil(uid: string, data: RequestData): Promise<unk
       const guess = timedOut ? '' : String(data.guess ?? '');
       const { word } = await readGameSecret<{ word: string }>(roomId, game.gameId);
       const correct = isCorrectGuess(guess, word);
-      const extensionsUsed: number = game.extensionsUsed ?? 0;
+      const stage: number = game.stage ?? 0;
+      const totalStages: number = game.totalStages ?? KAMMIL.duo.stages;
 
-      // Duo: a wrong guess is not necessarily the end — the artist gets one
-      // short bonus window before the round is decided, capped at one use.
-      if (game.isDuo && !correct && extensionsUsed < KAMMIL.duo.maxExtensions) {
+      /*
+       * Duo: a wrong guess sends the round back for another drawing stage, so
+       * the guesser sees more of the picture and tries again. The pen goes
+       * back to the same artist — there is nobody else to hand it to — and
+       * the canvas keeps everything drawn so far, which is what makes the
+       * picture grow rather than restart.
+       */
+      if (game.isDuo && !correct && stage + 1 < totalStages) {
         await gameRef.update({
-          phase: 'extend',
-          phaseEndsAt: Date.now() + KAMMIL.duo.extendMs,
+          phase: 'countdown',
+          phaseEndsAt: Date.now() + KAMMIL.duo.countdownMs,
           currentPlayerId: artistIds[0],
-          extensionsUsed: extensionsUsed + 1,
+          stage: stage + 1,
+          lastGuess: guess,
         });
-        return { phase: 'extend' };
+        return { phase: 'countdown', stage: stage + 1 };
       }
 
       const delta = game.isDuo
@@ -212,7 +220,7 @@ export async function advanceKammil(uid: string, data: RequestData): Promise<unk
             artistId: artistIds[0] as string,
             guesserId: game.guesserId,
             correct,
-            afterExtend: extensionsUsed > 0,
+            stage,
           })
         : scoreKammilRound({ artistIds, guesserId: game.guesserId, correct });
       const current = ((await db().ref(`playerScores/${roomId}`).get()).val() ?? {}) as Record<
@@ -237,20 +245,6 @@ export async function advanceKammil(uid: string, data: RequestData): Promise<unk
 
       await db().ref().update(updates);
       return { phase: 'reveal', correct };
-    }
-
-    // Duo only: the bonus drawing window ended (timer, or the artist is done
-    // early); back to the guesser for one more try. Idempotent for the same
-    // reason `startTurn` is — both the artist and the host may call this.
-    case 'endExtend': {
-      if (game.phase !== 'extend' || !game.isDuo) return { phase: game.phase };
-
-      await gameRef.update({
-        phase: 'guess',
-        phaseEndsAt: Date.now() + KAMMIL.duo.guessMs,
-        currentPlayerId: game.guesserId,
-      });
-      return { phase: 'guess' };
     }
 
     case 'toResult': {

@@ -14,10 +14,12 @@
  * After the last artist, the guesser — who never drew and never saw the word —
  * gets the finished mess and one question: وش ذا؟
  *
- * Duo (two players) adds one more phase, `extend`: a wrong guess is not
- * necessarily the end there — the artist gets one short bonus window to add
- * to the drawing before the guesser tries again, capped at one use per round
- * so it stays a bonus, not a second full turn.
+ * Duo (two players) cannot run that relay — with one artist and one guesser
+ * there is nobody to pass the pen to. It keeps the mode's real idea, a drawing
+ * revealed a piece at a time, by staging it in TIME instead of across people:
+ * the artist draws in several short bursts, and the guesser gets a go after
+ * each one. So `guess` loops back to `countdown` for the next stage, and the
+ * round ends the moment the guesser is right — or when the stages run out.
  */
 
 import { defineMachine } from '../../engine/fsm';
@@ -27,7 +29,6 @@ export type KammilPhase =
   | 'countdown'
   | 'turn'
   | 'guess'
-  | 'extend'
   | 'reveal'
   | 'result';
 
@@ -51,14 +52,11 @@ export const kammilMachine = defineMachine<KammilPhase>({
       describe: 'Pen is live for a few seconds, then locks automatically',
     },
     guess: {
-      next: ['reveal', 'extend'],
+      // Duo loops back for the next stage when the guess was wrong and stages
+      // remain; every other path ends the round.
+      next: ['reveal', 'countdown'],
       timed: true,
       describe: 'The guesser names whatever the room produced',
-    },
-    extend: {
-      next: ['guess'],
-      timed: true,
-      describe: 'Duo only: the guesser was wrong, artist gets one short bonus window',
     },
     reveal: {
       next: ['result'],

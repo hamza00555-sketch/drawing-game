@@ -82,10 +82,35 @@ describe('split prompt', () => {
     expect(visiblePromptPart(revealed, 'g1', parts)).toBe(parts.full);
   });
 
-  it('Duo: both players see the whole prompt from the start — there is no split', () => {
+  it('Duo keeps the split — it is the thing the two players are guessing', () => {
+    // Showing either player the whole prompt early would hand them the
+    // answer to the question the round ends on.
     const duoState = state({ isDuo: true, artistIds: ['a1', 'a2'], guesserIds: [] });
-    expect(visiblePromptPart(duoState, 'a1', parts)).toBe(parts.full);
-    expect(visiblePromptPart(duoState, 'a2', parts)).toBe(parts.full);
+    expect(visiblePromptPart(duoState, 'a1', parts)).toBe(parts.partA);
+    expect(visiblePromptPart(duoState, 'a2', parts)).toBe(parts.partB);
+  });
+});
+
+describe('who may guess', () => {
+  it('group: only the non-artists', () => {
+    expect(canGuess(state({ phase: 'guess' }), 'g1')).toBe(true);
+    expect(canGuess(state({ phase: 'guess' }), 'a1')).toBe(false);
+  });
+
+  it('Duo inverts it: the two artists are the ones guessing', () => {
+    const duoState = state({
+      phase: 'guess',
+      isDuo: true,
+      artistIds: ['a1', 'a2'],
+      guesserIds: [],
+    });
+    expect(canGuess(duoState, 'a1')).toBe(true);
+    expect(canGuess(duoState, 'a2')).toBe(true);
+  });
+
+  it('never before the guess phase', () => {
+    const drawing = state({ phase: 'draw', isDuo: true, artistIds: ['a1', 'a2'] });
+    expect(canGuess(drawing, 'a1')).toBe(false);
   });
 });
 
@@ -158,16 +183,40 @@ describe('scoreMushtarakRound', () => {
 
 describe('isLastDuoTurn', () => {
   it('is true once every swap has happened, not before', () => {
-    expect(isLastDuoTurn(5, MUSHTARAK.duo.totalSwaps)).toBe(false);
+    expect(isLastDuoTurn(0, MUSHTARAK.duo.totalSwaps)).toBe(false);
     expect(isLastDuoTurn(MUSHTARAK.duo.totalSwaps - 1, MUSHTARAK.duo.totalSwaps)).toBe(true);
+  });
+
+  it('gives both players the same number of turns', () => {
+    // Turns alternate p1,p2,p1,p2..., so an odd total would hand one player
+    // an extra go at the canvas.
+    expect(MUSHTARAK.duo.totalSwaps % 2).toBe(0);
   });
 });
 
 describe('scoreMushtarakDuoRound', () => {
-  it('pays both players the same flat award — there is no guess to judge', () => {
-    const delta = scoreMushtarakDuoRound(['a1', 'a2']);
-    expect(delta.a1).toBe(MUSHTARAK.duo.scores.participation);
-    expect(delta.a2).toBe(MUSHTARAK.duo.scores.participation);
+  const artistIds = ['a1', 'a2'] as const;
+
+  it('pays each player for naming their PARTNER half', () => {
+    const delta = scoreMushtarakDuoRound({ artistIds, correctByArtist: [true, false] });
+    expect(delta.a1).toBe(MUSHTARAK.duo.scores.guessedPartnerHalf);
+    expect(delta.a2).toBeUndefined();
+  });
+
+  it('adds a shared bonus when both drawings got across', () => {
+    const both = scoreMushtarakDuoRound({ artistIds, correctByArtist: [true, true] });
+    const one = scoreMushtarakDuoRound({ artistIds, correctByArtist: [true, false] });
+    expect(both.a1).toBeGreaterThan(one.a1 as number);
+    expect(both.a1).toBe(
+      MUSHTARAK.duo.scores.guessedPartnerHalf + MUSHTARAK.duo.scores.bothCorrectBonus,
+    );
+    expect(both.a2).toBe(both.a1);
+  });
+
+  it('pays nothing when neither read the other', () => {
+    const delta = scoreMushtarakDuoRound({ artistIds, correctByArtist: [false, false] });
+    expect(delta.a1).toBeUndefined();
+    expect(delta.a2).toBeUndefined();
   });
 });
 

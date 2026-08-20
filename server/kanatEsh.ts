@@ -81,6 +81,14 @@ export async function startKanatEshRound(uid: string, data: RequestData): Promis
     const firstDuration =
       linkTypeAt(1) === 'drawing' ? KANAT_ESH.duo.drawMs : KANAT_ESH.duo.writeMs;
 
+    /*
+     * The two tracks run in LOCKSTEP: one shared index, one shared deadline.
+     * `chainAssignmentsDuo` alternates the owner first, so at every index the
+     * two tracks have different authors — which means each player always has
+     * exactly one thing to do, on exactly one track, at any moment. Letting
+     * the tracks drift apart independently is what made this unreadable:
+     * a player could owe a move on both at once.
+     */
     const tracks: Record<string, unknown> = {};
     const visibleTo: Record<string, unknown> = {};
     for (const [track, owner] of [
@@ -91,18 +99,9 @@ export async function startKanatEshRound(uid: string, data: RequestData): Promis
       authorsByTrack[track].forEach((playerId, i) => {
         authorByIndex[String(i + 1)] = playerId;
       });
-      const firstAuthor = authorsByTrack[track][0] as string;
 
-      tracks[track] = {
-        ownerId: owner,
-        currentIndex: 1,
-        currentIndexKey: '1',
-        currentPlayerId: firstAuthor,
-        totalLinks: linksPerTrack,
-        authorByIndex,
-        phaseEndsAt: Date.now() + firstDuration,
-      };
-      visibleTo[track] = visibilityFor(0, firstAuthor);
+      tracks[track] = { ownerId: owner, authorByIndex };
+      visibleTo[track] = visibilityFor(0, authorsByTrack[track][0] as string);
     }
 
     await db()
@@ -120,6 +119,10 @@ export async function startKanatEshRound(uid: string, data: RequestData): Promis
           phase: 'turn',
           isDuo: true,
           linksPerTrack,
+          // Shared across both tracks — see the lockstep note above.
+          currentIndex: 1,
+          currentIndexKey: '1',
+          phaseEndsAt: Date.now() + firstDuration,
           tracks,
           visibleTo,
         },
@@ -306,14 +309,16 @@ export async function submitKanatEshLinkDuo(uid: string, data: RequestData): Pro
   const trackState = game.tracks?.[track];
   if (!trackState) throw new GameError('internal', 'ما لقينا المسار.');
 
-  const isAuthor = trackState.currentPlayerId === uid;
-  const expired =
-    typeof trackState.phaseEndsAt === 'number' && Date.now() >= trackState.phaseEndsAt;
+  const index: number = game.currentIndex;
+  const author = trackState.authorByIndex?.[String(index)] as string | undefined;
+  if (!author) throw new GameError('internal', 'ما لقينا صاحب الحلقة.');
+
+  const isAuthor = author === uid;
+  const expired = typeof game.phaseEndsAt === 'number' && Date.now() >= game.phaseEndsAt;
   if (!isAuthor && !expired) {
     throw new GameError('permission-denied', 'مو دورك.');
   }
 
-  const index: number = trackState.currentIndex;
   const type = linkTypeAt(index);
   const submitted = String(data.text ?? '').slice(0, 200).trim();
   const content =
@@ -321,29 +326,47 @@ export async function submitKanatEshLinkDuo(uid: string, data: RequestData): Pro
 
   await db().ref(`duoChains/${roomId}/${game.gameId}/${track}/${index}`).set({
     type,
-    playerId: trackState.currentPlayerId,
+    playerId: author,
     content,
   });
 
+  /*
+   * Both tracks move together, so nothing advances until each player has
+   * filed their link for THIS index (or the shared deadline passed and a
+   * caller is closing the turn out for whoever went quiet).
+   */
+  await gameRef.child(`submitted/${index}/${track}`).set(true);
+
+  const otherTrack = track === '0' ? '1' : '0';
+  const otherFiled =
+    Boolean(game.submitted?.[String(index)]?.[otherTrack]) ||
+    (await gameRef.child(`submitted/${index}/${otherTrack}`).get()).val() === true;
+
+  if (!otherFiled && !expired) {
+    return { phase: 'turn', waitingForPartner: true };
+  }
+
+  // The partner never filed and the clock is out — close their link so the
+  // chain is not left with a hole the poster cannot render.
+  if (!otherFiled) {
+    const otherAuthor = game.tracks?.[otherTrack]?.authorByIndex?.[String(index)] as
+      | string
+      | undefined;
+    const otherType = linkTypeAt(index);
+    if (otherAuthor) {
+      await db().ref(`duoChains/${roomId}/${game.gameId}/${otherTrack}/${index}`).set({
+        type: otherType,
+        playerId: otherAuthor,
+        content: otherType === 'drawing' ? String(index) : 'ما لحق',
+      });
+      await gameRef.child(`submitted/${index}/${otherTrack}`).set(true);
+    }
+  }
+
   const nextIndex = index + 1;
-  const totalLinks: number = trackState.totalLinks;
+  const totalLinks: number = game.linksPerTrack;
 
   if (nextIndex >= totalLinks) {
-    const otherTrack = track === '0' ? '1' : '0';
-    const otherDone = Boolean(game.tracks?.[otherTrack]?.done);
-
-    if (!otherDone) {
-      // This track is done; the other one is still going. Nothing to reveal
-      // yet — just record that this track has nothing left to submit.
-      await gameRef.update({
-        [`tracks/${track}/currentIndex`]: nextIndex,
-        [`tracks/${track}/done`]: true,
-        [`tracks/${track}/phaseEndsAt`]: null,
-      });
-      return { phase: 'turn', trackDone: track };
-    }
-
-    // Both tracks are done: close the round out, same as the group version.
     const playerIds = await connectedIds(roomId);
     const delta = scoreKanatEshRound({ authorByIndex: {}, faithfulIndices: [], playerIds });
     const current = ((await db().ref(`playerScores/${roomId}`).get()).val() ?? {}) as Record<
@@ -356,11 +379,10 @@ export async function submitKanatEshLinkDuo(uid: string, data: RequestData): Pro
     );
 
     const updates: Record<string, unknown> = {
-      [`games/${roomId}/current/tracks/${track}/currentIndex`]: nextIndex,
-      [`games/${roomId}/current/tracks/${track}/done`]: true,
-      [`games/${roomId}/current/tracks/${track}/phaseEndsAt`]: null,
       [`games/${roomId}/current/phase`]: 'reveal',
+      [`games/${roomId}/current/phaseEndsAt`]: null,
       [`games/${roomId}/current/visibleTo`]: null,
+      [`games/${roomId}/current/currentIndexKey`]: null,
       [`games/${roomId}/current/seedA`]: seedA,
       [`games/${roomId}/current/seedB`]: seedB,
       [`rooms/${roomId}/status`]: 'lobby',
@@ -374,23 +396,27 @@ export async function submitKanatEshLinkDuo(uid: string, data: RequestData): Pro
     return { phase: 'reveal' };
   }
 
-  const nextAuthor = trackState.authorByIndex?.[String(nextIndex)] as string | undefined;
-  if (!nextAuthor) throw new GameError('internal', 'ما لقينا اللاعب التالي.');
-
   const nextType = linkTypeAt(nextIndex);
   const duration = nextType === 'drawing' ? KANAT_ESH.duo.drawMs : KANAT_ESH.duo.writeMs;
 
+  // Both grants replaced wholesale, so the previous index's grants are
+  // revoked on both tracks at once.
+  const nextVisibleTo: Record<string, unknown> = {};
+  for (const t of ['0', '1'] as const) {
+    const nextAuthor = game.tracks?.[t]?.authorByIndex?.[String(nextIndex)] as string | undefined;
+    if (nextAuthor) {
+      nextVisibleTo[t] = visibilityFor(readableLinkIndex(nextIndex), nextAuthor);
+    }
+  }
+
   await gameRef.update({
-    [`tracks/${track}/currentIndex`]: nextIndex,
-    [`tracks/${track}/currentIndexKey`]: String(nextIndex),
-    [`tracks/${track}/currentPlayerId`]: nextAuthor,
-    [`tracks/${track}/phaseEndsAt`]: Date.now() + duration,
-    // Replaced wholesale, so the previous author's grant on this track is
-    // revoked — mirrors the single-chain version exactly, just scoped deeper.
-    [`visibleTo/${track}`]: visibilityFor(readableLinkIndex(nextIndex), nextAuthor),
+    currentIndex: nextIndex,
+    currentIndexKey: String(nextIndex),
+    phaseEndsAt: Date.now() + duration,
+    visibleTo: nextVisibleTo,
   });
 
-  return { phase: 'turn', track };
+  return { phase: 'turn', index: nextIndex };
 }
 
 export async function kanatEshToResult(_uid: string, data: RequestData): Promise<unknown> {

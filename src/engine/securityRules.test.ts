@@ -119,9 +119,9 @@ describe('strokes', () => {
 
   it('only allows drawing during a drawing phase, by whoever holds the pen', () => {
     // Covers every mode's own name for "pen is live": مزوّر/الممنوعات/الرسم
-    // المشترك use `draw`, كمّل رسمتي uses `turn`, and its Duo ruleset adds one
-    // short bonus window named `extend`.
-    expect(write).toContain("child('phase').val().matches(/^(draw|turn|extend)/)");
+    // المشترك use `draw`, and كمّل رسمتي uses `turn` — on every stage of its
+    // Duo ruleset too.
+    expect(write).toContain("child('phase').val().matches(/^(draw|turn)/)");
     expect(write).toContain("child('currentPlayerId').val() === auth.uid");
     // الرسم المشترك is the one mode where two pens are live at once.
     expect(write).toContain("child('activeDrawers').child(auth.uid).exists()");
@@ -197,8 +197,14 @@ describe('duoChains — كانت إيش؟ Duo', () => {
     expect(read).toContain('matches(/^(reveal|result)/)');
   });
 
-  it('confines writing to whoever is that TRACK\'s current author', () => {
-    expect(write).toContain("child('tracks').child($track).child('currentPlayerId').val() === auth.uid");
+  it('confines writing to that track\'s author for exactly this index', () => {
+    // Lockstep: one shared currentIndexKey for both tracks, and the author is
+    // read from the track's own authorByIndex map rather than a mutable
+    // currentPlayerId — so a client cannot be handed the wrong track's turn.
+    expect(write).toContain("child('currentIndexKey').val() === $index");
+    expect(write).toContain(
+      "child('tracks').child($track).child('authorByIndex').child($index).val() === auth.uid",
+    );
     expect(write).toContain('!data.exists()');
   });
 });
@@ -207,14 +213,18 @@ describe('duoLinkStrokes — كانت إيش؟ Duo', () => {
   const read = String(at('duoLinkStrokes/$roomId/$gameId/$track/$index/.read'));
   const write = String(at('duoLinkStrokes/$roomId/$gameId/$track/$index/$strokeId/.write'));
 
-  it('confines writing to the current author of that track and that link', () => {
-    expect(write).toContain("child('tracks').child($track).child('currentPlayerId').val() === auth.uid");
-    expect(write).toContain("child('tracks').child($track).child('currentIndexKey').val() === $index");
+  it('confines writing to that track\'s author for exactly this index', () => {
+    expect(write).toContain(
+      "child('tracks').child($track).child('authorByIndex').child($index).val() === auth.uid",
+    );
+    expect(write).toContain("child('currentIndexKey').val() === $index");
     expect(write).toContain("child('phase').val() === 'turn'");
   });
 
-  it('lets the current author see the link they are drawing, per track', () => {
-    expect(read).toContain("child('tracks').child($track).child('currentIndexKey').val() === $index");
+  it('lets that track\'s author see the link they are drawing', () => {
+    expect(read).toContain(
+      "child('tracks').child($track).child('authorByIndex').child($index).val() === auth.uid",
+    );
   });
 
   it('lets the author keep writing to a stroke that already exists', () => {

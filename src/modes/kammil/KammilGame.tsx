@@ -76,11 +76,6 @@ export function KammilGame({
     () => advance({ action: 'startTurn' }),
   );
   useDeadline(game.phaseEndsAt, game.phase === 'turn' && (isMyTurn || isHost), endTurn);
-  // Duo only: the bonus window ends the same way every other timed phase
-  // does — the active player closes it, the host shadows in case they can't.
-  useDeadline(game.phaseEndsAt, game.phase === 'extend' && (isMyTurn || isHost), () =>
-    advance({ action: 'endExtend' }),
-  );
   useDeadline(game.phaseEndsAt, game.phase === 'guess' && isHost, () =>
     advance({ action: 'closeGuess' }),
   );
@@ -88,13 +83,15 @@ export function KammilGame({
   switch (game.phase) {
     case 'countdown':
     case 'turn':
-    case 'extend':
       return (
         <KammilDrawScreen
           {...(secret?.word === undefined ? {} : { word: secret.word })}
           isGuesser={isGuesser}
           counting={game.phase === 'countdown'}
-          extending={game.phase === 'extend'}
+          isDuo={isDuo}
+          stage={game.stage ?? 0}
+          totalStages={game.totalStages ?? 1}
+          {...(game.lastGuess ? { lastGuess: game.lastGuess } : {})}
           selfId={selfId}
           currentArtistId={game.currentPlayerId ?? undefined}
           players={players}
@@ -102,16 +99,13 @@ export function KammilGame({
           strokes={session.strokes}
           penColor={penColorFor(players[selfId]?.characterId)}
           phaseEndsAt={game.phaseEndsAt}
-          turnDurationMs={game.phase === 'extend' ? KAMMIL.duo.extendMs : turnMs}
+          turnDurationMs={turnMs}
           countdownDurationMs={countdownMs}
           onCountdownComplete={() => {
             if (isMyTurn || isHost) advance({ action: 'startTurn' });
           }}
           onTurnExpire={() => {
-            if (isMyTurn || isHost) {
-              if (game.phase === 'extend') advance({ action: 'endExtend' });
-              else endTurn();
-            }
+            if (isMyTurn || isHost) endTurn();
           }}
           onStrokeStart={session.onStrokeStart}
           onStrokePoint={session.onStrokePoint}
@@ -130,6 +124,9 @@ export function KammilGame({
           strokes={session.strokes}
           endsAt={game.phaseEndsAt}
           durationMs={isDuo ? KAMMIL.duo.guessMs : KAMMIL.guessMs}
+          isDuo={isDuo}
+          stage={game.stage ?? 0}
+          totalStages={game.totalStages ?? 1}
           submitted={guessSubmitted}
           onGuess={(guess) => {
             setGuessSubmitted(true);

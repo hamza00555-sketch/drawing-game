@@ -44,15 +44,14 @@ describe('kammil machine', () => {
     expect(kammilMachine.canTransition('countdown', 'guess')).toBe(false);
   });
 
-  it('Duo: a wrong guess may route through one bonus window, never more', () => {
-    expect(kammilMachine.canTransition('guess', 'extend')).toBe(true);
-    expect(kammilMachine.canTransition('extend', 'guess')).toBe(true);
-    // Extend must go back through a fresh guess, not straight to reveal —
-    // that is what keeps it a bonus window and not a second full turn.
-    expect(kammilMachine.canTransition('extend', 'reveal')).toBe(false);
-    // Only reachable from a guess that was actually wrong.
-    expect(kammilMachine.canTransition('turn', 'extend')).toBe(false);
-    expect(kammilMachine.canTransition('countdown', 'extend')).toBe(false);
+  it('Duo: a wrong guess loops back for another drawing stage', () => {
+    // The staged loop IS the Duo ruleset: draw a bit, get guessed at, draw
+    // more. It must go back through countdown so the pen is locked while the
+    // artist reads the wrong guess, exactly as it is on the first stage.
+    expect(kammilMachine.canTransition('guess', 'countdown')).toBe(true);
+    expect(kammilMachine.canTransition('guess', 'reveal')).toBe(true);
+    // Never straight back to a live pen, in either ruleset.
+    expect(kammilMachine.canTransition('guess', 'turn')).toBe(false);
   });
 });
 
@@ -67,21 +66,17 @@ describe('drawing permission', () => {
     expect(canDraw(state(), 'p4')).toBe(false);
   });
 
-  it('Duo: the pen lights back up for the same artist during extend', () => {
+  it('Duo: the same artist keeps the pen across every stage', () => {
     const duoState = state({
-      phase: 'extend',
+      phase: 'turn',
       artistIds: ['p1'],
       guesserId: 'p2',
       turnIndex: 0,
       isDuo: true,
+      stage: 2,
     });
     expect(canDraw(duoState, 'p1')).toBe(true);
     expect(canDraw(duoState, 'p2')).toBe(false);
-  });
-
-  it('extend never lights the pen up outside Duo', () => {
-    const nonDuoExtend = state({ phase: 'extend', isDuo: false });
-    expect(canDraw(nonDuoExtend, 'p1')).toBe(false);
   });
 });
 
@@ -220,37 +215,49 @@ describe('scoreKammilRound', () => {
 });
 
 describe('nextPhaseAfterGuess — Duo only', () => {
-  it('sends a wrong guess to extend while a bonus window remains', () => {
-    expect(nextPhaseAfterGuess(false, 0, KAMMIL.duo.maxExtensions)).toBe('extend');
+  const stages = KAMMIL.duo.stages;
+
+  it('sends a wrong guess back for another drawing stage', () => {
+    expect(nextPhaseAfterGuess(false, 0, stages)).toBe('countdown');
+    expect(nextPhaseAfterGuess(false, stages - 2, stages)).toBe('countdown');
   });
 
-  it('ends the round once every extension is spent', () => {
-    expect(nextPhaseAfterGuess(false, KAMMIL.duo.maxExtensions, KAMMIL.duo.maxExtensions)).toBe(
-      'reveal',
-    );
+  it('ends the round when the last stage is guessed wrong', () => {
+    expect(nextPhaseAfterGuess(false, stages - 1, stages)).toBe('reveal');
   });
 
-  it('a correct guess always ends the round, extensions or not', () => {
-    expect(nextPhaseAfterGuess(true, 0, KAMMIL.duo.maxExtensions)).toBe('reveal');
+  it('a correct guess ends the round at any stage', () => {
+    for (let stage = 0; stage < stages; stage += 1) {
+      expect(nextPhaseAfterGuess(true, stage, stages)).toBe('reveal');
+    }
   });
 });
 
 describe('scoreKammilDuoRound', () => {
-  it('pays a first-try correct guess more than one that needed the extension', () => {
-    const firstTry = scoreKammilDuoRound({
-      artistId: 'p1',
-      guesserId: 'p2',
-      correct: true,
-      afterExtend: false,
-    });
-    const afterExtend = scoreKammilDuoRound({
-      artistId: 'p1',
-      guesserId: 'p2',
-      correct: true,
-      afterExtend: true,
-    });
+  it('pays more the earlier the guess lands', () => {
+    const points = [0, 1, 2].map(
+      (stage) =>
+        scoreKammilDuoRound({
+          artistId: 'p1',
+          guesserId: 'p2',
+          correct: true,
+          stage,
+        }).p2 as number,
+    );
 
-    expect(firstTry.p2).toBeGreaterThan(afterExtend.p2 as number);
+    // Guessing from the sparsest sketch is worth the most.
+    expect(points[0]).toBeGreaterThan(points[1] as number);
+    expect(points[1]).toBeGreaterThan(points[2] as number);
+  });
+
+  it('never pays nothing for a correct guess, however late', () => {
+    const delta = scoreKammilDuoRound({
+      artistId: 'p1',
+      guesserId: 'p2',
+      correct: true,
+      stage: 99,
+    });
+    expect(delta.p2).toBeGreaterThan(0);
   });
 
   it('still pays the artist something on a total miss', () => {
@@ -258,7 +265,7 @@ describe('scoreKammilDuoRound', () => {
       artistId: 'p1',
       guesserId: 'p2',
       correct: false,
-      afterExtend: true,
+      stage: KAMMIL.duo.stages - 1,
     });
     expect(delta.p2).toBeUndefined();
     expect(delta.p1).toBe(KAMMIL.duo.scores.artistOnFailure);

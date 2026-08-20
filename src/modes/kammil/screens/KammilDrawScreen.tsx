@@ -23,8 +23,13 @@ export interface KammilDrawScreenProps {
   word?: string;
   isGuesser: boolean;
   counting: boolean;
-  /** Duo only: this is the bonus window after a wrong first guess. */
-  extending?: boolean;
+  /** Duo: the round is staged — draw a bit, get guessed at, draw more. */
+  isDuo?: boolean;
+  /** Duo only: current stage (0-based) and how many there are. */
+  stage?: number;
+  totalStages?: number;
+  /** Duo only: what the guesser said last stage, so the artist can adjust. */
+  lastGuess?: string;
   selfId: string;
   currentArtistId: string | undefined;
   players: Record<string, RoomPlayer>;
@@ -49,7 +54,10 @@ export function KammilDrawScreen({
   word,
   isGuesser,
   counting,
-  extending = false,
+  isDuo = false,
+  stage = 0,
+  totalStages = 1,
+  lastGuess,
   selfId,
   currentArtistId,
   players,
@@ -76,17 +84,32 @@ export function KammilDrawScreen({
   return (
     <Screen
       footer={
-        <p className="text-center font-body text-sm text-ink-soft">
-          {myTurn
-            ? counting
-              ? 'استعد...'
-              : extending
-                ? 'فرصة أخيرة — كمّلها!'
-                : 'ارسم بسرعة'
-            : extending
-              ? `${artist?.name ?? '...'} يكمّل الرسمة`
+        <div className="flex flex-col gap-1 text-center">
+          {/*
+           * Duo's whole shape is "draw a bit, get guessed at, draw more", and
+           * a player who cannot see which pass they are on just experiences a
+           * canvas that keeps interrupting itself. So the stage is stated
+           * plainly, and — from the second stage on — so is the wrong guess
+           * that sent us back here, which is the artist's only clue about what
+           * their drawing is currently saying.
+           */}
+          {isDuo && lastGuess && (
+            <p className="font-body text-sm text-ink-soft">
+              خمّن <span className="font-display text-tomato-deep">{lastGuess}</span> — عدّل رسمتك
+            </p>
+          )}
+          <p className="font-body text-sm text-ink-soft">
+            {myTurn
+              ? counting
+                ? isDuo && stage > 0
+                  ? 'استعد تكمّل...'
+                  : 'استعد...'
+                : isDuo
+                  ? 'ارسم — عندك وقت أطول هالمرة'
+                  : 'ارسم بسرعة'
               : `دور ${artist?.name ?? '...'}`}
-        </p>
+          </p>
+        </div>
       }
     >
       <div className="flex flex-1 flex-col gap-3 py-2">
@@ -105,7 +128,9 @@ export function KammilDrawScreen({
           </div>
 
           <span className="shrink-0 font-body text-sm text-ink-faint">
-            {position} من {artistIds.length}
+            {isDuo
+              ? `مرحلة ${stage + 1} من ${totalStages}`
+              : `${position} من ${artistIds.length}`}
           </span>
         </div>
 

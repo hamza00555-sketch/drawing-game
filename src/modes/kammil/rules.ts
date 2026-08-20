@@ -30,8 +30,8 @@ export interface KammilState {
   /** Index into artistIds. Does NOT wrap — each artist draws exactly once. */
   turnIndex: number;
   isDuo?: boolean;
-  /** Duo only: how many of the (currently: 1) bonus windows have been used. */
-  extensionsUsed?: number;
+  /** Duo only: which draw-then-guess stage this round is on, 0-based. */
+  stage?: number;
 }
 
 export function currentArtistId(state: KammilState): string | undefined {
@@ -44,28 +44,26 @@ export function currentArtistId(state: KammilState): string | undefined {
  * False during `countdown` by design: the artist can see the drawing and the
  * word, but cannot touch the canvas. Those three seconds are for reading the
  * situation, and letting anyone draw in them would hand the fastest reactions a
- * permanent advantage. `extend` is Duo-only and lights the pen back up for the
- * same artist for one short bonus window after a wrong guess.
+ * permanent advantage. In Duo the same artist holds the pen for every stage,
+ * so this stays true across the whole round.
  */
 export function canDraw(state: KammilState, playerId: string): boolean {
-  const inDrawablePhase =
-    state.phase === 'turn' || (Boolean(state.isDuo) && state.phase === 'extend');
-  return inDrawablePhase && currentArtistId(state) === playerId;
+  return state.phase === 'turn' && currentArtistId(state) === playerId;
 }
 
 /**
  * Duo only: what should happen after a guess is judged.
  *
- * A wrong guess gets one bonus drawing window before the round is decided —
- * capped by `maxExtensions` so it stays a bonus, not a second full turn. A
- * correct guess, or a wrong one with no extensions left, ends the round.
+ * A wrong guess sends the round back for another drawing stage, so the
+ * guesser sees more of the picture and tries again. A correct guess — or a
+ * wrong one on the last stage — ends the round.
  */
 export function nextPhaseAfterGuess(
   correct: boolean,
-  extensionsUsed: number,
-  maxExtensions: number,
+  stage: number,
+  totalStages: number,
 ): KammilPhase {
-  if (!correct && extensionsUsed < maxExtensions) return 'extend';
+  if (!correct && stage + 1 < totalStages) return 'countdown';
   return 'reveal';
 }
 

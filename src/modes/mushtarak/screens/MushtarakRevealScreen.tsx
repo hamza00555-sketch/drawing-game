@@ -99,48 +99,60 @@ export function MushtarakRevealScreen({
       <div className="flex flex-1 flex-col gap-3 py-2">
         <div className="rounded-md border-bold border-ink bg-paper-raised p-3 text-center">
           <p className="font-display text-xl text-ink">{full}</p>
-          {!isDuo && (
-            <p className="mt-1 font-body text-xs text-ink-soft">
-              {correctGuesserIds.length > 0
+          <p className="mt-1 font-body text-xs text-ink-soft">
+            {isDuo
+              ? correctGuesserIds.length === 2
+                ? 'كلٍ عرف نص الثاني'
+                : correctGuesserIds.length === 1
+                  ? 'واحد بس عرف نص صاحبه'
+                  : 'ولا واحد عرف نص الثاني'
+              : correctGuesserIds.length > 0
                 ? `${correctGuesserIds.length} عرفوها`
                 : 'ولا واحد عرفها'}
-            </p>
-          )}
+          </p>
         </div>
 
         {/*
-         * The two halves side by side — the gap between them is the joke.
-         * Skipped in Duo: partA/partB are the same phrase there (nothing was
-         * split), and up to seven alternating turns don't fit two columns —
-         * the replay below already attributes each turn by name.
+         * The two halves side by side — the gap between them is the joke, and
+         * in Duo it is also the answer key: each player was guessing the half
+         * in the OTHER column, so a tick per side says who read whose drawing.
          */}
-        {!isDuo && (
-          <ul className="grid list-none grid-cols-2 gap-2 p-0">
-            {[partA, partB].map((part, index) => {
-              const artistId = artistIds[index];
-              const player = artistId ? players[artistId] : undefined;
+        <ul className="grid list-none grid-cols-2 gap-2 p-0">
+          {[partA, partB].map((part, index) => {
+            const artistId = artistIds[index];
+            const player = artistId ? players[artistId] : undefined;
+            const gotIt = artistId ? correctGuesserIds.includes(artistId) : false;
 
-              return (
-                <li
-                  key={part}
-                  className="rounded-md border-thin border-ink-hairline bg-paper p-2"
-                >
-                  <div className="flex items-center gap-2">
+            return (
+              <li
+                key={part}
+                className="rounded-md border-thin border-ink-hairline bg-paper p-2"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-pill border-thin border-ink"
+                    style={{ backgroundColor: artistId ? penColors[artistId] : undefined }}
+                    aria-hidden
+                  />
+                  <span className="truncate font-body text-xs text-ink-faint">
+                    {player?.name ?? ''}
+                  </span>
+                  {isDuo && (
                     <span
-                      className="h-3 w-3 shrink-0 rounded-pill border-thin border-ink"
-                      style={{ backgroundColor: artistId ? penColors[artistId] : undefined }}
-                      aria-hidden
-                    />
-                    <span className="truncate font-body text-xs text-ink-faint">
-                      {player?.name ?? ''}
+                      className={[
+                        'ms-auto shrink-0 font-body text-xs',
+                        gotIt ? 'text-ink-soft' : 'text-tomato-deep',
+                      ].join(' ')}
+                    >
+                      {gotIt ? 'عرف نص صاحبه' : 'ما عرف'}
                     </span>
-                  </div>
-                  <p className="mt-1 font-display text-base text-ink">{part}</p>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  )}
+                </div>
+                <p className="mt-1 font-display text-base text-ink">{part}</p>
+              </li>
+            );
+          })}
+        </ul>
 
         <div className="relative min-h-0 flex-1 rounded-md border-bold border-ink">
           <StaticDrawing strokes={strokes} onReady={handleReady} />

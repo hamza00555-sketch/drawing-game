@@ -38,21 +38,27 @@ export function canDraw(state: MushtarakState, playerId: string): boolean {
   return state.artistIds.includes(playerId);
 }
 
+/**
+ * Who may guess. Inverted in Duo: the two artists are normally the only
+ * players barred from guessing, but in Duo they are the only players there
+ * are — and each names their partner's half.
+ */
 export function canGuess(state: MushtarakState, playerId: string): boolean {
-  return state.phase === 'guess' && !state.artistIds.includes(playerId);
+  if (state.phase !== 'guess') return false;
+  if (state.isDuo) return state.artistIds.includes(playerId);
+  return !state.artistIds.includes(playerId);
 }
 
 /**
- * An artist only ever sees their OWN half, until the reveal — except in Duo,
- * where there is no split and no guesser to protect the split from, so both
- * players see the whole prompt from the brief onward.
+ * An artist only ever sees their OWN half, until the reveal. This holds in
+ * Duo too — the split is exactly what the players are guessing at the end, so
+ * showing anyone the whole prompt early would give the answer away.
  */
 export function visiblePromptPart(
   state: MushtarakState,
   playerId: string,
   parts: { partA?: string; partB?: string; full?: string },
 ): string | undefined {
-  if (state.isDuo) return parts.full;
   if (state.phase === 'reveal' || state.phase === 'result') return parts.full;
 
   const index = state.artistIds.indexOf(playerId);

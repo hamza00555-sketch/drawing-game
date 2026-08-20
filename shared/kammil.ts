@@ -58,15 +58,23 @@ export const KAMMIL = {
    */
   duo: {
     countdownMs: 3_000,
-    turnMs: 3_500,
-    guessMs: 12_000,
-    extendMs: 4_000,
-    /** How many times a wrong guess may trigger a bonus drawing window. */
-    maxExtensions: 1,
+    /**
+     * Per stage, not per round. Three of these add up to ~21 seconds of
+     * drawing — far more than the group ruleset gives any single artist,
+     * which is the point: with one artist there is no relay to create the
+     * mess, so the drawing has to be legible enough to be worth guessing.
+     */
+    turnMs: 7_000,
+    guessMs: 10_000,
+    /** Draw-then-guess rounds before the round is called. */
+    stages: 3,
     scores: {
-      guesserCorrectFirstTry: 4,
-      /** Less than a first-try correct: the extension gave a second look. */
-      guesserCorrectAfterExtend: 2,
+      /**
+       * Guessing from the least drawing is worth the most. Indexed by stage,
+       * so a guess landing on the first sparse sketch pays 5 and one that
+       * needed all three pays 2.
+       */
+      guesserByStage: [5, 3, 2],
       artistOnSuccess: 2,
       artistOnFailure: 1,
     },
@@ -135,18 +143,19 @@ export interface KammilDuoRoundInput {
   artistId: string;
   guesserId: string;
   correct: boolean;
-  /** Whether the correct guess came after the bonus extension was used. */
-  afterExtend: boolean;
+  /** Which stage the round ended on, 0-based. */
+  stage: number;
 }
 
 export function scoreKammilDuoRound(input: KammilDuoRoundInput): KammilScoreDelta {
-  const { artistId, guesserId, correct, afterExtend } = input;
-  const { guesserCorrectFirstTry, guesserCorrectAfterExtend, artistOnSuccess, artistOnFailure } =
-    KAMMIL.duo.scores;
+  const { artistId, guesserId, correct, stage } = input;
+  const { guesserByStage, artistOnSuccess, artistOnFailure } = KAMMIL.duo.scores;
 
   const delta: KammilScoreDelta = {};
   if (correct) {
-    delta[guesserId] = afterExtend ? guesserCorrectAfterExtend : guesserCorrectFirstTry;
+    // Beyond the listed stages, pay the last tier rather than nothing.
+    delta[guesserId] =
+      guesserByStage[stage] ?? guesserByStage[guesserByStage.length - 1] ?? 0;
   }
   delta[artistId] = correct ? artistOnSuccess : artistOnFailure;
   return delta;

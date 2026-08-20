@@ -35,17 +35,28 @@ export const MUSHTARAK = {
    * same canvas, aiming for something fast and chaotic rather than a careful
    * drawing session.
    */
+  /**
+   * Two players keep the mode's real idea — each holds half an idea and
+   * neither can see the other's — but there is nobody left to guess the
+   * combination, so THEY guess it: at the end each names the half their
+   * partner was drawing. That is what gives the round a goal, and it is
+   * why the split is preserved rather than telling both players everything.
+   */
   duo: {
-    briefMs: 4_000,
-    turnMs: 2_500,
-    /** "6-8 تبديلات تقريبًا" — the midpoint. */
-    totalSwaps: 7,
+    briefMs: 5_000,
+    /** Long enough to actually draw something; 2.5s was unreadable. */
+    turnMs: 6_000,
+    /** Turns in total across both players — three each. */
+    totalSwaps: 6,
+    guessMs: 25_000,
     scores: {
-      /** Flat, to both players — there is no guess to judge, only participation. */
-      participation: 2,
+      /** For naming your partner's half. */
+      guessedPartnerHalf: 3,
+      /** Both got it — the drawing worked in both directions. */
+      bothCorrectBonus: 2,
     },
     replay: {
-      msPerContribution: 400,
+      msPerContribution: 500,
     },
   },
 } as const;
@@ -172,14 +183,32 @@ export interface MushtarakRoundInput {
 
 export type MushtarakScoreDelta = Record<string, number>;
 
+export interface MushtarakDuoRoundInput {
+  artistIds: readonly [string, string];
+  /** Did artistIds[0] name artistIds[1]'s half, and vice versa. */
+  correctByArtist: readonly [boolean, boolean];
+}
+
 /**
- * Duo scoring: both players already knew the prompt, so there is no guess to
- * reward — a flat award to each keeps the scoreboard moving without judging a
- * round that was never a contest.
+ * Duo scoring: each player is paid for naming their PARTNER's half — the
+ * thing they were never told and had to read out of the drawing. Getting
+ * both halves across earns a small shared bonus, since that takes two
+ * drawings that each worked.
  */
-export function scoreMushtarakDuoRound(artistIds: readonly [string, string]): MushtarakScoreDelta {
-  const { participation } = MUSHTARAK.duo.scores;
-  return { [artistIds[0]]: participation, [artistIds[1]]: participation };
+export function scoreMushtarakDuoRound(input: MushtarakDuoRoundInput): MushtarakScoreDelta {
+  const { artistIds, correctByArtist } = input;
+  const { guessedPartnerHalf, bothCorrectBonus } = MUSHTARAK.duo.scores;
+
+  const delta: MushtarakScoreDelta = {};
+  artistIds.forEach((id, index) => {
+    if (correctByArtist[index]) delta[id] = guessedPartnerHalf;
+  });
+
+  if (correctByArtist[0] && correctByArtist[1]) {
+    for (const id of artistIds) delta[id] = (delta[id] ?? 0) + bothCorrectBonus;
+  }
+
+  return delta;
 }
 
 export function scoreMushtarakRound(input: MushtarakRoundInput): MushtarakScoreDelta {

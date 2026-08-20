@@ -1,49 +1,51 @@
 import { useState, type FormEvent } from 'react';
 import { GameButton } from '../../../design/components/GameButton';
 import { Screen } from '../../../design/components/Screen';
+import { StaticDrawing } from '../../../design/components/StaticDrawing';
 import { TextField } from '../../../design/components/TextField';
 import { Timer } from '../../../design/components/Timer';
 import type { Stroke } from '../../../engine/canvas/strokes';
-import { StaticDrawing } from '../../../design/components/StaticDrawing';
 
 /**
- * كمّل رسمتي — the guess.
+ * الرسم المشترك — the guess.
  *
- * The guesser finally gets to look properly at a drawing built by people who
- * had three seconds each, and answer the question the game is named after.
+ * Two framings, because the mode asks a different question depending on how
+ * many people are in the room:
  *
- * Everyone else watches the same drawing and the same countdown. They know the
- * word; the comedy is watching someone try to reach it from that.
+ *   group  everyone who did not draw names the whole combined idea
+ *   duo    each of the two artists names the HALF their partner was holding
+ *
+ * The duo wording matters. "وش ذا؟" would be wrong there — the player already
+ * knows their own half, and is being asked for the other one specifically.
  */
 
-export interface KammilGuessScreenProps {
-  isGuesser: boolean;
-  guesserName: string;
+export interface MushtarakGuessScreenProps {
+  /** Whether THIS player is one of the people answering. */
+  canGuess: boolean;
+  isDuo?: boolean;
+  /** Duo only: whose half this player is naming. */
+  partnerName?: string;
+  /** Shown to anyone who is only watching. */
+  watchingName: string;
   strokes: readonly Stroke[];
   endsAt: number | null | undefined;
   durationMs: number;
-  /** Duo: the round is staged, so a wrong guess is not the end. */
-  isDuo?: boolean;
-  stage?: number;
-  totalStages?: number;
   onGuess: (guess: string) => void;
   submitted?: boolean;
 }
 
-export function KammilGuessScreen({
-  isGuesser,
-  guesserName,
+export function MushtarakGuessScreen({
+  canGuess,
+  isDuo = false,
+  partnerName,
+  watchingName,
   strokes,
   endsAt,
   durationMs,
-  isDuo = false,
-  stage = 0,
-  totalStages = 1,
   onGuess,
   submitted = false,
-}: KammilGuessScreenProps) {
+}: MushtarakGuessScreenProps) {
   const [guess, setGuess] = useState('');
-  const triesLeft = totalStages - stage - 1;
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -55,7 +57,7 @@ export function KammilGuessScreen({
     <form onSubmit={handleSubmit} className="contents">
       <Screen
         footer={
-          isGuesser ? (
+          canGuess ? (
             <GameButton
               tone="primary"
               size="lg"
@@ -67,28 +69,23 @@ export function KammilGuessScreen({
             </GameButton>
           ) : (
             <p className="text-center font-body text-sm text-ink-soft">
-              {guesserName} يحاول يفهمها
+              {watchingName} يحاول يفهمها
             </p>
           )
         }
       >
         <div className="flex flex-1 flex-col gap-3 py-2">
           <div className="flex items-center justify-between gap-3">
-            <h1 className="font-display text-2xl text-ink">وش ذا؟</h1>
+            <h1 className="font-display text-2xl text-ink">
+              {isDuo ? 'وش كان نصّه؟' : 'وش ذا؟'}
+            </h1>
             <Timer endsAt={endsAt} durationMs={durationMs} className="max-w-[10rem]" />
           </div>
 
-          {/*
-           * In Duo a wrong guess is not the end — it buys another drawing
-           * stage. Saying so is what turns "the screen keeps changing" into a
-           * rule the player can actually play against: guess early for more
-           * points, or wait for a clearer picture and score less.
-           */}
-          {isDuo && (
+          {isDuo && canGuess && (
             <p className="font-body text-sm text-ink-soft">
-              {triesLeft > 0
-                ? `خمّن الحين وتاخذ نقاط أكثر — ولو غلطت، بيكمّل الرسمة ولك ${triesLeft} محاولة بعد.`
-                : 'آخر محاولة — الرسمة اكتملت.'}
+              أنت تعرف نصّك. خمّن النص الثاني اللي كان مع{' '}
+              <span className="font-display text-ink">{partnerName}</span>.
             </p>
           )}
 
@@ -97,14 +94,14 @@ export function KammilGuessScreen({
             <StaticDrawing strokes={strokes} />
           </div>
 
-          {isGuesser && (
+          {canGuess && (
             <TextField
-              label="تخمينك"
+              label={isDuo ? 'نصّه' : 'تخمينك'}
               value={guess}
               onChange={(event) => setGuess(event.target.value)}
               maxLength={40}
               disabled={submitted}
-              placeholder="وش تشوفها؟"
+              placeholder={isDuo ? 'وش كان يرسم؟' : 'وش تشوفها؟'}
             />
           )}
         </div>

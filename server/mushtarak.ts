@@ -63,11 +63,12 @@ export async function startMushtarakRound(uid: string, data: RequestData): Promi
   if (isDuo) {
     const [a, b] = playerIds as [string, string];
 
-    // No split, and no guesser: both players already know the whole prompt,
-    // so there is nothing left for either half to hide.
+    // The split is kept: each player is told only their own half, exactly as
+    // in the group ruleset. What changes is who has to name the other half —
+    // with no third player, they name each other's at the end.
     const secrets: Record<string, unknown> = {
-      [a]: { role: 'artist', part: combo.full },
-      [b]: { role: 'artist', part: combo.full },
+      [a]: { role: 'artist', part: combo.partA },
+      [b]: { role: 'artist', part: combo.partB },
     };
 
     await db()
@@ -75,8 +76,8 @@ export async function startMushtarakRound(uid: string, data: RequestData): Promi
       .update({
         [`playerSecrets/${roomId}/${gameId}`]: secrets,
         [gameSecretPath(roomId, gameId)]: {
-          partA: combo.full,
-          partB: combo.full,
+          partA: combo.partA,
+          partB: combo.partB,
           full: combo.full,
         },
         [`rooms/${roomId}/status`]: 'playing',
@@ -87,6 +88,7 @@ export async function startMushtarakRound(uid: string, data: RequestData): Promi
           phase: 'brief',
           phaseEndsAt: Date.now() + MUSHTARAK.duo.briefMs,
           artistIds: [a, b],
+          // Both players are artists AND, at the end, each other's guessers.
           guesserIds: [],
           isDuo: true,
           turnIndex: 0,
@@ -181,9 +183,8 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
     }
 
     // Duo only: one short turn ends and either the next player's turn begins,
-    // or — once every swap has happened — the round goes straight to reveal.
-    // There is no guessing phase to route through: both players already know
-    // the prompt.
+    // or — once every swap has happened — both players go to the guess phase
+    // to name each other's half.
     case 'endTurn': {
       if (game.phase !== 'draw' || !game.isDuo) return { phase: game.phase };
 
@@ -198,29 +199,14 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
       const nextIndex = (game.turnIndex ?? 0) + 1;
 
       if (nextIndex >= totalSwaps) {
-        const delta = scoreMushtarakDuoRound(artistIds as [string, string]);
-        const current = ((await db().ref(`playerScores/${roomId}`).get()).val() ?? {}) as Record<
-          string,
-          number
-        >;
-        const secret = await readGameSecret<MushtarakSecret>(roomId, game.gameId);
-
-        const updates: Record<string, unknown> = {
-          [`games/${roomId}/current/phase`]: 'reveal',
-          [`games/${roomId}/current/phaseEndsAt`]: null,
-          [`games/${roomId}/current/correctGuesserIds`]: [],
-          [`games/${roomId}/current/partA`]: secret.partA,
-          [`games/${roomId}/current/partB`]: secret.partB,
-          [`games/${roomId}/current/full`]: secret.full,
-          [`rooms/${roomId}/status`]: 'lobby',
-        };
-        updates[`games/${roomId}/current/scoreDelta`] = delta;
-        for (const [playerId, points] of Object.entries(delta)) {
-          updates[`playerScores/${roomId}/${playerId}`] = (current[playerId] ?? 0) + points;
-        }
-
-        await db().ref().update(updates);
-        return { phase: 'reveal' };
+        await gameRef.update({
+          phase: 'guess',
+          phaseEndsAt: Date.now() + MUSHTARAK.duo.guessMs,
+          currentPlayerId: null,
+          // Nobody may draw once guessing starts.
+          activeDrawers: null,
+        });
+        return { phase: 'guess' };
       }
 
       await gameRef.update({
@@ -244,13 +230,29 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
 
     case 'submitGuess': {
       if (game.phase !== 'guess') return { phase: game.phase };
-      if ((game.artistIds ?? []).includes(uid)) {
-        throw new GameError('permission-denied', 'الرسّام ما يخمّن.');
-      }
 
+      const artistIds: string[] = game.artistIds ?? [];
       const text = String(data.guess ?? '').slice(0, 60);
       const secret = await readGameSecret<MushtarakSecret>(roomId, game.gameId);
-      const correct = isCorrectGuess(text, secret.full);
+
+      /*
+       * Duo inverts who guesses. In the group ruleset the two artists are the
+       * only players who may NOT guess; here they are the only two players
+       * there are, and each is judged against their PARTNER's half — the one
+       * thing they were never told.
+       */
+      let correct: boolean;
+      if (game.isDuo) {
+        const index = artistIds.indexOf(uid);
+        if (index === -1) throw new GameError('permission-denied', 'أنت مو في هذي الجولة.');
+        const partnersHalf = index === 0 ? secret.partB : secret.partA;
+        correct = isCorrectGuess(text, partnersHalf);
+      } else {
+        if (artistIds.includes(uid)) {
+          throw new GameError('permission-denied', 'الرسّام ما يخمّن.');
+        }
+        correct = isCorrectGuess(text, secret.full);
+      }
 
       await db().ref(`guesses/${roomId}/${game.gameId}`).push({
         playerId: uid,
@@ -274,10 +276,16 @@ export async function advanceMushtarak(uid: string, data: RequestData): Promise<
         ),
       ];
 
-      const delta = scoreMushtarakRound({
-        artistIds: game.artistIds ?? [],
-        correctGuesserIds: correctIds,
-      });
+      const artistIds: string[] = game.artistIds ?? [];
+      const delta = game.isDuo
+        ? scoreMushtarakDuoRound({
+            artistIds: artistIds as [string, string],
+            correctByArtist: [
+              correctIds.includes(artistIds[0] as string),
+              correctIds.includes(artistIds[1] as string),
+            ],
+          })
+        : scoreMushtarakRound({ artistIds, correctGuesserIds: correctIds });
       const current = ((await db().ref(`playerScores/${roomId}`).get()).val() ?? {}) as Record<
         string,
         number

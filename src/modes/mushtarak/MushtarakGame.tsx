@@ -9,7 +9,7 @@ import { MamnouBriefScreen } from '../mamnou3at/screens/MamnouBriefScreen';
 import { MushtarakDrawScreen } from './screens/MushtarakDrawScreen';
 import { MushtarakRevealScreen } from './screens/MushtarakRevealScreen';
 import { RoundScoresScreen } from '../../screens/RoundScoresScreen';
-import { KammilGuessScreen } from '../kammil/screens/KammilGuessScreen';
+import { MushtarakGuessScreen } from './screens/MushtarakGuessScreen';
 
 /**
  * الرسم المشترك, live.
@@ -149,14 +149,23 @@ export function MushtarakGame({
         />
       );
 
-    case 'guess':
+    case 'guess': {
+      // Duo inverts this: the artists ARE the guessers, each naming the half
+      // their partner held.
+      const partnerId = artistIds.find((id) => id !== selfId);
+      const partnerName = partnerId ? (players[partnerId]?.name ?? '') : '';
+
       return (
-        <KammilGuessScreen
-          isGuesser={!isArtist}
-          guesserName={artistIds.map((id) => players[id]?.name ?? '').join(' و')}
+        <MushtarakGuessScreen
+          canGuess={isDuo ? isArtist : !isArtist}
+          isDuo={isDuo}
+          partnerName={partnerName}
+          watchingName={
+            isDuo ? partnerName : artistIds.map((id) => players[id]?.name ?? '').join(' و')
+          }
           strokes={session.strokes}
           endsAt={game.phaseEndsAt}
-          durationMs={MUSHTARAK.guessMs}
+          durationMs={isDuo ? MUSHTARAK.duo.guessMs : MUSHTARAK.guessMs}
           submitted={guessSubmitted || guesses.some((g) => g.playerId === selfId)}
           onGuess={(guess) => {
             setGuessSubmitted(true);
@@ -164,6 +173,7 @@ export function MushtarakGame({
           }}
         />
       );
+    }
 
     case 'reveal':
       return (
@@ -187,7 +197,11 @@ export function MushtarakGame({
         <RoundScoresScreen
           headline={
             isDuo
-              ? 'خلصتوها!'
+              ? (game.correctGuesserIds ?? []).length === 2
+                ? 'فهمتوا بعض'
+                : (game.correctGuesserIds ?? []).length === 1
+                  ? 'واحد بس فهم'
+                  : 'ما فهمتوا بعض'
               : (game.correctGuesserIds ?? []).length > 0
                 ? 'وصلت الفكرة'
                 : 'ما وصلت'
