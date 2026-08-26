@@ -4,6 +4,7 @@ import { HostOfflineBanner } from '../design/components/HostOfflineBanner';
 import { PlayerAvatar, type PlayerStatus } from '../design/components/PlayerAvatar';
 import { Screen } from '../design/components/Screen';
 import { ROOM } from '../config/balance';
+import { isModeAvailable } from '../config/modes';
 import { MODE_MIN_PLAYERS } from './ModeSelectScreen';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
 import type { GameMode } from '../engine/room';
@@ -70,6 +71,14 @@ export function LobbyScreen({
   onSettings,
   onShareCode,
 }: LobbyScreenProps) {
+  /*
+   * A room keeps its chosen mode, so a room created before a mode was taken
+   * out of rotation still has that name stored. Treat it as no choice at all:
+   * the row reads "لم يُختر بعد" and "ابدأ" stays disabled until the host picks
+   * something that is actually playable.
+   */
+  const selectedMode = isModeAvailable(currentMode) ? currentMode : undefined;
+
   const [justCopied, setJustCopied] = useState(false);
   const roster = Object.values(players).sort((a, b) => a.joinedAt - b.joinedAt);
   const connectedCount = roster.filter((p) => presence[p.id]?.connected).length;
@@ -86,9 +95,9 @@ export function LobbyScreen({
   const isHost = selfId === hostId;
   // Below the room's own floor, no mode can start regardless of what is
   // selected — above it, the gate is per-mode (مزوّر still needs 3).
-  const requiredMin = currentMode ? MODE_MIN_PLAYERS[currentMode] : ROOM.minPlayers;
+  const requiredMin = selectedMode ? MODE_MIN_PLAYERS[selectedMode] : ROOM.minPlayers;
   const enoughPlayers = connectedCount >= requiredMin;
-  const canStart = isHost && enoughPlayers && Boolean(currentMode);
+  const canStart = isHost && enoughPlayers && Boolean(selectedMode);
 
   function statusOf(player: RoomPlayer): PlayerStatus {
     if (presence[player.id]?.connected === false) return 'disconnected';
@@ -204,7 +213,7 @@ export function LobbyScreen({
             ].join(' ')}
           >
             <span className="font-display">
-              {currentMode ? MODE_NAMES[currentMode] : 'لم يُختر بعد'}
+              {selectedMode ? MODE_NAMES[selectedMode] : 'لم يُختر بعد'}
             </span>
             {isHost && <span className="text-sm text-ink-faint">تغيير</span>}
           </button>

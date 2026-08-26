@@ -30,6 +30,7 @@ import {
   type GameState,
 } from '../engine/game';
 import type { PresenceRecord, RoomPlayer } from '../engine/presence';
+import { isModeAvailable } from '../config/modes';
 import { GameRouter } from './GameRouter';
 import { useSession } from './session';
 import { SetupNeededScreen } from './SetupNeededScreen';
@@ -222,7 +223,7 @@ export function App() {
     case 'modeSelect':
       return (
         <ModeSelectScreen
-          {...(room?.currentMode === undefined ? {} : { selected: room.currentMode })}
+          {...(isModeAvailable(room?.currentMode) ? { selected: room.currentMode } : {})}
           connectedPlayerCount={
             Object.values(players).filter((p) => presence[p.id]?.connected).length
           }
@@ -271,7 +272,9 @@ export function App() {
           {...(error === undefined ? {} : { error })}
           onStart={() => {
             const mode = room.currentMode;
-            if (!mode) {
+            // Also covers a mode that has since been taken out of rotation:
+            // the host is sent back to pick one that is playable today.
+            if (!isModeAvailable(mode)) {
               setRoute({ name: 'modeSelect' });
               return;
             }

@@ -10,6 +10,7 @@ import {
   type TunableMode,
 } from '../../shared/tunables';
 import { DEFAULT_BALANCE } from '../config/balance';
+import { isModeAvailable } from '../config/modes';
 
 /**
  * Room settings — host only.
@@ -33,13 +34,15 @@ const MODE_NAMES: Record<TunableMode, string> = {
   kanatEsh: 'كانت إيش؟',
 };
 
-const MODE_ORDER: readonly TunableMode[] = [
-  'mozawwer',
-  'kammil',
-  'mamnou3at',
-  'mushtarak',
-  'kanatEsh',
-];
+/**
+ * A mode out of rotation keeps its tunables — the server still clamps against
+ * them, and any override the host set before is still stored — but it gets no
+ * section here. Timers for a mode nobody can start are noise on a screen whose
+ * whole job is finding the one number you came to change.
+ */
+const MODE_ORDER: readonly TunableMode[] = (
+  ['mozawwer', 'kammil', 'mamnou3at', 'mushtarak', 'kanatEsh'] as const
+).filter((mode) => isModeAvailable(mode));
 
 export interface SettingsScreenProps {
   /** Current overrides, keyed by mode, plus a `drawing` section. */

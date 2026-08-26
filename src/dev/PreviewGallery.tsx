@@ -106,7 +106,7 @@ export function PreviewGallery({ screen }: { screen: string }) {
           presence={presence}
           hostId="p1"
           selfId="p1"
-          currentMode="kammil"
+          currentMode="mamnou3at"
           error="الجولات تحتاج نشر المنطق الموثوق (Cloud Functions). الغرف والانضمام يشتغلون بدونه — شوف DEPLOY.md."
           onChangeMode={noop}
           onStart={noop}

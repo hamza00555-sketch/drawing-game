@@ -1,6 +1,7 @@
 import { AssetSlot } from '../assets/AssetSlot';
 import { GameButton } from '../design/components/GameButton';
 import { Screen } from '../design/components/Screen';
+import { isModeAvailable } from '../config/modes';
 import type { GameMode } from '../engine/room';
 
 /**
@@ -96,13 +97,20 @@ export function ModeSelectScreen({
   onBack,
   connectedPlayerCount,
 }: ModeSelectScreenProps) {
-  const playable = MODES.filter(
+  /*
+   * Modes taken out of rotation drop out here, before the screen is split into
+   * its three groups — so a hidden mode is not a locked card and not a
+   * "قريبًا" line either. It is simply not on the screen. See config/modes.ts.
+   */
+  const inRotation = MODES.filter((mode) => isModeAvailable(mode.id));
+
+  const playable = inRotation.filter(
     (mode) => mode.ready && connectedPlayerCount >= mode.minPlayers,
   );
-  const locked = MODES.filter(
+  const locked = inRotation.filter(
     (mode) => mode.ready && connectedPlayerCount < mode.minPlayers,
   );
-  const upcoming = MODES.filter((mode) => !mode.ready);
+  const upcoming = inRotation.filter((mode) => !mode.ready);
 
   return (
     <Screen
